@@ -19,6 +19,7 @@
         .swal2-popup { border-radius: 20px !important; font-family: 'Poppins', sans-serif !important; }
         .swal2-styled.swal2-confirm { background-color: var(--brand) !important; border-radius: 10px !important; padding: 0.6rem 1.5rem !important; font-weight: 600 !important; }
         .swal2-styled.swal2-cancel { border-radius: 10px !important; padding: 0.6rem 1.5rem !important; font-weight: 600 !important; }
+        .modal-blur { filter: blur(5px); transition: filter 0.3s ease; }
     </style>
     <style>
         :root {
@@ -501,6 +502,63 @@
         .violation-overlay.active { display: flex; }
         .violation-card { background: #fff; border-radius: 24px; padding: 2.5rem; max-width: 440px; width: 90%; text-align: center; }
         .violation-icon { font-size: 3.5rem; color: #ef4444; margin-bottom: 1rem; }
+
+        /* Print Optimization */
+        @media print {
+            /* Hide everything except the preview modal content */
+            body > *:not(#paperPreviewModal) { display: none !important; }
+            .modal-backdrop, .modal-header, .modal-footer, button, .btn { display: none !important; }
+            
+            #paperPreviewModal { 
+                position: absolute !important; 
+                left: 0 !important; 
+                top: 0 !important; 
+                width: 100% !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                display: block !important; 
+                visibility: visible !important; 
+            }
+            #paperPreviewModal .modal-dialog { 
+                max-width: 100% !important; 
+                margin: 0 !important; 
+                width: 100% !important; 
+            }
+            #paperPreviewModal .modal-content { 
+                border: none !important; 
+                box-shadow: none !important; 
+                background: white !important; 
+            }
+            #previewPaperContent { 
+                display: block !important; 
+                visibility: visible !important; 
+                padding: 0 !important; 
+                overflow: visible !important; 
+                max-height: none !important; 
+            }
+            #previewPaperContent > div { 
+                box-shadow: none !important; 
+                padding: 20px !important; 
+                margin: 0 !important; 
+                width: 100% !important; 
+                max-width: none !important; 
+                background: white !important;
+            }
+            
+            /* Ensure colors and backgrounds print */
+            * { 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important; 
+                color-adjust: exact !important;
+            }
+            
+            /* Prevent section breaks in the middle of a question */
+            .mb-5 { page-break-inside: avoid; break-inside: avoid; }
+            
+            /* Clean up the paper appearance for print */
+            .bg-[#f8fafc], .bg-[#fef2f2] { background-color: transparent !important; }
+            .border-dashed { border-style: solid !important; border-width: 1px !important; border-color: #e2e8f0 !important; }
+        }
     </style>
 
 </head>
@@ -1781,11 +1839,11 @@
                             <div class="col-md-6">
                                 <label class="form-label d-block">Assessment Type <span class="text-danger">*</span></label>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="packAssessmentType" id="packTypeInternal" value="internal" checked onchange="toggleCategoryVisibility(this.value)">
+                                    <input class="form-check-input" type="radio" name="packAssessmentType" id="packTypeInternal" value="internal" checked onchange="handleAssessmentTypeChange(this.value)">
                                     <label class="form-check-label small fw-medium" for="packTypeInternal">Internal</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="packAssessmentType" id="packTypeRecruitment" value="recruitment" onchange="toggleCategoryVisibility(this.value)">
+                                    <input class="form-check-input" type="radio" name="packAssessmentType" id="packTypeRecruitment" value="recruitment" onchange="handleAssessmentTypeChange(this.value)">
                                     <label class="form-check-label small fw-medium" for="packTypeRecruitment">Recruitment</label>
                                 </div>
                             </div>
@@ -1836,23 +1894,15 @@
                         <p class="wizard-step-subtitle">Choose how to populate questions for this test.</p>
 
                         <div class="row g-3 mb-3">
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="card-custom text-start p-3 h-100 hover-border-primary cursor-pointer active-selection"
-                                    id="cardAutoSelect" onclick="selectPopulateMethod('Auto')">
-                                    <i class="bi bi-lightning-fill text-warning fs-4 mb-2 d-block"></i>
-                                    <h4 class="small fw-bold mb-1">Auto-select</h4>
-                                    <p class="text-xs text-secondary mb-0">Automatic selection from bank.</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card-custom text-start p-3 h-100 hover-border-primary cursor-pointer"
                                     id="cardManualOverride" onclick="selectPopulateMethod('Manual')">
                                     <i class="bi bi-search text-info fs-4 mb-2 d-block"></i>
                                     <h4 class="small fw-bold mb-1">Manual Override</h4>
                                     <p class="text-xs text-secondary mb-0">Hand-pick individual questions.</p>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="card-custom text-start p-3 h-100 hover-border-primary cursor-pointer"
                                     id="cardBulkUpload" onclick="selectPopulateMethod('Bulk')">
                                     <i class="bi bi-file-earmark-text text-secondary fs-4 mb-2 d-block"></i>
@@ -1864,19 +1914,27 @@
 
                         <div class="bg-pink-light p-2 px-3 rounded d-flex justify-content-between align-items-center mb-3"
                             style="background: #fff5f5; border: 1px solid #fee2e2;">
-                            <span class="text-xs fw-medium text-secondary">Questions selected:</span>
-                            <span class="text-xs fw-bold text-danger" id="selectedQuestionsCount">0 / 40 required</span>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="text-xs fw-medium text-secondary">Questions selected:</span>
+                                <span class="text-xs fw-bold text-danger" id="selectedQuestionsCount">0 / 40 required</span>
+                            </div>
+                            <button class="btn btn-outline-danger btn-xs py-1 px-3 rounded-[8px] font-bold text-[11px]" onclick="App.previewQuestionPaper()">
+                                <i class="bi bi-eye me-1"></i> Preview Paper
+                            </button>
                         </div>
 
                         <!-- Manual Override Section -->
-                        <div id="manualOverrideView" class="d-none">
-                            <div class="mb-4">
-                                <div class="input-group">
+                        <div id="manualOverrideView">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="input-group" style="max-width: 400px;">
                                     <span class="input-group-text bg-white border-end-0"><i
                                             class="bi bi-search"></i></span>
                                     <input type="text" class="form-control border-start-0"
                                         placeholder="Search by question text or category...">
                                 </div>
+                                <button class="btn btn-primary-custom btn-sm px-4 rounded-[8px] font-bold" onclick="App.openAddManualQuestionModal()">
+                                    <i class="bi bi-plus-lg me-1"></i> Add Question Manually
+                                </button>
                             </div>
                             <div class="table-responsive border rounded mb-4">
                                 <table class="table table-hover mb-0">
@@ -1910,7 +1968,7 @@
                                         <h6 class="fw-bold mb-1">Drag & drop CSV</h6>
                                         <p class="text-[10px] text-secondary mb-3">or click to browse</p>
                                         <div class="d-flex justify-content-center gap-2">
-                                            <button class="btn btn-primary-custom btn-sm px-3 py-1 text-xs">Browse</button>
+                                            <button class="btn btn-primary-custom btn-sm px-3 py-1 text-xs" onclick="App.handleBulkUploadMock()">Browse</button>
                                             <button class="btn btn-outline-secondary btn-sm px-3 py-1 text-xs" onclick="App.downloadTemplate()">
                                                 <i class="bi bi-download"></i> Template
                                             </button>
@@ -1967,53 +2025,120 @@
                         <h3 class="wizard-step-title">Step 3 — Assign Test</h3>
                         <p class="wizard-step-subtitle">Assign the test to specific departments, roles, or individuals.</p>
 
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label">Department</label>
-                                <select class="form-select">
-                                    <option>All Departments</option>
-                                    <option>Engineering</option>
-                                    <option>HR</option>
-                                    <option>Product</option>
-                                </select>
+                        <!-- Internal Assignment View -->
+                        <div id="assignInternalView">
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">Department</label>
+                                    <select class="form-select">
+                                        <option>All Departments</option>
+                                        <option>Engineering</option>
+                                        <option>HR</option>
+                                        <option>Product</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Role</label>
+                                    <select class="form-select">
+                                        <option>All Roles</option>
+                                        <option>Developer</option>
+                                        <option>Tester</option>
+                                        <option>Designer</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Role</label>
-                                <select class="form-select">
-                                    <option>All Roles</option>
-                                    <option>Developer</option>
-                                    <option>Tester</option>
-                                    <option>Designer</option>
-                                </select>
+
+                            <div class="label-text fw-bold mb-2">Target Employees (0 selected)</div>
+                            <div class="table-responsive border rounded">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 40px;"><input type="checkbox" class="form-check-input"></th>
+                                            <th class="small fw-bold">Name</th>
+                                            <th class="small fw-bold">Email</th>
+                                            <th class="small fw-bold">Role</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><input type="checkbox" class="form-check-input" checked></td>
+                                            <td class="small fw-medium">John Doe</td>
+                                            <td class="small">john.doe@company.com</td>
+                                            <td class="small">Developer</td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="checkbox" class="form-check-input"></td>
+                                            <td class="small fw-medium">Jane Smith</td>
+                                            <td class="small">jane.smith@company.com</td>
+                                            <td class="small">Designer</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
-                        <div class="label-text fw-bold mb-2">Target Employees (0 selected)</div>
-                        <div class="table-responsive border rounded">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 40px;"><input type="checkbox" class="form-check-input"></th>
-                                        <th class="small fw-bold">Name</th>
-                                        <th class="small fw-bold">Email</th>
-                                        <th class="small fw-bold">Role</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><input type="checkbox" class="form-check-input" checked></td>
-                                        <td class="small fw-medium">John Doe</td>
-                                        <td class="small">john.doe@company.com</td>
-                                        <td class="small">Developer</td>
-                                    </tr>
-                                    <tr>
-                                        <td><input type="checkbox" class="form-check-input"></td>
-                                        <td class="small fw-medium">Jane Smith</td>
-                                        <td class="small">jane.smith@company.com</td>
-                                        <td class="small">Designer</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <!-- Recruitment Assignment View -->
+                        <div id="assignRecruitmentView" class="d-none">
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">College / University</label>
+                                    <select class="form-select">
+                                        <option>All Colleges</option>
+                                        <option>IIT Madras</option>
+                                        <option>Anna University</option>
+                                        <option>NIT Trichy</option>
+                                        <option>PSG College of Technology</option>
+                                        <option>Vellore Institute of Technology</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Batch / Passing Year</label>
+                                    <select class="form-select">
+                                        <option>All Batches</option>
+                                        <option>2024 Passouts</option>
+                                        <option>2025 Passouts</option>
+                                        <option>2023 Passouts</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="label-text fw-bold mb-2">Target Freshers / Candidates (0 selected)</div>
+                            <div class="table-responsive border rounded">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 40px;"><input type="checkbox" class="form-check-input"></th>
+                                            <th class="small fw-bold">Candidate Name</th>
+                                            <th class="small fw-bold">Email Address</th>
+                                            <th class="small fw-bold">College</th>
+                                            <th class="small fw-bold">GPA</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><input type="checkbox" class="form-check-input" checked></td>
+                                            <td class="small fw-medium">Aditya Kumar</td>
+                                            <td class="small">aditya.k@gmail.com</td>
+                                            <td class="small">IIT Madras</td>
+                                            <td class="small">8.9</td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="checkbox" class="form-check-input"></td>
+                                            <td class="small fw-medium">Priya Sharma</td>
+                                            <td class="small">priya.s@outlook.com</td>
+                                            <td class="small">Anna University</td>
+                                            <td class="small">9.1</td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="checkbox" class="form-check-input"></td>
+                                            <td class="small fw-medium">Rahul Verma</td>
+                                            <td class="small">rahul.v@gmail.com</td>
+                                            <td class="small">NIT Trichy</td>
+                                            <td class="small">8.5</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -2138,7 +2263,7 @@
                                     </div>
                                     <div class="mb-2">
                                         <div class="text-[10px] text-uppercase text-secondary fw-bold">Method</div>
-                                        <div class="small fw-bold" id="rev_method">Auto-select</div>
+                                        <div class="small fw-bold" id="rev_method">Manual-select</div>
                                     </div>
                                     <div class="mb-2">
                                         <div class="text-[10px] text-uppercase text-secondary fw-bold">Duration</div>
@@ -2160,6 +2285,134 @@
                     <span class="small text-secondary d-none d-md-block" id="stepIndicatorText">Complete all fields to proceed.</span>
                     <button type="button" class="btn btn-primary-custom px-4" id="nextPackStep">Next Step</button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Question Manually Modal -->
+<div class="modal fade" id="addManualQuestionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
+            <div class="modal-header px-4 py-3 border-bottom border-gray-100">
+                <h5 class="modal-title fw-bold text-[#1e293b]">Add Question Manually</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label text-[11px] font-bold text-[#64748b] text-uppercase tracking-wider mb-2">Question Type</label>
+                        <select class="form-select h-[42px] rounded-[8px] border-[#e2e8f0] text-[13px] font-medium" id="manualQuestionType" onchange="App.onManualQuestionTypeChange(this.value)">
+                            <option value="MCQ">MCQ</option>
+                            <option value="Multi-select">Multi-select</option>
+                            <option value="True/False">True/False</option>
+                            <option value="2-Mark">2-Mark</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-[11px] font-bold text-[#64748b] text-uppercase tracking-wider mb-2">Category</label>
+                        <select class="form-select h-[42px] rounded-[8px] border-[#e2e8f0] text-[13px] font-medium" id="manualQuestionCategory">
+                            <option>Java Basics</option>
+                            <option>Python Core</option>
+                            <option>React Hooks</option>
+                            <option>SQL Advanced</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-[11px] font-bold text-[#64748b] text-uppercase tracking-wider mb-2">Marks</label>
+                    <input type="number" class="form-control h-[42px] rounded-[8px] border-[#e2e8f0] text-[14px] font-bold" id="manualQuestionMarks" value="2">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-[11px] font-bold text-[#64748b] text-uppercase tracking-wider mb-2">Question Text <span class="text-danger">*</span></label>
+                    <textarea class="form-control rounded-[8px] border-[#e2e8f0] text-[13px] p-3" id="manualQuestionText" rows="3" placeholder="Enter the question..."></textarea>
+                </div>
+
+                <!-- MCQ / Multi-select Options Section -->
+                <div id="manualOptionsSection">
+                    <label class="form-label text-[11px] font-bold text-[#64748b] text-uppercase tracking-wider mb-3" id="manualOptionLabel">Answer Options (check one correct)</label>
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[8px]">
+                            <span class="fw-bold text-[#64748b]" style="width: 20px;">A</span>
+                            <input type="text" class="form-control border-0 p-0 text-[13px] shadow-none" placeholder="Option A">
+                            <div class="d-flex align-items-center gap-2 ps-3 border-start border-[#f1f5f9]">
+                                <input type="radio" class="form-check-input manual-correct-check" name="manualCorrect" value="A" checked style="width: 18px; height: 18px;">
+                                <span class="text-[11px] font-bold text-[#94a3b8] text-uppercase">Correct</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[8px]">
+                            <span class="fw-bold text-[#64748b]" style="width: 20px;">B</span>
+                            <input type="text" class="form-control border-0 p-0 text-[13px] shadow-none" placeholder="Option B">
+                            <div class="d-flex align-items-center gap-2 ps-3 border-start border-[#f1f5f9]">
+                                <input type="radio" class="form-check-input manual-correct-check" name="manualCorrect" value="B" style="width: 18px; height: 18px;">
+                                <span class="text-[11px] font-bold text-[#94a3b8] text-uppercase">Correct</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[8px]">
+                            <span class="fw-bold text-[#64748b]" style="width: 20px;">C</span>
+                            <input type="text" class="form-control border-0 p-0 text-[13px] shadow-none" placeholder="Option C">
+                            <div class="d-flex align-items-center gap-2 ps-3 border-start border-[#f1f5f9]">
+                                <input type="radio" class="form-check-input manual-correct-check" name="manualCorrect" value="C" style="width: 18px; height: 18px;">
+                                <span class="text-[11px] font-bold text-[#94a3b8] text-uppercase">Correct</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[8px]">
+                            <span class="fw-bold text-[#64748b]" style="width: 20px;">D</span>
+                            <input type="text" class="form-control border-0 p-0 text-[13px] shadow-none" placeholder="Option D">
+                            <div class="d-flex align-items-center gap-2 ps-3 border-start border-[#f1f5f9]">
+                                <input type="radio" class="form-check-input manual-correct-check" name="manualCorrect" value="D" style="width: 18px; height: 18px;">
+                                <span class="text-[11px] font-bold text-[#94a3b8] text-uppercase">Correct</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- True/False Section -->
+                <div id="manualTFSection" class="d-none">
+                    <label class="form-label text-[11px] font-bold text-[#64748b] text-uppercase tracking-wider mb-3">Correct Answer</label>
+                    <div class="d-flex gap-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="manualTF" id="tfTrue" value="True" checked>
+                            <label class="form-check-label text-[13px] font-bold text-[#334155]" for="tfTrue">True</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="manualTF" id="tfFalse" value="False">
+                            <label class="form-check-label text-[13px] font-bold text-[#334155]" for="tfFalse">False</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-Mark / Short Answer Section -->
+                <div id="manualShortAnswerSection" class="d-none">
+                    <label class="form-label text-[11px] font-bold text-[#64748b] text-uppercase tracking-wider mb-2">Correct Answer (Short Answer)</label>
+                    <input type="text" class="form-control rounded-[8px] border-[#e2e8f0] text-[13px] h-[42px]" placeholder="Enter the correct answer...">
+                </div>
+
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4 gap-2">
+                <button type="button" class="btn btn-light px-4 rounded-[8px] font-bold text-[13px]" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary-custom px-4 rounded-[8px] font-bold text-[13px]" onclick="App.addQuestionManually()">Add Question</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Question Paper Preview Modal -->
+<div class="modal fade" id="paperPreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; background: #f8fafc;">
+            <div class="modal-header px-4 py-3 border-bottom bg-white sticky-top" style="border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 10;">
+                <h5 class="modal-title fw-bold text-[#1e293b]">Question Paper Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="previewPaperContent" style="max-height: 80vh; overflow-y: auto;">
+                <!-- Content injected via JS -->
+            </div>
+            <div class="modal-footer bg-white border-0 px-4 pb-4" style="border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
+                <button type="button" class="btn btn-light px-4 rounded-[8px] font-bold" data-bs-dismiss="modal">Close Preview</button>
+                <button type="button" class="btn btn-primary-custom px-4 rounded-[8px] font-bold" onclick="window.print()">Print Paper</button>
             </div>
         </div>
     </div>
@@ -2200,6 +2453,10 @@
 
     function openPackWizard() {
         currentPackStep = 1;
+        // Reset assessment type to internal on open
+        document.getElementById('packTypeInternal').checked = true;
+        handleAssessmentTypeChange('internal');
+        
         updatePackWizardUI();
         const modalEl = document.getElementById('createPackModal');
         const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
@@ -2248,12 +2505,35 @@
         }
     });
 
-    function toggleCategoryVisibility(type) {
+    function handleAssessmentTypeChange(type) {
+        // Toggle Category field in Step 1
         const field = document.getElementById('packCategoryField');
-        if (type === 'recruitment') {
-            field.classList.add('d-none');
-        } else {
-            field.classList.remove('d-none');
+        if (field) {
+            field.classList.toggle('d-none', type === 'recruitment');
+        }
+
+        // Toggle Step 3 Views (Assign Test)
+        const internalView = document.getElementById('assignInternalView');
+        const recruitmentView = document.getElementById('assignRecruitmentView');
+        const subtitle = document.querySelector('#packStep3 .wizard-step-subtitle');
+
+        if (internalView && recruitmentView) {
+            if (type === 'recruitment') {
+                internalView.classList.add('d-none');
+                recruitmentView.classList.remove('d-none');
+                if (subtitle) subtitle.textContent = "Assign the test to colleges, batches, or specific fresher candidates.";
+            } else {
+                internalView.classList.remove('d-none');
+                recruitmentView.classList.add('d-none');
+                if (subtitle) subtitle.textContent = "Assign the test to specific departments, roles, or individuals.";
+            }
+        }
+        
+        // Update summary label in Step 1
+        const summTypeBadge = document.getElementById('summ_temp_type');
+        if (summTypeBadge) {
+            summTypeBadge.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+            summTypeBadge.className = type === 'recruitment' ? 'badge-custom badge-purple' : 'badge-custom badge-blue';
         }
     }
 
@@ -2281,24 +2561,287 @@
 
     function selectPopulateMethod(method) {
         // Fix for ID mapping
-        const cardIds = { 'Auto': 'cardAutoSelect', 'Manual': 'cardManualOverride', 'Bulk': 'cardBulkUpload' };
-        Object.values(cardIds).forEach(id => document.getElementById(id).classList.remove('active-selection'));
+        const cardIds = { 'Manual': 'cardManualOverride', 'Bulk': 'cardBulkUpload' };
+        Object.values(cardIds).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active-selection');
+        });
         document.getElementById(cardIds[method]).classList.add('active-selection');
 
         document.getElementById('manualOverrideView').classList.toggle('d-none', method !== 'Manual');
         document.getElementById('bulkUploadView').classList.toggle('d-none', method !== 'Bulk');
         
         const countEl = document.getElementById('selectedQuestionsCount');
-        if (method === 'Auto') {
-            countEl.textContent = 'Auto-selection active (40 / 40)';
-            countEl.classList.replace('text-danger', 'text-success');
-        } else {
-            countEl.textContent = '0 / 40 required';
-            countEl.classList.replace('text-success', 'text-danger');
-        }
+        countEl.textContent = '0 / 40 required';
+        countEl.classList.replace('text-success', 'text-danger');
         
         document.getElementById('rev_method').textContent = method + '-select';
     }
+
+    App.openAddManualQuestionModal = () => {
+        const modalEl = document.getElementById('addManualQuestionModal');
+        const parentModalContent = document.querySelector('#createPackModal .modal-content');
+        
+        if (parentModalContent) parentModalContent.classList.add('modal-blur');
+        
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            if (parentModalContent) parentModalContent.classList.remove('modal-blur');
+        }, { once: true });
+    };
+
+    App.onManualQuestionTypeChange = (type) => {
+        const optionsSec = document.getElementById('manualOptionsSection');
+        const tfSec = document.getElementById('manualTFSection');
+        const shortSec = document.getElementById('manualShortAnswerSection');
+        const label = document.getElementById('manualOptionLabel');
+
+        optionsSec.classList.add('d-none');
+        tfSec.classList.add('d-none');
+        shortSec.classList.add('d-none');
+
+        if (type === 'MCQ' || type === 'Multi-select') {
+            optionsSec.classList.remove('d-none');
+            label.textContent = type === 'MCQ' ? 'Answer Options (check one correct)' : 'Answer Options (check all correct)';
+            const checks = document.querySelectorAll('.manual-correct-check');
+            checks.forEach(c => {
+                c.type = type === 'MCQ' ? 'radio' : 'checkbox';
+                c.name = 'manualCorrect';
+            });
+        } else if (type === 'True/False') {
+            tfSec.classList.remove('d-none');
+        } else if (type === '2-Mark') {
+            shortSec.classList.remove('d-none');
+        }
+    };
+
+    App.manualQuestions = [];
+
+    App.addQuestionManually = () => {
+        const type = document.getElementById('manualQuestionType').value;
+        const text = document.getElementById('manualQuestionText').value;
+        const marks = document.getElementById('manualQuestionMarks').value;
+        const category = document.getElementById('manualQuestionCategory').value;
+        if (!text) { Swal.fire('Required', 'Please enter question text', 'error'); return; }
+
+        let options = [];
+        if (type === 'MCQ' || type === 'Multi-select') {
+            const optInputs = document.querySelectorAll('#manualOptionsSection input[type="text"]');
+            optInputs.forEach((input, i) => {
+                if (input.value) options.push({ text: input.value });
+            });
+        } else if (type === 'True/False') {
+            options = [{ text: 'True' }, { text: 'False' }];
+        }
+
+        // Store for preview
+        App.manualQuestions.push({ text, type, category, marks, options });
+
+        const tbody = document.getElementById('manualQuestionTableBody');
+        if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="checkbox" class="form-check-input" checked onchange="App.updateManualCount()"></td>
+            <td class="small fw-medium">${text.substring(0, 60)}${text.length > 60 ? '...' : ''}</td>
+            <td class="small">${category}</td>
+            <td class="small">${type}</td>
+            <td class="small">Medium</td>
+            <td class="small fw-bold">${marks}</td>
+        `;
+        tbody.appendChild(tr);
+        
+        App.updateManualCount();
+        bootstrap.Modal.getInstance(document.getElementById('addManualQuestionModal')).hide();
+        
+        // Reset form
+        document.getElementById('manualQuestionText').value = '';
+        document.querySelectorAll('#manualOptionsSection input[type="text"]').forEach(i => i.value = '');
+        
+        Swal.fire({ title: 'Success', text: 'Question added to manual list', icon: 'success', timer: 1500, showConfirmButton: false });
+    };
+
+    App.handleBulkUploadMock = () => {
+        const mockQuestions = [
+            { text: 'Explain the difference between let and const in JavaScript.', type: '2-Mark', category: 'Java Basics', marks: 2, options: [] },
+            { text: 'Which hook is used for side effects in React?', type: 'MCQ', category: 'React Hooks', marks: 2, options: [{text: 'useState'}, {text: 'useEffect'}, {text: 'useContext'}, {text: 'useReducer'}] }
+        ];
+        
+        App.manualQuestions = App.manualQuestions.concat(mockQuestions);
+        
+        const tbody = document.getElementById('manualQuestionTableBody');
+        if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+
+        mockQuestions.forEach(q => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="checkbox" class="form-check-input" checked onchange="App.updateManualCount()"></td>
+                <td class="small fw-medium">${q.text.substring(0, 60)}...</td>
+                <td class="small">${q.category}</td>
+                <td class="small">${q.type}</td>
+                <td class="small">Medium</td>
+                <td class="small fw-bold">${q.marks}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        App.updateManualCount();
+        Swal.fire('Bulk Upload Success', 'Questions imported successfully from CSV.', 'success');
+    };
+
+    App.previewQuestionPaper = () => {
+        const questions = App.manualQuestions || [];
+        if (questions.length === 0) {
+            Swal.fire('No Questions', 'Add at least one question to preview the paper.', 'info');
+            return;
+        }
+
+        const totalMarks = questions.reduce((acc, q) => acc + parseInt(q.marks), 0);
+        const container = document.getElementById('previewPaperContent');
+
+        // Group by category
+        const sections = {};
+        questions.forEach(q => {
+            if (!sections[q.category]) sections[q.category] = [];
+            sections[q.category].push(q);
+        });
+
+        let sectionsHtml = '';
+        let secIndex = 0;
+        const secNames = ['A', 'B', 'C', 'D', 'E'];
+
+        for (const [cat, qs] of Object.entries(sections)) {
+            const secName = secNames[secIndex++] || 'X';
+            sectionsHtml += `
+                <div class="mb-5 px-5">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="h5 fw-bold text-[#dc2230] mb-0 text-uppercase tracking-wider">SECTION ${secName}</h3>
+                        <div class="bg-[#fff1f2] text-[#dc2230] px-3 py-1.5 rounded-[8px] text-[11px] font-bold d-flex align-items-center gap-2">
+                             <i class="bi bi-list-ul"></i> ${qs.length} Questions | ${qs[0].marks} Marks each
+                        </div>
+                    </div>
+                    ${qs.map((q, i) => `
+                        <div class="mb-5">
+                            <div class="d-flex align-items-center gap-2 mb-3 text-[#64748b] text-[11px] font-bold">
+                                <i class="bi bi-info-circle-fill"></i> Question Type: ${q.type === 'MCQ' ? 'Multiple Choice' : (q.type === '2-Mark' ? 'Short Answer' : q.type)}
+                            </div>
+                            <div class="d-flex justify-content-between mb-4">
+                                <div class="fw-bold text-[#1e293b] text-[16px]">Q${i + 1}. ${q.text}</div>
+                                <div class="text-[#1e293b] font-bold text-sm">[${q.marks} Marks]</div>
+                            </div>
+                            <div class="ps-2">
+                                ${q.type === '2-Mark' ? `
+                                    <div class="border border-2 border-dashed border-[#e2e8f0] rounded-[12px] p-5 text-gray-400 text-[13px] bg-[#fcfcfd]">
+                                        Student response area...
+                                    </div>
+                                ` : `
+                                    <div class="row g-4">
+                                        ${q.options.map((opt, oi) => `
+                                            <div class="col-md-6">
+                                                <div class="text-[14px] text-[#334155] d-flex gap-3">
+                                                    <span class="fw-bold text-[#1e293b] min-w-[20px]">${String.fromCharCode(65 + oi)})</span>
+                                                    <span>${opt.text}</span>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        container.innerHTML = `
+            <div class="bg-white mx-auto shadow-sm" style="max-width: 900px; min-height: 1000px; padding: 60px 0;">
+                <!-- Header -->
+                <div class="text-center mb-5 px-5">
+                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop" class="mx-auto mb-4 rounded shadow-sm" style="width: 80px; height: 80px; object-fit: cover;">
+                    <h2 class="fw-bold text-[#1e293b] mb-5 text-3xl">eNova Technology Solutions</h2>
+                    
+                    <div class="d-flex justify-content-center gap-4 mb-5">
+                        <div class="d-flex align-items-center gap-4 p-3 bg-white border border-[#e2e8f0] rounded-[20px] min-w-[200px] shadow-sm">
+                            <div class="w-12 h-12 bg-[#fff1f2] text-[#dc2230] rounded-full d-flex align-items-center justify-content-center shadow-inner"><i class="bi bi-clock"></i></div>
+                            <div class="text-start">
+                                <div class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest mb-1">Duration</div>
+                                <div class="fw-bold text-[#1e293b] text-lg">60 Minutes</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-4 p-3 bg-white border border-[#e2e8f0] rounded-[20px] min-w-[200px] shadow-sm">
+                            <div class="w-12 h-12 bg-[#fff1f2] text-[#dc2230] rounded-full d-flex align-items-center justify-content-center shadow-inner"><i class="bi bi-star"></i></div>
+                            <div class="text-start">
+                                <div class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest mb-1">Total Marks</div>
+                                <div class="fw-bold text-[#1e293b] text-lg">${totalMarks} Marks</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mx-5 opacity-100 my-5"></div>
+                </div>
+
+                <!-- Candidate Info -->
+                <div class="row g-4 mb-5 px-5">
+                    <div class="col-md-6">
+                        <div class="p-4 bg-[#fcfcfd] border border-[#e2e8f0] rounded-[20px]">
+                            <label class="text-[11px] font-bold text-[#64748b] uppercase tracking-widest mb-3 d-block">Candidate Name</label>
+                            <div class="border-bottom border-dotted border-[#cbd5e1] pb-1 text-gray-300 text-[10px] letter-spacing-[2px]">..........................................................................................</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-4 bg-[#fcfcfd] border border-[#e2e8f0] rounded-[20px]">
+                            <label class="text-[11px] font-bold text-[#64748b] uppercase tracking-widest mb-3 d-block">Roll Number / ID</label>
+                            <div class="border-bottom border-dotted border-[#cbd5e1] pb-1 text-gray-300 text-[10px] letter-spacing-[2px]">..........................................................................................</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="mx-5 p-5 bg-[#fcfcfd] rounded-[20px] mb-5 shadow-sm">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="w-8 h-8 bg-[#dc2230] text-white rounded-full d-flex align-items-center justify-content-center">
+                            <i class="bi bi-info-circle-fill"></i>
+                        </div>
+                        <h4 class="mb-0 fw-bold text-[#1e293b] text-lg">Important Instructions</h4>
+                    </div>
+                    <ul class="text-[14px] text-[#475569] mb-0 ps-3">
+                        <li class="mb-3">Read all questions carefully before attempting.</li>
+                        <li class="mb-3">This paper consists of ${Object.keys(sections).length} distinct sections.</li>
+                        <li class="mb-3">All questions are mandatory unless specified otherwise.</li>
+                        <li>The total duration for this assessment is 60 minutes.</li>
+                    </ul>
+                </div>
+
+                <div id="previewQuestionsList">${sectionsHtml}</div>
+
+                <div class="text-center mt-5 pt-5 mx-5 text-[#94a3b8] text-[12px]">
+                    <div class="fw-bold text-[#1e293b] mb-1">© 2026 eNova Technology Solutions</div>
+                    <div>Generated via eNova Assessment Management Portal</div>
+                </div>
+            </div>
+        `;
+
+        const modalEl = document.getElementById('paperPreviewModal');
+        const parentModalContent = document.querySelector('#createPackModal .modal-content');
+        
+        if (parentModalContent) parentModalContent.classList.add('modal-blur');
+        
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            if (parentModalContent) parentModalContent.classList.remove('modal-blur');
+        }, { once: true });
+    };
+
+    App.updateManualCount = () => {
+        const count = document.querySelectorAll('#manualQuestionTableBody input[type="checkbox"]:checked').length;
+        const countEl = document.getElementById('selectedQuestionsCount');
+        countEl.textContent = `${count} / 40 required`;
+        countEl.classList.toggle('text-danger', count < 40);
+        countEl.classList.toggle('text-success', count >= 40);
+    };
 
     App.onTemplateSelect = (val) => {
         const select = document.getElementById('baseTemplateSelect');
