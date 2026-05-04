@@ -1,3 +1,34 @@
+<?php
+// Mock data for demonstration if not provided by controller
+if (empty($packs)) {
+    $packs = [
+        [
+            'id' => 1,
+            'pack_name' => 'React Frontend Core Assessment',
+            'created_at' => '2024-04-15',
+            'template_name' => 'Senior Developer Template',
+            'status' => 'Live',
+            'user_role' => 'Recruitment Team'
+        ],
+        [
+            'id' => 2,
+            'pack_name' => 'Data Structures & Algorithms v2',
+            'created_at' => '2024-04-20',
+            'template_name' => 'Standard DS Template',
+            'status' => 'Draft',
+            'user_role' => 'Engineering Lead'
+        ],
+        [
+            'id' => 3,
+            'pack_name' => 'Node.js Backend Security Pack',
+            'created_at' => '2024-04-25',
+            'template_name' => 'Security Audit v1',
+            'status' => 'Live',
+            'user_role' => 'CTO Office'
+        ]
+    ];
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +44,12 @@
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -20,6 +57,46 @@
         .swal2-styled.swal2-confirm { background-color: var(--brand) !important; border-radius: 10px !important; padding: 0.6rem 1.5rem !important; font-weight: 600 !important; }
         .swal2-styled.swal2-cancel { border-radius: 10px !important; padding: 0.6rem 1.5rem !important; font-weight: 600 !important; }
         .modal-blur { filter: blur(5px); transition: filter 0.3s ease; }
+        
+        /* DataTables Compact Design */
+        .dataTables_wrapper .dataTables_filter input { width: 220px !important; font-size: 11px !important; height: 32px !important; }
+        .dataTables_wrapper .dataTables_paginate .paginate_button { 
+            padding: 4px 12px !important; 
+            font-size: 11px !important; 
+            margin: 0 2px !important; 
+            border-radius: 8px !important; 
+            border: 1px solid #e2e8f0 !important;
+            background: #f8fafc !important;
+            color: #64748b !important;
+            font-weight: 700 !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+            display: inline-block !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+            color: var(--brand) !important;
+            text-decoration: none !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: var(--brand) !important;
+            color: white !important;
+            border-color: var(--brand) !important;
+            box-shadow: 0 4px 10px -2px rgba(220, 34, 48, 0.3) !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+            background: #f8fafc !important;
+            color: #94a3b8 !important;
+        }
+        .dataTables_paginate { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+        #assessmentPacksTable_wrapper { padding: 0 !important; }
+        #assessmentPacksTable { border: none !important; margin: 0 !important; }
+        #assessmentPacksTable thead th { border-bottom: 1px solid #f1f5f9 !important; padding: 10px 20px !important; font-size: 10px !important; }
+        #assessmentPacksTable tbody td { padding: 8px 20px !important; border-bottom: 1px solid #f1f5f9 !important; }
+        .table-responsive { overflow: hidden !important; } /* Remove unwanted scrollbars */
     </style>
     <style>
         :root {
@@ -486,8 +563,7 @@
         .success-title { font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 0.75rem; }
         .success-text { color: #64748b; margin-bottom: 2rem; }
         .success-actions { display: flex; flex-direction: column; gap: 0.75rem; }
-        .btn-view-results { background: var(--brand); color: #fff; border-radius: 12px; font-weight: 700; padding: 1rem; border: none; }
-        .btn-back-dashboard { background: #f1f5f9; color: #475569; border-radius: 12px; font-weight: 700; padding: 1rem; border: none; }
+        .btn-view-results { background: var(--brand); color: #fff; border-radius: 12px; font-weight: 700; padding: 1rem; border: none; text-align: center; }
 
         .submit-confirm-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 4000; display: flex; align-items: center; justify-content: center; }
         .confirm-card { background: #fff; border-radius: 20px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
@@ -801,37 +877,20 @@
             </button>
         </div>
 
-        <div class="card overflow-hidden">
+        <div class="card overflow-hidden p-3 border-0 shadow-sm">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="bg-gray-50 border-b">
-                        <tr>
+                <table class="table table-hover mb-0 w-full" id="assessmentPacksTable">
+                    <thead>
+                        <tr class="bg-[#f8fafc] border-b border-[#f1f5f9]">
                             <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Pack Name</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Template</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Status</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Assigned</th>
-                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Actions</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y">
-                        <?php if(empty($packs)): ?>
-                        <tr><td colspan="5" class="px-6 py-10 text-center text-gray-400 small">No assessment packs created yet.</td></tr>
-                        <?php else: ?>
-                        <?php foreach($packs as $p): ?>
-                        <tr>
-                            <td class="px-6 py-4">
-                                <div class="font-bold text-gray-800"><?= esc($p['pack_name']) ?></div>
-                                <div class="text-[10px] text-gray-400">Created on <?= date('M d, Y', strtotime($p['created_at'])) ?></div>
-                            </td>
-                            <td class="px-6 py-4 text-sm"><?= esc($p['template_name'] ?? 'Custom') ?></td>
-                            <td class="px-6 py-4"><span class="chip chip-mark">Live</span></td>
-                            <td class="px-6 py-4 text-sm"><?= esc($p['user_role']) ?></td>
-                            <td class="px-6 py-4">
-                                <button class="action-btn btn-delete" onclick="deletePack(<?= $p['id'] ?>)"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                        <?php endif; ?>
+                    <tbody class="divide-y divide-[#f1f5f9]">
+                        <!-- Dynamic content by DataTables -->
                     </tbody>
                 </table>
             </div>
@@ -856,7 +915,7 @@
                 <div class="flex flex-wrap items-center justify-between gap-6">
                     <div class="flex-1 min-w-[320px]">
                         <label class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest mb-1 block">Candidate Performance Dashboard</label>
-                        <div class="text-[15px] font-bold text-[#1e293b]">Arjun Sharma — React Recruitment Drive</div>
+                        <div class="text-[15px] font-bold text-[#1e293b]">Overall Ranking — React Recruitment Drive</div>
                         <div class="text-[11px] text-[#94a3b8] font-medium mt-0.5">Batch: Recruitment Drive April 2024</div>
                     </div>
                     
@@ -882,19 +941,19 @@
 
             <div class="card border border-[#e2e8f0] shadow-sm rounded-[12px] overflow-hidden bg-white">
                 <div class="px-5 py-3 border-b border-[#f1f5f9] bg-[#f8fafc]/50 flex justify-between items-center">
-                    <h4 class="text-[12px] font-bold text-[#1e293b] mb-0 uppercase tracking-wide">Topic-wise Performance Breakdown</h4>
-                    <span class="text-[10px] font-bold text-[#94a3b8] bg-white border border-[#e2e8f0] px-2 py-0.5 rounded" id="breakdown-cat-count">6 Categories</span>
+                    <h4 class="text-[12px] font-bold text-[#1e293b] mb-0 uppercase tracking-wide">Candidate Ranking & Leaderboard</h4>
+                    <span class="text-[10px] font-bold text-[#94a3b8] bg-white border border-[#e2e8f0] px-2 py-0.5 rounded" id="breakdown-cat-count">15 Candidates</span>
                 </div>
                 <div class="table-responsive">
                     <table class="w-full text-left border-collapse">
                         <thead class="bg-[#f8fafc] border-b border-[#f1f5f9]">
                             <tr>
-                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">#</th>
-                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">Subject Category</th>
-                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">Attempted</th>
-                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">Correct</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">Rank</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">Candidate Name</th>
                                 <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">Score</th>
-                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-right">Success Rate</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">Accuracy</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">Status</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-right">Time Utility</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[#f1f5f9]" id="topicBreakdownTable">
@@ -906,7 +965,58 @@
         </div>
 
         <!-- Evaluator View Container -->
-        <div id="result-evaluator-view" class="hidden">
+        <div id="result-evaluator-view" class="hidden space-y-4">
+            <!-- Bulk Evaluation Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="card p-4 border border-[#e2e8f0] shadow-sm rounded-[12px] bg-white flex items-center justify-between">
+                    <div>
+                        <h5 class="text-[13px] font-bold text-[#1e293b] mb-1">Bulk Grading Template</h5>
+                        <p class="text-[11px] text-[#94a3b8] mb-0">Download candidate list to enter marks offline.</p>
+                    </div>
+                    <button class="btn btn-outline-primary-custom btn-sm px-4 rounded-[8px] font-bold text-[11px]" onclick="App.downloadBulkEvaluationTemplate()">
+                        <i class="bi bi-download me-1"></i> Download CSV
+                    </button>
+                </div>
+                <div class="card p-4 border border-[#e2e8f0] shadow-sm rounded-[12px] bg-white flex items-center justify-between">
+                    <div>
+                        <h5 class="text-[13px] font-bold text-[#1e293b] mb-1">Upload Scored Sheet</h5>
+                        <p class="text-[11px] text-[#94a3b8] mb-0">Sync marks from your completed CSV file.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="file" id="bulkEvaluationInput" class="hidden" onchange="App.handleBulkEvaluationUpload(this)">
+                        <button class="btn btn-primary-custom btn-sm px-4 rounded-[8px] font-bold text-[11px]" onclick="document.getElementById('bulkEvaluationInput').click()">
+                            <i class="bi bi-upload me-1"></i> Upload CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk Preview Section (Hidden by default) -->
+            <div id="bulkEvaluationPreview" class="hidden card border border-[#e2e8f0] shadow-sm rounded-[12px] overflow-hidden bg-white">
+                <div class="px-5 py-3 border-b border-[#f1f5f9] bg-[#fefce8]/30 flex justify-between items-center">
+                    <h4 class="text-[12px] font-bold text-[#1e293b] mb-0 uppercase tracking-wide">Bulk Evaluation Preview</h4>
+                    <div class="flex gap-2">
+                        <button class="btn btn-sm btn-light px-3 rounded-[8px] font-bold text-[11px]" onclick="document.getElementById('bulkEvaluationPreview').classList.add('hidden')">Cancel</button>
+                        <button class="btn btn-sm btn-success px-4 rounded-[8px] font-bold text-[11px]" onclick="App.submitBulkEvaluation()">Submit Marks</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-[#f8fafc] border-b border-[#f1f5f9]">
+                            <tr>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">Candidate ID</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">Name</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">MCQ Score</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">Final Total</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-right">Manual Grading</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#f1f5f9]" id="bulkEvaluationTableBody">
+                            <!-- Preview rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             <div class="card border border-[#e2e8f0] shadow-sm rounded-[12px] overflow-hidden bg-white">
                 <div class="px-5 py-2.5 border-b border-[#f1f5f9] bg-[#f8fafc]/50 flex justify-between items-center">
                     <h4 class="text-[12px] font-bold text-[#1e293b] mb-0 tracking-wide uppercase">Subjective Evaluation Required</h4>
@@ -1203,16 +1313,34 @@
                 <div class="exec-brand-text">AssessHub <span class="proctor-badge">PROCTORING ON</span></div>
             </div>
             <div class="exec-divider"></div>
-            <div class="exec-test-info">
-                <h1 id="execTestTitle" class="exec-test-name">JavaScript Developer Assessment</h1>
-                <div id="execQuestionProgress" class="exec-test-step">Question 10 of 15</div>
+            <div class="exec-test-info flex items-center gap-3">
+                <div id="execHeaderLogo" class="w-10 h-10 bg-white rounded-lg border flex items-center justify-center text-brand font-bold shadow-sm overflow-hidden">
+                     <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <h1 id="execTestTitle" class="exec-test-name">JavaScript Developer Assessment</h1>
+                    <div id="execQuestionProgress" class="exec-test-step">Question 10 of 15</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Stats: Total Marks, Pass Mark & Duration -->
+        <div class="flex items-center gap-6 px-6 py-1 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl shadow-sm">
+            <div class="text-center px-4 border-e border-[#e2e8f0]">
+                <div id="execTotalMarks" class="text-sm font-extrabold text-[#1e293b] leading-tight">--</div>
+                <div class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-wider">Total Marks</div>
+            </div>
+            <div class="text-center px-4 border-e border-[#e2e8f0]">
+                <div id="execPassMark" class="text-sm font-extrabold text-[#10b981] leading-tight">--</div>
+                <div class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-wider">Pass Mark</div>
+            </div>
+            <div class="text-center px-4">
+                <div id="execTotalDuration" class="text-sm font-extrabold text-[#1e293b] leading-tight">--</div>
+                <div class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-wider">Duration</div>
             </div>
         </div>
 
         <div class="exec-header-right">
-            <button class="btn btn-simulate-custom" onclick="App.simulateViolation()">
-                <i class="bi bi-exclamation-triangle"></i> Simulate Violation
-            </button>
             <div id="execTimer" class="exec-timer-box-custom">
                 <div class="timer-icon-custom"><i class="bi bi-clock"></i></div>
                 <div class="timer-values-custom">
@@ -1329,8 +1457,7 @@
         <h2 class="success-title">Test Submitted Successfully!</h2>
         <p class="success-text">Your answers have been recorded. Results will be available shortly.</p>
         <div class="success-actions">
-            <button class="btn btn-view-results" onclick="App.viewSubmittedResults()">View Results</button>
-            <button class="btn btn-back-dashboard" onclick="App.backToDashboard()">Back to Dashboard</button>
+            <button class="btn btn-view-results" onclick="App.backToDashboard()">Back to Dashboard</button>
         </div>
     </div>
 </div>
@@ -1412,6 +1539,21 @@
             App.executionState.flagged = new Set();
             App.executionState.timeLeft = 58 * 60 + 45; // Matching screenshot start
             App.executionState.violations = 0;
+
+            // Calculate Total Marks
+            const totalMarks = App.executionState.questions.reduce((acc, q) => acc + (parseInt(q.marks) || 0), 0);
+            const totalDuration = "60 Mins"; // Mocking as 60 mins based on timeLeft
+
+            // Update UI
+            document.getElementById('execTotalMarks').textContent = `${totalMarks} Marks`;
+            document.getElementById('execPassMark').textContent = `70%`; // Defaulting to 70% as per wizard
+            document.getElementById('execTotalDuration').textContent = totalDuration;
+            
+            const testTitle = document.getElementById('execTestTitle').textContent;
+            const headerLogo = document.getElementById('execHeaderLogo');
+            if (headerLogo) {
+                headerLogo.innerHTML = `<img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop" class="w-full h-full object-cover">`;
+            }
 
             document.getElementById('executionView').classList.remove('d-none');
             document.body.style.overflow = 'hidden';
@@ -1629,6 +1771,9 @@
                 const btn = document.querySelector('#violationOverlay .btn');
                 btn.textContent = "Return to Dashboard";
                 btn.onclick = () => App.backToDashboard();
+                
+                // Automatically submit the test
+                App.submitTest(true);
             }
         },
 
@@ -1659,12 +1804,7 @@
             document.getElementById('submissionSuccessOverlay').classList.remove('d-none');
         },
 
-        viewSubmittedResults: () => {
-            document.getElementById('submissionSuccessOverlay').classList.add('d-none');
-            document.body.style.overflow = '';
-            switchMainTab('results');
-            App.loadCandidateResult(1);
-        },
+
 
         backToDashboard: () => {
             location.reload();
@@ -1672,30 +1812,124 @@
 
         // --- Results & Evaluation ---
         loadCandidateResult: (id) => {
-            const mockBreakdown = [
-                { cat: 'React & Frontend', q: 12, c: 11, s: '22/24', p: '92%' },
-                { cat: 'Data Structures & Algorithms', q: 8, c: 7, s: '14/16', p: '88%' },
-                { cat: 'Databases', q: 6, c: 5, s: '10/12', p: '83%' },
-                { cat: 'Software Design', q: 5, c: 5, s: '10/10', p: '100%' },
-                { cat: 'Cloud Computing', q: 4, c: 3, s: '6/8', p: '75%' },
-                { cat: 'Unit Testing', q: 5, c: 4, s: '8/10', p: '80%' }
+            const mockLeaderboard = [
+                { name: 'Arjun Sharma', score: 82, accuracy: '82%', status: 'Pass', time: '42m 15s' },
+                { name: 'Priya Patel', score: 80, accuracy: '80%', status: 'Pass', time: '38m 20s' },
+                { name: 'Vikram Singh', score: 80, accuracy: '80%', status: 'Pass', time: '45m 10s' },
+                { name: 'Ananya Iyer', score: 78, accuracy: '78%', status: 'Pass', time: '52m 05s' },
+                { name: 'Rohan Mehta', score: 75, accuracy: '75%', status: 'Pass', time: '48m 30s' },
+                { name: 'Sneha Reddy', score: 72, accuracy: '72%', status: 'Pass', time: '55m 45s' },
+                { name: 'Kabir Das', score: 68, accuracy: '68%', status: 'Fail', time: '58m 12s' }
             ];
             const tbody = document.getElementById('topicBreakdownTable');
-            if(tbody) tbody.innerHTML = mockBreakdown.map((item, idx) => `
-                <tr class="hover:bg-[#f8fafc] transition-colors">
+            if(tbody) tbody.innerHTML = mockLeaderboard.map((item, idx) => `
+                <tr class="hover:bg-[#f8fafc] transition-colors cursor-pointer" onclick="App.loadDetailedResult('${item.name}')">
                     <td class="px-6 py-2 text-[11px] font-bold text-[#94a3b8]">${idx + 1}</td>
-                    <td class="px-6 py-2 text-[13px] font-bold text-[#334155]">${item.cat}</td>
-                    <td class="px-6 py-2 text-[13px] text-[#64748b] text-center font-medium">${item.q}</td>
-                    <td class="px-6 py-2 text-[13px] text-[#64748b] text-center font-medium">${item.c}</td>
-                    <td class="px-6 py-2 text-[13px] font-bold text-[#334155] text-center">${item.s}</td>
-                    <td class="px-6 py-2 font-bold text-[#10b981] text-right text-[13px]">${item.p}</td>
+                    <td class="px-6 py-2 text-[13px] font-bold text-[#334155]">${item.name}</td>
+                    <td class="px-6 py-2 text-[13px] text-[#64748b] text-center font-medium">${item.score}</td>
+                    <td class="px-6 py-2 text-[13px] text-[#64748b] text-center font-medium">${item.accuracy}</td>
+                    <td class="px-6 py-2 text-center">
+                        <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${item.status === 'Pass' ? 'bg-[#f0fdf4] text-[#16a34a]' : 'bg-[#fef2f2] text-[#dc2230]'}">${item.status}</span>
+                    </td>
+                    <td class="px-6 py-2 font-bold text-[#475569] text-right text-[13px]">${item.time}</td>
                 </tr>
             `).join('');
             
             document.getElementById('resTotalScore').textContent = '82';
             document.getElementById('resPercentage').textContent = '82%';
             document.getElementById('resTimeTaken').textContent = '78m';
-            document.getElementById('breakdown-cat-count').textContent = `${mockBreakdown.length} Categories`;
+            document.getElementById('breakdown-cat-count').textContent = `${mockLeaderboard.length} Candidates`;
+        },
+
+        loadDetailedResult: (name) => {
+            Swal.fire({
+                title: 'Student Details',
+                text: `Loading full performance breakdown for ${name}...`,
+                icon: 'info',
+                timer: 1000,
+                showConfirmButton: false
+            });
+        },
+
+        downloadBulkEvaluationTemplate: () => {
+            const headers = ["candidate_id", "candidate_name", "test_id", "question_count", "marks_obtained"];
+            const candidates = [
+                ["C001", "Arjun Sharma", "T882", "40", ""],
+                ["C002", "Priya Patel", "T882", "40", ""],
+                ["C003", "Vikram Singh", "T882", "40", ""],
+                ["C004", "Ananya Iyer", "T882", "40", ""]
+            ];
+
+            let csvContent = "data:text/csv;charset=utf-8," 
+                + headers.join(",") + "\n"
+                + candidates.map(e => e.join(",")).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "bulk_evaluation_template.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        },
+
+        handleBulkEvaluationUpload: (input) => {
+            if (!input.files || !input.files[0]) return;
+            
+            Swal.fire({
+                title: 'Processing File',
+                text: 'Reading candidate data...',
+                timer: 1000,
+                didOpen: () => { Swal.showLoading(); }
+            }).then(() => {
+                App.previewBulkEvaluation();
+            });
+        },
+
+        previewBulkEvaluation: () => {
+            const previewContainer = document.getElementById('bulkEvaluationPreview');
+            const tbody = document.getElementById('bulkEvaluationTableBody');
+            
+            const mockData = [
+                { id: 'C001', name: 'Arjun Sharma', prev: 82, new: 85, status: 'Increase' },
+                { id: 'C002', name: 'Priya Patel', prev: 80, new: 88, status: 'Increase' },
+                { id: 'C003', name: 'Vikram Singh', prev: 80, new: 80, status: 'No Change' },
+                { id: 'C004', name: 'Ananya Iyer', prev: 78, new: 82, status: 'Increase' }
+            ];
+
+            tbody.innerHTML = mockData.map(d => `
+                <tr class="hover:bg-[#f8fafc]">
+                    <td class="px-6 py-3 text-[12px] font-medium text-[#64748b]">${d.id}</td>
+                    <td class="px-6 py-3 text-[13px] font-bold text-[#1e293b]">${d.name}</td>
+                    <td class="px-6 py-3 text-[13px] text-center text-[#94a3b8]">${d.prev}</td>
+                    <td class="px-6 py-3 text-[14px] text-center font-bold text-[#dc2230]">${d.new}</td>
+                    <td class="px-6 py-3 text-right">
+                        <span class="text-[10px] font-bold uppercase ${d.new > d.prev ? 'text-green-500' : 'text-gray-400'}">
+                            ${d.new > d.prev ? `+${d.new - d.prev} Marks Added` : 'No Manual Marks'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+
+            previewContainer.classList.remove('hidden');
+            previewContainer.scrollIntoView({ behavior: 'smooth' });
+        },
+
+        submitBulkEvaluation: () => {
+            Swal.fire({
+                title: 'Apply Bulk Marks?',
+                text: "This will update the final scores for all candidates in the list.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Update All',
+                confirmButtonColor: '#dc2230'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('Success', 'Marks updated successfully for 4 candidates.', 'success');
+                    document.getElementById('bulkEvaluationPreview').classList.add('hidden');
+                    App.loadCandidateResult(1); // Refresh leaderboard
+                }
+            });
         },
 
         renderEvaluatorView: (candidateId = 1) => {
@@ -1783,6 +2017,19 @@
             App.renderEvaluatorView();
         }
     }
+
+    // Proctoring: Tab/Window Switch Detection
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && App.executionState.active) {
+            App.simulateViolation();
+        }
+    });
+
+    window.addEventListener('blur', () => {
+        if (App.executionState.active) {
+            App.simulateViolation();
+        }
+    });
 </script>
 
 <!-- Create Assessment Pack Modal (Test Creation Wizard) -->
@@ -2281,8 +2528,8 @@
             </div>
             <div class="modal-footer border-0 px-md-5 pb-4">
                 <button type="button" class="btn btn-secondary-custom px-4" id="prevPackStep" style="display: none;">← Previous</button>
-                <div class="ms-auto d-flex align-items-center gap-3">
-                    <span class="small text-secondary d-none d-md-block" id="stepIndicatorText">Complete all fields to proceed.</span>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-light px-4 border" onclick="saveDraftAssessment()">Save as Draft</button>
                     <button type="button" class="btn btn-primary-custom px-4" id="nextPackStep">Next Step</button>
                 </div>
             </div>
@@ -2430,6 +2677,9 @@
         const target = document.getElementById('tab-content-' + tabId);
         if(target) {
             target.classList.remove('hidden');
+            if(tabId === 'test-creation') {
+                setTimeout(initPacksDataTable, 100);
+            }
             if(tabId === 'results') {
                 if (typeof switchResultView === 'function') switchResultView('student');
                 else App.loadCandidateResult(1);
@@ -2797,6 +3047,8 @@
                     </div>
                 </div>
 
+                <div id="previewQuestionsList">${sectionsHtml}</div>
+
                 <!-- Instructions -->
                 <div class="mx-5 p-5 bg-[#fcfcfd] rounded-[20px] mb-5 shadow-sm">
                     <div class="d-flex align-items-center gap-3 mb-4">
@@ -2812,8 +3064,6 @@
                         <li>The total duration for this assessment is 60 minutes.</li>
                     </ul>
                 </div>
-
-                <div id="previewQuestionsList">${sectionsHtml}</div>
 
                 <div class="text-center mt-5 pt-5 mx-5 text-[#94a3b8] text-[12px]">
                     <div class="fw-bold text-[#1e293b] mb-1">© 2026 eNova Technology Solutions</div>
@@ -2873,7 +3123,15 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 Swal.fire('Success!', 'Assessment Pack has been published.', 'success').then(() => {
-                    location.reload();
+                    addPackToTable({
+                        id: Date.now(),
+                        pack_name: 'New Technical Assessment ' + (new Date().getFullYear()),
+                        created_at: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+                        template_name: document.getElementById('summ_temp_name').textContent || 'Custom Template',
+                        status: 'Live',
+                        user_role: 'Internal Team'
+                    });
+                    bootstrap.Modal.getInstance(document.getElementById('createPackModal')).hide();
                 });
             }
         });
@@ -2953,6 +3211,139 @@
                 location.reload();
             }
         });
+    }
+
+    function saveDraftAssessment() {
+        Swal.fire({
+            title: 'Save as Draft?',
+            text: "You can return later to complete and publish this assessment.",
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Save Draft',
+            confirmButtonColor: '#475569'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire('Saved!', 'Assessment has been saved as a draft.', 'success').then(() => {
+                    addPackToTable({
+                        id: Date.now(),
+                        pack_name: 'Draft Assessment ' + (new Date().getHours() + ":" + new Date().getMinutes()),
+                        created_at: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+                        template_name: 'In Progress...',
+                        status: 'Draft',
+                        user_role: 'User Draft'
+                    });
+                    bootstrap.Modal.getInstance(document.getElementById('createPackModal')).hide();
+                });
+            }
+        });
+    }
+
+    function reusePack(id) {
+        Swal.fire({
+            title: 'Reuse Assessment?',
+            text: "This will copy the template and questions, jumping directly to candidate assignment.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Reuse',
+            confirmButtonColor: '#2563eb'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Configuration Copied!',
+                    text: 'Redirecting to Step 3: Assign Candidates...',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    // Create a duplicated row in background for demo
+                    addPackToTable({
+                        id: Date.now(),
+                        pack_name: 'Copy of Previous Assessment',
+                        created_at: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+                        template_name: 'Duplicated Template',
+                        status: 'Draft',
+                        user_role: 'Reused'
+                    });
+
+                    // Jump to Step 3
+                    currentPackStep = 3;
+                    updatePackWizardUI();
+                    
+                    // Show Modal
+                    const modalEl = document.getElementById('createPackModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    modal.show();
+                });
+            }
+        });
+    }
+
+    let packsDataTable = null;
+    function initPacksDataTable() {
+        if (packsDataTable) return; // Already initialized
+        
+        const initialPacks = <?= json_encode($packs) ?>;
+        
+        packsDataTable = $('#assessmentPacksTable').DataTable({
+            data: initialPacks,
+            columns: [
+                { 
+                    data: 'pack_name',
+                    render: (data, type, row) => `
+                        <div class="font-bold text-[#1e293b]">${data}</div>
+                        <div class="text-[10px] text-[#94a3b8]">Created on ${row.created_at}</div>
+                    `
+                },
+                { 
+                    data: 'template_name',
+                    render: (data) => `<span class="text-[13px] text-[#475569] font-medium">${data}</span>`
+                },
+                { 
+                    data: 'status',
+                    render: (data) => `
+                        <span class="chip ${data.toLowerCase() === 'draft' ? 'bg-gray-100 text-gray-500 border-gray-200' : 'chip-mark'}">
+                            ${data}
+                        </span>
+                    `
+                },
+                { 
+                    data: 'user_role',
+                    render: (data) => `<span class="text-[13px] text-[#64748b]">${data}</span>`
+                },
+                {
+                    data: null,
+                    className: 'text-right',
+                    render: (data, type, row) => `
+                        <button class="action-btn text-blue-600 hover:text-blue-800 me-3" onclick="reusePack(${row.id})" title="Reuse Assessment"><i class="bi bi-arrow-repeat"></i></button>
+                        <button class="action-btn btn-delete text-red-500 hover:text-red-700" onclick="deletePack(${row.id})"><i class="bi bi-trash"></i></button>
+                    `
+                }
+            ],
+            pageLength: 5,
+            lengthChange: false,
+            ordering: true,
+            info: false,
+            autoWidth: false,
+            dom: '<"flex justify-between items-center mb-3"f>rtp',
+            language: {
+                search: "",
+                searchPlaceholder: "Search Assessments...",
+                paginate: {
+                    previous: '<i class="bi bi-chevron-left"></i>',
+                    next: '<i class="bi bi-chevron-right"></i>'
+                }
+            },
+            drawCallback: function() {
+                // Style search input
+                $('.dataTables_filter input').addClass('form-control form-control-sm border-[#e2e8f0] rounded-[8px] px-3 py-1.5 w-[220px] shadow-none focus:border-[#dc2230]');
+                $('.dataTables_paginate').addClass('mt-3');
+            }
+        });
+    }
+
+    function addPackToTable(pack) {
+        if (!packsDataTable) initPacksDataTable();
+        packsDataTable.row.add(pack).draw(false);
     }
     document.addEventListener('DOMContentLoaded', () => {
         const resultsTab = document.getElementById('tab-content-results');
