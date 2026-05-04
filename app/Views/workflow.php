@@ -10,6 +10,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         .swal2-popup { border-radius: 20px !important; font-family: 'Poppins', sans-serif !important; }
         .swal2-styled.swal2-confirm { background-color: var(--brand) !important; border-radius: 10px !important; padding: 0.6rem 1.5rem !important; font-weight: 600 !important; }
@@ -24,6 +29,11 @@
             --muted: #6b7280;
             --bg: #f4f6f9;
             --line: #e6e8ec;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --primary-red: #dc2230;
+            --text-primary: #1e293b;
         }
         * { font-family: 'Poppins', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; font-family: 'Poppins', sans-serif; }
@@ -45,9 +55,9 @@
         .chip-mark { background:#ecfdf5; color:#047857; }
         .accordion { background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
         .accordion + .accordion { margin-top:12px; }
-        .modal-backdrop { position:fixed; inset:0; background:rgba(15,23,42,.45); display:none; align-items:flex-start; justify-content:center; z-index:50; padding:60px 16px; overflow:auto;}
-        .modal-backdrop.open { display:flex; }
-        .modal { background:#fff; border-radius:16px; width:100%; max-width:720px; padding:28px; box-shadow: 0 25px 60px -20px rgba(15,23,42,.35); }
+        .custom-modal-backdrop { position:fixed; inset:0; background:rgba(15,23,42,.45); display:none; align-items:flex-start; justify-content:center; z-index:50; padding:60px 16px; overflow:auto;}
+        .custom-modal-backdrop.open { display:flex; }
+        .custom-modal { background:#fff; border-radius:16px; width:100%; max-width:720px; padding:28px; box-shadow: 0 25px 60px -20px rgba(15,23,42,.35); }
         .tab { padding:.55rem 1rem; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; border-radius:10px; cursor:pointer; }
         .tab-active { background: var(--brand); color:#fff; }
         .tab-idle { color:#6b7280; background:#f3f4f6; }
@@ -133,7 +143,366 @@
         .action-btn:hover { background-color: #f8fafc; transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .btn-delete:hover { color: #dc2230; border-color: #fca5a5; background-color: #fef2f2; }
         .btn-edit:hover { color: #2563eb; border-color: #93c5fd; background-color: #eff6ff; }
+
+        /* Premium Execution View */
+        .execution-wrapper {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #f8fafc;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .execution-header {
+            background: #fff;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .execution-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 3rem 2rem;
+        }
+        .execution-footer {
+            background: #fff;
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .question-nav {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+        .nav-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .nav-dot.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+        .nav-dot.answered { background: #ecfdf5; color: #047857; border-color: #10b981; }
+        .nav-dot.flagged { background: #fef3c7; color: #b45309; border-color: #f59e0b; }
+
+        .timer-badge {
+            background: #fef2f2;
+            color: var(--brand);
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid #fee2e2;
+        }
+
+        .evaluation-item { transition: all 0.2s; }
+        .evaluation-item:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+
+        /* Sidebar Execution View */
+        .exec-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+            height: calc(100vh - 160px);
+            overflow: hidden;
+        }
+        .exec-sidebar {
+            background: #fff;
+            border-left: 1px solid #e2e8f0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            overflow-y: auto;
+        }
+        .sb-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        .sb-title {
+            font-size: 11px;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+        }
+        .proctor-badge {
+            background: #ecfdf5;
+            color: #047857;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            border: 1px solid #10b981;
+        }
+        .timer-box {
+            background: #0f172a;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        .timer-box.warning { background: var(--brand); animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        /* Results Enhancements */
+        .score-card {
+            background: linear-gradient(135deg, #fef2f2 0%, #fff 100%);
+            border: 1.5px solid var(--brand-soft);
+            border-radius: 20px;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+        }
+        .score-display {
+            text-align: center;
+            padding-right: 3rem;
+            border-right: 1px solid #fee2e2;
+        }
+        .score-val { font-size: 3.5rem; font-weight: 800; color: var(--brand); line-height: 1; }
+        .score-label { font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-top: 0.5rem; }
+
+        /* Wizard Styles */
+        .modal-backdrop.show { backdrop-filter: blur(10px); background: rgba(15, 23, 42, 0.5); }
+        .modal-content { border-radius: 24px; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+        
+        .wizard-step-title { font-size: 1.25rem; font-weight: 800; color: #1e293b; letter-spacing: -0.02em; }
+        .wizard-step-subtitle { font-size: 0.875rem; color: #64748b; margin-top: 0.25rem; }
+        
+        .stepper { display: flex; align-items: center; justify-content: space-between; position: relative; max-width: 800px; margin: 0 auto; }
+        .stepper::before { content: ''; position: absolute; top: 18px; left: 50px; right: 50px; height: 2px; background: #e2e8f0; z-index: 1; }
+        .stepper .step { position: relative; z-index: 2; background: #fff; padding: 0 10px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .stepper .step-circle { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #94a3b8; background: #fff; transition: all 0.3s; }
+        .stepper .step-label { font-size: 12px; font-weight: 600; color: #94a3b8; transition: all 0.3s; }
+        
+        .stepper .step.active .step-circle { border-color: #dc2230; background: #dc2230; color: #fff; box-shadow: 0 0 0 4px rgba(220,34,48,0.1); }
+        .stepper .step.active .step-label { color: #dc2230; font-weight: 700; }
+        .stepper .step.completed .step-circle { border-color: #dc2230; background: #dc2230; color: #fff; }
+        .stepper .step.completed .step-label { color: #dc2230; }
+
+        .card-custom {
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 16px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary-custom {
+            background-color: var(--primary-red);
+            color: white !important;
+            border: none;
+            border-radius: 6px;
+        }
+
+        .btn-primary-custom:hover {
+            background-color: #c62828;
+            box-shadow: 0 4px 8px rgba(229, 57, 53, 0.2);
+        }
+
+        .btn-secondary-custom {
+            background-color: white;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .btn-secondary-custom:hover {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+        }
+        
+        .form-label { font-size: 13px; font-weight: 600; color: #475569; }
+        .form-select, .form-control { border-radius: 8px; border: 1px solid #e2e8f0; padding: 10px 12px; font-size: 14px; }
+        .form-select:focus, .form-control:focus { border-color: #dc2230; box-shadow: 0 0 0 3px rgba(220,34,48,0.1); }
+
+        /* Premium Execution View Styles */
+        .exec-header {
+            background: #fff;
+            padding: 0.75rem 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .exec-header-left { display: flex; align-items: center; gap: 1.5rem; }
+        .exec-brand { display: flex; align-items: center; gap: 0.75rem; }
+        .exec-logo { width: 32px; height: 32px; background: var(--brand); color: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+        .exec-brand-text { font-weight: 800; font-size: 1.1rem; color: #0f172a; display: flex; align-items: center; gap: 0.5rem; }
+        .proctor-badge { background: #ecfdf5; color: #059669; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; border: 1px solid #10b981; }
+        .exec-divider { width: 1px; height: 32px; background: #e2e8f0; }
+        .exec-test-name { font-size: 1rem; font-weight: 700; color: #1e293b; margin: 0; }
+        .exec-test-step { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+
+        .exec-header-right { display: flex; align-items: center; gap: 1.5rem; }
+        .btn-simulate-custom { background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; font-weight: 700; font-size: 12px; border-radius: 8px; }
+        .btn-simulate-custom:hover { background: #ffe4e6; }
+        .exec-timer-box-custom { background: #0f172a; color: #fff; padding: 0.5rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.75rem; min-width: 120px; }
+        .exec-timer-box-custom.warning { background: var(--brand); animation: pulse-timer 1s infinite; }
+        @keyframes pulse-timer { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        .timer-icon-custom { color: #94a3b8; font-size: 1.1rem; }
+        .timer-values-custom { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1.1rem; }
+        .btn-submit-test-custom { background: var(--brand); color: #fff; border-radius: 8px; font-weight: 700; font-size: 14px; padding: 0.6rem 1.25rem; border: none; }
+
+        .exec-container-custom {
+            display: flex;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+            background: #f8fafc;
+        }
+        .exec-content-custom {
+            flex: 1;
+            padding: 2.5rem;
+            overflow-y: auto;
+        }
+        .exec-content-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .exec-sidebar-custom {
+            width: 360px;
+            background: #fff;
+            border-left: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+        .question-card-custom-v2 { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
+        .q-card-header-custom { padding: 1.5rem 2rem; background: #fafbfc; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        .q-meta-group-custom { display: flex; gap: 0.5rem; }
+        .q-id-pill-custom { background: #f1f5f9; color: #475569; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 6px; }
+        .q-type-pill-custom { background: #eff6ff; color: #2563eb; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 6px; }
+        .q-marks-pill-custom { background: #f0fdf4; color: #16a34a; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 6px; }
+        .q-category-pill-custom { background: #fff7ed; color: #ea580c; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 6px; }
+        .btn-flag-custom { border: none; background: transparent; color: #94a3b8; font-weight: 700; font-size: 12px; display: flex; align-items: center; gap: 0.5rem; }
+        .btn-flag-custom.btn-primary-custom { color: #f59e0b; }
+
+        .q-body-custom { padding: 2.5rem 2rem; }
+        .q-text-custom { font-size: 1.25rem; font-weight: 700; color: #0f172a; line-height: 1.5; margin-bottom: 0.5rem; }
+        .q-hint-custom { font-size: 0.875rem; }
+
+        .options-grid { display: grid; gap: 1rem; }
+        .option-item { background: #fff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 1.25rem 1.5rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem; }
+        .option-item:hover { border-color: #cbd5e1; background: #f8fafc; }
+        .option-item.selected { border-color: var(--brand); background: #fef2f2; }
+        .option-circle { width: 20px; height: 20px; border: 2px solid #cbd5e1; border-radius: 50%; position: relative; }
+        .option-square { width: 20px; height: 20px; border: 2px solid #cbd5e1; border-radius: 4px; position: relative; }
+        .option-item.selected .option-circle::after { content: ''; position: absolute; inset: 3px; background: var(--brand); border-radius: 50%; }
+        .option-item.selected .option-square::after { content: '\F26B'; font-family: 'bootstrap-icons'; position: absolute; inset: -2px; color: var(--brand); font-size: 14px; display: flex; align-items: center; justify-content: center; }
+        .option-text { font-weight: 600; font-size: 0.95rem; color: #334155; }
+
+        .exec-footer-custom { margin-top: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .btn-nav-prev-custom { background: #fff; border: 1.5px solid #e2e8f0; border-radius: 10px; font-weight: 700; font-size: 14px; padding: 0.75rem 1.5rem; color: #475569; }
+        .btn-nav-next-custom { background: var(--brand); border: none; border-radius: 10px; font-weight: 700; font-size: 14px; padding: 0.75rem 2rem; color: #fff; }
+        .save-status-custom { display: flex; align-items: center; gap: 0.5rem; font-size: 12px; color: #94a3b8; font-weight: 600; }
+        .save-dot-custom { width: 8px; height: 8px; background: #10b981; border-radius: 50%; }
+
+        .exec-sidebar-custom { display: flex; flex-direction: column; gap: 1.5rem; }
+        .sidebar-card-custom { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 1.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .sb-title-custom { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1.25rem; }
+        .progress-info-custom { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.75rem; }
+        .progress-percent-custom { font-size: 1.5rem; font-weight: 800; color: #0f172a; }
+        .progress-label-custom { font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px; }
+        .exec-progress-gradient-custom { background: linear-gradient(90deg, #dc2230 0%, #ef4444 100%); border-radius: 10px; }
+        .sb-stats-custom { display: flex; gap: 1.5rem; }
+        .sb-stat-item-custom { display: flex; flex-direction: column; }
+        .sb-stat-val-custom { font-size: 1.1rem; font-weight: 800; color: #0f172a; }
+        .sb-stat-label-custom { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+
+        .navigator-grid-custom-v2 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; }
+        .nav-item { width: 100%; aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; border: 1.5px solid transparent; }
+        .nav-item.unanswered { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
+        .nav-item.current { background: #fff; border-color: var(--brand); color: var(--brand); box-shadow: 0 0 0 3px rgba(220,34,48,0.1); }
+        .nav-item.answered { background: #f0fdf4; border-color: #bbf7d0; color: #16a34a; }
+        .nav-item.flagged { background: #fff7ed; border-color: #fed7aa; color: #ea580c; }
+        .nav-legend-custom { margin-top: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .legend-item-custom { font-size: 10px; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 0.5rem; text-transform: uppercase; }
+        .leg-dot-custom { width: 10px; height: 10px; border-radius: 3px; }
+        .leg-dot-custom.current { background: #fff; border: 1.5px solid var(--brand); }
+        .leg-dot-custom.answered { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+        .leg-dot-custom.flagged { background: #fff7ed; border: 1.5px solid #fed7aa; }
+        .leg-dot-custom.unanswered { background: #f8fafc; border: 1.5px solid #e2e8f0; }
+
+        .instructions-card-custom { background: #fefce8; border-color: #fef08a; }
+        .instructions-card-custom .sb-title-custom { color: #a16207; }
+        .sb-list-custom { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+        .sb-list-custom li { font-size: 12px; color: #854d0e; font-weight: 500; display: flex; gap: 0.5rem; }
+        .sb-list-custom li::before { content: '•'; color: #eab308; font-weight: 900; }
+
+        .submission-success-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); z-index: 4000; display: flex; align-items: center; justify-content: center; }
+        .success-card { background: #fff; border-radius: 24px; padding: 3rem; max-width: 480px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .success-icon-wrapper { width: 80px; height: 80px; background: #f0fdf4; color: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 1.5rem; }
+        .success-title { font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 0.75rem; }
+        .success-text { color: #64748b; margin-bottom: 2rem; }
+        .success-actions { display: flex; flex-direction: column; gap: 0.75rem; }
+        .btn-view-results { background: var(--brand); color: #fff; border-radius: 12px; font-weight: 700; padding: 1rem; border: none; }
+        .btn-back-dashboard { background: #f1f5f9; color: #475569; border-radius: 12px; font-weight: 700; padding: 1rem; border: none; }
+
+        .submit-confirm-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 4000; display: flex; align-items: center; justify-content: center; }
+        .confirm-card { background: #fff; border-radius: 20px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .confirm-title { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem; }
+        .confirm-text { font-size: 0.95rem; color: #475569; margin-bottom: 0.5rem; }
+        .confirm-warning { font-size: 0.85rem; color: #94a3b8; margin-bottom: 2rem; }
+        .confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .btn-confirm-cancel { background: #f1f5f9; color: #475569; border: none; border-radius: 10px; font-weight: 700; padding: 0.75rem; }
+        .btn-confirm-yes { background: var(--brand); color: #fff; border: none; border-radius: 10px; font-weight: 700; padding: 0.75rem; }
+
+        .violation-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; display: none; align-items: center; justify-content: center; }
+        .violation-overlay.active { display: flex; }
+        .violation-card { background: #fff; border-radius: 24px; padding: 2.5rem; max-width: 440px; width: 90%; text-align: center; }
+        .violation-icon { font-size: 3.5rem; color: #ef4444; margin-bottom: 1rem; }
     </style>
+
 </head>
 <body class="min-h-screen">
 
@@ -192,10 +561,16 @@
             <p class="text-sm text-gray-500">Evaluate & track employee competencies</p>
         </div>
     </div>
-    <button class="btn-outline flex items-center gap-2">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-        Preview User View
-    </button>
+    <div class="flex items-center gap-3">
+        <button class="btn-outline flex items-center gap-2" onclick="switchMainTab('results')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H9H8"/></svg>
+            Results & Evaluation
+        </button>
+        <button class="btn-outline flex items-center gap-2" onclick="startExecutionMode()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            Execution View
+        </button>
+    </div>
 </div>
 
 <!-- Module Tabs -->
@@ -210,7 +585,7 @@
     </div>
     <div class="module-tab" onclick="switchMainTab('test-creation')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Create Assessment Pack
+        Assessment Pack
     </div>
 </div>
 
@@ -356,328 +731,144 @@
         </div>
     </main>
 
-    <!-- 3. CREATE ASSESSMENT PACK (TEST CREATION) TAB -->
-    <main id="tab-content-test-creation" class="hidden pb-20">
-        <div class="px-8 mt-10 text-center">
-            <h3 class="text-xl font-bold">Create New Assessment</h3>
-            <p class="text-gray-500 text-sm mt-1">Configure and launch a new test session.</p>
+    <!-- 3. ASSESSMENT PACK TAB (Updated to trigger Modal) -->
+    <main id="tab-content-test-creation" class="hidden px-8 py-10">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h3 class="text-2xl font-bold">Assessment Packs</h3>
+                <p class="text-sm text-gray-500">Design, deploy, and analyze performance assessments across the organization.</p>
+            </div>
+            <button class="btn-red-rounded" onclick="openPackWizard()">
+                <i class="bi bi-plus-lg me-1"></i> Create Pack
+            </button>
         </div>
 
-        <!-- Stepper -->
-        <div class="stepper px-8" id="creation-stepper">
-            <div class="step active" data-step="1">
-                <div class="step-circle">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                </div>
-                <div class="step-label">QP CREATION</div>
-            </div>
-            <div class="step" data-step="2">
-                <div class="step-circle">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                </div>
-                <div class="step-label">DURATION</div>
-            </div>
-            <div class="step" data-step="3">
-                <div class="step-circle">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                </div>
-                <div class="step-label">EXAM SETTING</div>
-            </div>
-            <div class="step" data-step="4">
-                <div class="step-circle">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                </div>
-                <div class="step-label">SCORING & PASS</div>
-            </div>
-        </div>
-
-        <!-- Content Card: Step 1 (QP Creation) -->
-        <div id="step-1-content" class="card-main">
-            <h4 class="text-xl font-bold mb-6">Assessment & Question Paper</h4>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pt-6">
-                <div class="form-group">
-                    <label class="block text-sm font-semibold text-gray-600 mb-2">Assessment Pack Name</label>
-                    <input type="text" id="main_pack_name" class="input border-gray-200 h-12" placeholder="e.g. Q4 Technical Assessment" />
-                </div>
-                <div class="form-group">
-                    <label class="block text-sm font-semibold text-gray-600 mb-2">Target Role</label>
-                    <select id="main_pack_role" class="select border-gray-200 h-12">
-                        <option>Designer</option>
-                        <option>Developer</option>
-                        <option>HR</option>
-                        <option>Digital Marketing</option>
-                        <option>Other</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="mb-8 pt-6 border-t border-gray-50">
-                <label class="block text-sm font-semibold text-gray-600 mb-2">Select Parent Assessment</label>
-                <select id="main_assessment_select" class="select border-gray-200 h-12">
-                    <option value="">-- Choose Assessment --</option>
-                    <?php foreach($assessments as $a): ?>
-                    <option value="<?= $a['id'] ?>"><?= esc($a['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pt-6 border-t border-gray-50">
-                <div class="form-group">
-                    <label>Select Template</label>
-                    <select id="main_template_select" class="select border-gray-200 h-12" onchange="updateTemplateDetails(this.value)">
-                        <option value="">-- Choose Existing Template --</option>
-                        <?php foreach($templates as $t): ?>
-                        <option value="<?= $t['id'] ?>" data-json='<?= json_encode($t) ?>'><?= esc($t['name']) ?></option>
+        <div class="card overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Pack Name</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Template</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Status</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Assigned</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <?php if(empty($packs)): ?>
+                        <tr><td colspan="5" class="px-6 py-10 text-center text-gray-400 small">No assessment packs created yet.</td></tr>
+                        <?php else: ?>
+                        <?php foreach($packs as $p): ?>
+                        <tr>
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-gray-800"><?= esc($p['pack_name']) ?></div>
+                                <div class="text-[10px] text-gray-400">Created on <?= date('M d, Y', strtotime($p['created_at'])) ?></div>
+                            </td>
+                            <td class="px-6 py-4 text-sm"><?= esc($p['template_name'] ?? 'Custom') ?></td>
+                            <td class="px-6 py-4"><span class="chip chip-mark">Live</span></td>
+                            <td class="px-6 py-4 text-sm"><?= esc($p['user_role']) ?></td>
+                            <td class="px-6 py-4">
+                                <button class="action-btn btn-delete" onclick="deletePack(<?= $p['id'] ?>)"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>
                         <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="flex items-end">
-                    <button class="btn-outline w-full h-12 flex justify-center gap-2" onclick="openModal('templateModal')">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-                        Create Manual Template
-                    </button>
-                </div>
-            </div>
-
-            <div id="template_details_section" class="details-box hidden">
-                <div class="flex items-center justify-between mb-4">
-                    <h5 class="font-bold text-gray-700">Creation Summary</h5>
-                    <div class="flex gap-2">
-                        <span class="chip chip-mcq">MCQ</span>
-                        <span class="chip chip-2m">2 Marks</span>
-                    </div>
-                </div>
-                <!-- Logic for manual/bulk upload options -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="p-4 bg-white border border-gray-100 rounded-lg">
-                        <div class="text-sm font-bold">Manual Creation</div>
-                        <div class="text-[11px] text-gray-400 mt-1">Add questions one by one</div>
-                    </div>
-                    <div class="p-4 bg-white border border-gray-100 rounded-lg cursor-pointer hover:border-blue-400" onclick="Swal.fire('Bulk Upload', 'The bulk upload interface is being prepared.', 'info')">
-                        <div class="text-sm font-bold text-blue-600">Bulk Upload</div>
-                        <div class="text-[11px] text-gray-400 mt-1">Upload CSV or Excel sheet</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between mt-12 pt-8 border-t border-gray-100">
-                <button class="btn-outline opacity-50 cursor-not-allowed" disabled>Previous</button>
-                <div class="flex gap-3">
-                    <button class="btn-outline">Save Draft</button>
-                    <button class="btn-red-rounded" onclick="goToStep(2)">
-                        Next Step
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-                    </button>
-                </div>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
-
-        <!-- Content Card: Step 2 (Duration Setting) -->
-        <div id="step-2-content" class="card-main hidden">
-            <h4 class="text-xl font-bold mb-6">Duration & Schedule</h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="md:col-span-1">
-                    <div class="settings-card">
-                        <h5 class="font-bold text-sm mb-4 flex items-center gap-2">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            Timing Details
-                        </h5>
-                        <div class="form-group mb-4">
-                            <label>Duration (Minutes)</label>
-                            <input type="number" id="inp_duration" class="input h-11" value="45" oninput="updateLiveSchedule()" />
-                        </div>
-                        <div class="form-group mb-4">
-                            <label>Start Date & Time</label>
-                            <input type="datetime-local" id="inp_start" class="input h-11" value="2026-05-05T11:00" onchange="updateLiveSchedule()" />
-                        </div>
-                        <div class="form-group">
-                            <label>End Date & Time</label>
-                            <input type="datetime-local" id="inp_end" class="input h-11" value="2026-05-02T17:00" onchange="updateLiveSchedule()" />
-                        </div>
-                    </div>
-                </div>
-                <div class="md:col-span-2">
-                    <div class="h-full bg-blue-50/30 border border-blue-100 rounded-2xl p-8">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-10 h-10 bg-blue-500 text-white rounded-lg flex items-center justify-center">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            </div>
-                            <div>
-                                <h5 class="font-bold text-blue-900">Live Schedule Preview</h5>
-                                <p class="text-[11px] text-blue-600 font-semibold uppercase tracking-wider">Exam Window Visibility</p>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-xl p-6 border border-blue-100 shadow-sm">
-                            <div class="flex items-center justify-between pb-4 border-b border-gray-50">
-                                <div class="text-xs font-bold text-gray-400">STATUS</div>
-                                <span class="chip chip-mark bg-blue-100 text-blue-700">Scheduled</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-6 mt-6">
-                                <div>
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Starts On</label>
-                                    <div class="font-bold text-gray-800" id="prev_start">May 05, 2026</div>
-                                    <div class="text-xs text-gray-500" id="prev_start_time">11:00 AM</div>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Ends On</label>
-                                    <div class="font-bold text-gray-800" id="prev_end">May 05, 2026</div>
-                                    <div class="text-xs text-gray-500" id="prev_end_time">05:00 PM</div>
-                                </div>
-                            </div>
-                            <div class="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                    <span class="text-xs font-bold text-gray-700">Exam Duration: <span id="prev_duration">45</span> Mins</span>
-                                </div>
-                                <div class="text-[10px] text-gray-400 italic">Auto-calculating window...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between mt-12 pt-8 border-t border-gray-100">
-                <button class="btn-outline" onclick="goToStep(1)">Previous</button>
-                <div class="flex gap-3">
-                    <button class="btn-outline">Save Draft</button>
-                    <button class="btn-red-rounded" onclick="goToStep(3)">
-                        Next Step
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Content Card: Step 3 (Exam Setting) -->
-        <div id="step-3-content" class="card-main hidden">
-            <h4 class="text-xl font-bold mb-6">Exam Settings</h4>
-            <div class="max-w-2xl">
-                <div class="settings-card">
-                    <div class="settings-row">
-                        <div>
-                            <div class="font-bold text-sm">Shuffle Questions</div>
-                            <div class="text-xs text-gray-400">Randomize the order of questions for each user</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="settings-row">
-                        <div>
-                            <div class="font-bold text-sm">Shuffle Options</div>
-                            <div class="text-xs text-gray-400">Randomize MCQ options</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="settings-row">
-                        <div>
-                            <div class="font-bold text-sm">Show Timer</div>
-                            <div class="text-xs text-gray-400">Display a countdown for the user</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="settings-row">
-                        <div>
-                            <div class="font-bold text-sm">Allow Review</div>
-                            <div class="text-xs text-gray-400">Let users go back and change answers</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="settings-row">
-                        <div>
-                            <div class="font-bold text-sm">Auto Submit on Timeout</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="settings-row">
-                        <div>
-                            <div class="font-bold text-sm">Show Score Immediately</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between mt-12 pt-8 border-t border-gray-100">
-                <button class="btn-outline" onclick="goToStep(2)">Previous</button>
-                <div class="flex gap-3">
-                    <button class="btn-outline">Save Draft</button>
-                    <button class="btn-red-rounded" onclick="goToStep(4)">
-                        Next Step
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Content Card: Step 4 (Scoring) -->
-        <div id="step-4-content" class="card-main hidden">
-            <h4 class="text-xl font-bold mb-6">Scoring & Pass Criteria</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                    <div class="settings-card mb-6">
-                        <div class="form-group mb-6">
-                            <label>Passing Score (%)</label>
-                            <input type="number" class="input h-12 text-lg font-bold" value="70" />
-                        </div>
-                        <div class="form-group">
-                            <label>Max Attempts</label>
-                            <select class="select h-12">
-                                <option>1 attempt</option>
-                                <option>2 attempts</option>
-                                <option>Unlimited</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <div class="bg-gray-50 border border-gray-200 rounded-2xl p-6">
-                        <h5 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Summary</h5>
-                        <div class="summary-row"><span>Total MCQ</span><span class="font-bold">2 questions</span></div>
-                        <div class="summary-row"><span>2-Mark Questions</span><span class="font-bold">1 questions</span></div>
-                        <div class="summary-row"><span>Total Marks</span><span class="font-bold">4 marks</span></div>
-                        <div class="summary-row summary-total"><span>Passing Marks Required</span><span>3 marks</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between mt-12 pt-8 border-t border-gray-100">
-                <button class="btn-outline" onclick="goToStep(3)">Previous</button>
-                <div class="flex gap-3">
-                    <button class="btn-outline">Save Draft</button>
-                    <button class="btn-red-rounded" onclick="publishAssessmentPack()">
-                        Publish Assessment
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
     </main>
 
-    <!-- RESULTS TAB -->
     <main id="tab-content-results" class="hidden px-8 py-10">
-         <div class="card p-8 text-center">
-            <h3 class="text-lg font-bold">Assessment Results</h3>
-            <p class="text-gray-500">Track student performance here.</p>
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h3 class="text-2xl font-bold">Results & Evaluation</h3>
+                <p class="text-sm text-gray-500">Review candidate performance and grade subjective answers.</p>
+            </div>
+            <div class="flex p-1 bg-gray-100 rounded-xl">
+                <button class="tab tab-active" id="btn-view-student" onclick="switchResultView('student')" style="min-width: 140px;">Student View</button>
+                <button class="tab tab-idle" id="btn-view-evaluator" onclick="switchResultView('evaluator')" style="min-width: 140px;">Evaluator View</button>
+            </div>
+        </div>
+
+        <!-- Student View Container -->
+        <div id="result-student-view" class="space-y-4">
+            <div class="card p-4 border border-[#e2e8f0] shadow-sm rounded-[12px] bg-white">
+                <div class="flex flex-wrap items-center justify-between gap-6">
+                    <div class="flex-1 min-w-[320px]">
+                        <label class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest mb-1 block">Candidate Performance Dashboard</label>
+                        <div class="text-[15px] font-bold text-[#1e293b]">Arjun Sharma — React Recruitment Drive</div>
+                        <div class="text-[11px] text-[#94a3b8] font-medium mt-0.5">Batch: Recruitment Drive April 2024</div>
+                    </div>
+                    
+                    <div class="flex items-center gap-8 border-l border-[#f1f5f9] pl-8">
+                        <div class="text-center">
+                            <div class="text-[24px] font-bold text-[#dc2230] leading-none" id="resTotalScore">82</div>
+                            <div class="text-[9px] font-bold text-[#94a3b8] uppercase mt-1.5 tracking-wider">Total Score</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-[18px] font-bold text-[#10b981]" id="resPercentage">82%</div>
+                            <div class="text-[9px] font-bold text-[#94a3b8] uppercase mt-1.5 tracking-wider">Accuracy</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-[18px] font-bold text-[#475569]" id="resTimeTaken">78m</div>
+                            <div class="text-[9px] font-bold text-[#94a3b8] uppercase mt-1.5 tracking-wider">Duration</div>
+                        </div>
+                        <div class="pl-4">
+                             <span id="resStatusBadge" class="bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0] px-3 py-1 rounded-[6px] font-bold text-[10px] uppercase">✓ PASS</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border border-[#e2e8f0] shadow-sm rounded-[12px] overflow-hidden bg-white">
+                <div class="px-5 py-3 border-b border-[#f1f5f9] bg-[#f8fafc]/50 flex justify-between items-center">
+                    <h4 class="text-[12px] font-bold text-[#1e293b] mb-0 uppercase tracking-wide">Topic-wise Performance Breakdown</h4>
+                    <span class="text-[10px] font-bold text-[#94a3b8] bg-white border border-[#e2e8f0] px-2 py-0.5 rounded" id="breakdown-cat-count">6 Categories</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-[#f8fafc] border-b border-[#f1f5f9]">
+                            <tr>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">#</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">Subject Category</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">Attempted</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">Correct</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">Score</th>
+                                <th class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-right">Success Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#f1f5f9]" id="topicBreakdownTable">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evaluator View Container -->
+        <div id="result-evaluator-view" class="hidden">
+            <div class="card border border-[#e2e8f0] shadow-sm rounded-[12px] overflow-hidden bg-white">
+                <div class="px-5 py-2.5 border-b border-[#f1f5f9] bg-[#f8fafc]/50 flex justify-between items-center">
+                    <h4 class="text-[12px] font-bold text-[#1e293b] mb-0 tracking-wide uppercase">Subjective Evaluation Required</h4>
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest leading-none">Evaluator Focus:</span>
+                        <div class="relative">
+                            <select class="appearance-none bg-white border border-[#e2e8f0] rounded-[8px] pl-3 pr-8 py-1.5 text-[11px] font-bold text-[#1e293b] focus:outline-none focus:border-[#dc2230] min-w-[220px] cursor-pointer shadow-sm transition-all" onchange="App.renderEvaluatorView(this.value)">
+                                <option value="1">Arjun Sharma — 2 Pending answers</option>
+                                <option value="2">Priya Patel — All Graded</option>
+                            </select>
+                            <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#94a3b8]">
+                                <i class="bi bi-chevron-down text-[10px]"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="pendingEvaluationList" class="p-5 space-y-4">
+                    <!-- List of questions requiring manual marking -->
+                </div>
+            </div>
         </div>
     </main>
 
@@ -689,11 +880,59 @@
         </div>
     </main>
 
+    <!-- 5. EXECUTION VIEW TAB (Live Assessments) -->
+    <main id="tab-content-execution" class="hidden px-8 py-10">
+        <div class="card-custom">
+            <div class="px-4 py-3 bg-header border-bottom d-flex justify-content-between align-items-center">
+                <h2 class="section-title mb-0">Scheduled & Live Assessments</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Test Name</th>
+                            <th>Status</th>
+                            <th>Schedule</th>
+                            <th>Participants</th>
+                            <th>Completed</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="fw-bold">JavaScript Developer Assessment</span></td>
+                            <td><span class="badge-custom badge-green">LIVE</span></td>
+                            <td><span class="small">Oct 29, 2023 10:00 AM</span></td>
+                            <td><span class="small">15 Employees</span></td>
+                            <td><span class="small">8 / 15</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-primary-custom" onclick="App.startExecution()">
+                                    <i class="bi bi-play-fill"></i> Start Test
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="fw-bold">Senior Java Developer Screening</span></td>
+                            <td><span class="badge-custom badge-blue">SCHEDULED</span></td>
+                            <td><span class="small">Nov 02, 2023 02:00 PM</span></td>
+                            <td><span class="small">45 Candidates</span></td>
+                            <td><span class="small">0 / 45</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary-custom border-0">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
 </div>
 
-<!-- MODAL: NEW TEMPLATE -->
-<div id="templateModal" class="modal-backdrop" onclick="if(event.target===this)closeModal('templateModal')">
-  <div class="modal">
+<!-- MODAL: CREATE TEMPLATE -->
+<div id="templateModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeModal('templateModal')">
+  <div class="custom-modal">
     <h3 class="text-xl font-extrabold mb-4">Create Question Paper Template</h3>
     <div class="grid gap-4 mb-4">
         <input id="temp_name" class="input" placeholder="Template Name" />
@@ -716,8 +955,8 @@
 </div>
 
 <!-- MODAL: NEW ASSESSMENT -->
-<div id="assessmentModal" class="modal-backdrop" onclick="if(event.target===this)closeModal('assessmentModal')">
-  <div class="modal max-w-md">
+<div id="assessmentModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeModal('assessmentModal')">
+  <div class="custom-modal max-w-md">
     <h3 class="text-xl font-extrabold mb-4">Create Assessment</h3>
     <div class="grid gap-4 mb-4">
         <div class="form-group">
@@ -776,8 +1015,8 @@
 </div>
 
 <!-- MODAL: NEW TEST PACK -->
-<div id="testPackModal" class="modal-backdrop" onclick="if(event.target===this)closeModal('testPackModal')">
-  <div class="modal">
+<div id="testPackModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeModal('testPackModal')">
+  <div class="custom-modal">
     <h3 class="text-xl font-extrabold mb-4">Create Test Pack</h3>
     <input type="hidden" id="tp_ass_id" />
     <div class="grid gap-4 mb-4">
@@ -799,8 +1038,8 @@
 </div>
 
 <!-- MODAL: ASSIGN QUESTIONS -->
-<div id="assignModal" class="modal-backdrop" onclick="if(event.target===this)closeModal('assignModal')">
-  <div class="modal max-w-3xl">
+<div id="assignModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeModal('assignModal')">
+  <div class="custom-modal max-w-3xl">
     <h3 class="text-xl font-extrabold mb-2">Assign Questions</h3>
     <p id="assign_subtitle" class="text-sm text-gray-500 mb-4"></p>
     <div id="assign_tp_id_display" class="hidden"></div>
@@ -896,49 +1135,1239 @@
   </div>
 </div>
 
-<script>
-    let tempSections = [];
-    function switchMainTab(tabId) {
-        // Toggle tabs
-        document.querySelectorAll('.module-tab').forEach(t => {
-            if (t.getAttribute('onclick').includes(tabId)) t.classList.add('active');
-            else t.classList.remove('active');
-        });
-        
-        // Hide all containers
-        document.querySelectorAll('#main-content-area > main').forEach(m => m.classList.add('hidden'));
-        
-        // Show target
-        const target = document.getElementById('tab-content-' + tabId);
-        if(target) target.classList.remove('hidden');
+<!-- Premium Execution View (Full Screen) -->
+<div id="executionView" class="execution-wrapper d-none">
+    <!-- Top Sticky Header -->
+    <header class="exec-header">
+        <div class="exec-header-left">
+            <div class="exec-brand">
+                <div class="exec-logo"><i class="bi bi-shield-check"></i></div>
+                <div class="exec-brand-text">AssessHub <span class="proctor-badge">PROCTORING ON</span></div>
+            </div>
+            <div class="exec-divider"></div>
+            <div class="exec-test-info">
+                <h1 id="execTestTitle" class="exec-test-name">JavaScript Developer Assessment</h1>
+                <div id="execQuestionProgress" class="exec-test-step">Question 10 of 15</div>
+            </div>
+        </div>
 
-        // Reset locking if navigating manually
-        if(tabId === 'test-creation') {
-            const sel = document.getElementById('main_assessment_select');
-            // If we didn't just come from setAssessmentAndRedirect (checked via window flag or just reset)
-            if(!window.skipSelectReset) {
-                sel.disabled = false;
-                sel.value = "";
+        <div class="exec-header-right">
+            <button class="btn btn-simulate-custom" onclick="App.simulateViolation()">
+                <i class="bi bi-exclamation-triangle"></i> Simulate Violation
+            </button>
+            <div id="execTimer" class="exec-timer-box-custom">
+                <div class="timer-icon-custom"><i class="bi bi-clock"></i></div>
+                <div class="timer-values-custom">
+                    <span id="timerText">58:45</span>
+                </div>
+            </div>
+            <button class="btn btn-submit-test-custom" onclick="App.confirmSubmit()">
+                Submit Assessment <i class="bi bi-send-fill ms-2"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <div class="exec-container-custom">
+        <!-- Main Question Area -->
+        <main class="exec-content-custom">
+            <div class="exec-content-container">
+                <div class="question-card-custom-v2" id="questionCard">
+                    <div class="q-card-header-custom">
+                        <div class="q-meta-group-custom">
+                            <span class="q-id-pill-custom" id="qIdxBadge">Q10</span>
+                            <span class="q-type-pill-custom" id="qTypeBadge">Multi-select</span>
+                            <span class="q-marks-pill-custom" id="qMarksBadge">3 marks</span>
+                            <span class="q-category-pill-custom" id="qCategoryBadge">Testing</span>
+                        </div>
+                        <button class="btn btn-flag-custom" id="flagBtn" onclick="App.toggleFlagCurrent()">
+                            <i class="bi bi-flag"></i> Flag Question
+                        </button>
+                    </div>
+
+                    <div class="q-body-custom">
+                        <h2 class="q-text-custom" id="qTextContent">
+                            Which testing types are included in the software testing pyramid?
+                        </h2>
+                        <p class="q-hint-custom text-secondary mb-4">Select all that apply.</p>
+
+                        <div id="answerArea" class="options-container-custom">
+                            <!-- Options or Textarea injected here -->
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="exec-footer-custom">
+                    <button class="btn btn-nav-prev-custom" onclick="App.prevQuestion()">
+                        <i class="bi bi-chevron-left me-2"></i> Previous Question
+                    </button>
+                    <div class="save-status-custom">
+                        <div class="save-dot-custom"></div>
+                        <span>Last saved: just now</span>
+                    </div>
+                    <button class="btn btn-nav-next-custom" id="nextQBtn" onclick="App.nextQuestion()">
+                        Next Question <i class="bi bi-chevron-right ms-2"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="exec-sidebar-custom">
+            <!-- Instructions Card -->
+            <div class="sidebar-card-custom instructions-card-custom">
+                <h3 class="sb-title-custom"><i class="bi bi-info-circle me-2"></i> INSTRUCTIONS</h3>
+                <ul class="sb-list-custom">
+                    <li>Questions can be revisited at any time.</li>
+                    <li>Partial marks are available for multi-select.</li>
+                    <li>Avoid refreshing the page during the exam.</li>
+                </ul>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="sidebar-card-custom">
+                <h3 class="sb-title-custom">OVERALL PROGRESS</h3>
+                <div class="sb-progress-container-custom">
+                    <div class="progress-info-custom">
+                        <span class="progress-percent-custom"><span id="answeredCount">8</span> of 15</span>
+                        <span class="progress-label-custom">Answered</span>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 10px;">
+                        <div id="execProgressBar" class="progress-bar exec-progress-gradient-custom" style="width: 53%;"></div>
+                    </div>
+                </div>
+                <div class="sb-stats-custom mt-3">
+                    <div class="sb-stat-item-custom">
+                        <span class="sb-stat-val-custom" id="flaggedCount">0</span>
+                        <span class="sb-stat-label-custom">Flagged</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigator Section -->
+            <div class="sidebar-card-custom">
+                <h3 class="sb-title-custom">QUESTION NAVIGATOR</h3>
+                <div id="navGrid" class="navigator-grid-custom-v2">
+                    <!-- Navigation items injected here -->
+                </div>
+                <div class="nav-legend-custom">
+                    <div class="legend-item-custom"><span class="leg-dot-custom current"></span> Current</div>
+                    <div class="legend-item-custom"><span class="leg-dot-custom answered"></span> Answered</div>
+                    <div class="legend-item-custom"><span class="leg-dot-custom flagged"></span> Flagged</div>
+                    <div class="legend-item-custom"><span class="leg-dot-custom unanswered"></span> Unanswered</div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<!-- Submission Success Overlay -->
+<div id="submissionSuccessOverlay" class="submission-success-overlay d-none">
+    <div class="success-card">
+        <div class="success-icon-wrapper">
+            <i class="bi bi-check-lg"></i>
+        </div>
+        <h2 class="success-title">Test Submitted Successfully!</h2>
+        <p class="success-text">Your answers have been recorded. Results will be available shortly.</p>
+        <div class="success-actions">
+            <button class="btn btn-view-results" onclick="App.viewSubmittedResults()">View Results</button>
+            <button class="btn btn-back-dashboard" onclick="App.backToDashboard()">Back to Dashboard</button>
+        </div>
+    </div>
+</div>
+
+<!-- Submit Confirmation Modal -->
+<div id="submitConfirmModal" class="submit-confirm-overlay d-none">
+    <div class="confirm-card">
+        <h3 class="confirm-title">Submit Test?</h3>
+        <p class="confirm-text">
+            You have answered <span id="confirmAnsweredCount" class="fw-bold">15</span> of
+            <span id="confirmTotalCount" class="fw-bold">15</span> questions.
+        </p>
+        <p class="confirm-warning">
+            Once submitted, you cannot make changes. Are you sure you want to submit?
+        </p>
+        <div class="confirm-actions">
+            <button class="btn btn-confirm-cancel" onclick="App.hideSubmitConfirmation()">Cancel</button>
+            <button class="btn btn-confirm-yes" onclick="App.submitTest()">Yes, Submit</button>
+        </div>
+    </div>
+</div>
+
+<div id="violationOverlay" class="violation-overlay">
+    <div class="violation-card">
+        <div class="violation-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <h3 class="fw-bold mb-2" id="violationTitle">Tab Switch Detected</h3>
+        <p class="text-secondary-custom mb-4" id="violationMsg">
+            You have switched away from the test window. This is a violation of the proctoring rules.
+        </p>
+        <div class="bg-light p-3 rounded mb-4">
+            <div class="label-text mb-2">Violation Count</div>
+            <div class="d-flex gap-2" id="violationDots">
+                <div class="flex-1 bg-danger rounded-pill" style="height: 6px;"></div>
+                <div class="flex-1 bg-light border rounded-pill" style="height: 6px;"></div>
+                <div class="flex-1 bg-light border rounded-pill" style="height: 6px;"></div>
+            </div>
+        </div>
+        <button class="btn btn-primary-custom w-100 py-3" onclick="App.dismissViolation()">
+            Dismiss & Continue
+        </button>
+    </div>
+</div><script>
+    // --- Assessment Execution Engine ---
+    const App = {
+        mockQuestions: [
+            { id: 1, text: 'What is the correct way to check if a variable is an array in JS?', type: 'MCQ', options: ['typeof arr === "array"', 'arr instanceof Array', 'Array.isArray(arr)', 'Object.is(arr, Array)'], category: 'JavaScript', marks: 1 },
+            { id: 2, text: 'Which keyword is used to create a constant variable?', type: 'MCQ', options: ['var', 'let', 'const', 'final'], category: 'JavaScript', marks: 1 },
+            { id: 3, text: 'What is the output of 2 + "2"?', type: 'MCQ', options: ['4', '"22"', 'NaN', 'Error'], category: 'JavaScript', marks: 1 },
+            { id: 4, text: 'Select all features introduced in ES6.', type: 'Multi-select', options: ['Arrow functions', 'Classes', 'Promises', 'XMLHttpRequest'], category: 'Modern JS', marks: 3 },
+            { id: 5, text: 'JavaScript is a statically typed language.', type: 'True/False', options: ['True', 'False'], category: 'Fundamentals', marks: 1 },
+            { id: 6, text: 'What is the time complexity of binary search?', type: 'MCQ', options: ['O(n)', 'O(log n)', 'O(n^2)', 'O(1)'], category: 'Data Structures', marks: 2 },
+            { id: 7, text: 'Which testing types are included in the software testing pyramid?', type: 'Multi-select', options: ['Unit Tests', 'Integration Tests', 'Performance Tests', 'End-to-End Tests'], category: 'Testing', marks: 3 },
+            { id: 8, text: 'Redux is primarily used for component styling.', type: 'True/False', options: ['True', 'False'], category: 'State Management', marks: 1 },
+            { id: 9, text: 'Agile methodology uses fixed, long-term plans that don\'t change.', type: 'True/False', options: ['True', 'False'], category: 'Project Management', marks: 1 },
+            { id: 10, text: 'Describe the SOLID principles in object-oriented design.', type: '2-Mark', options: [], category: 'Software Design', marks: 2 },
+            { id: 11, text: 'Explain the concept of closures in JavaScript.', type: '2-Mark', options: [], category: 'JavaScript', marks: 2 },
+            { id: 12, text: 'What is the purpose of the "use strict" directive?', type: 'MCQ', options: ['Enable new features', 'Enforce stricter parsing', 'Optimize performance', 'Prevent hoisting'], category: 'JavaScript', marks: 1 },
+            { id: 13, text: 'What does "this" refer to in a global context?', type: 'MCQ', options: ['The function', 'The object', 'The window/global', 'undefined'], category: 'JavaScript', marks: 1 },
+            { id: 14, text: 'Which method is used to remove the last element from an array?', type: 'MCQ', options: ['shift()', 'pop()', 'splice()', 'remove()'], category: 'JavaScript', marks: 1 },
+            { id: 15, text: 'React uses a Virtual DOM to improve performance.', type: 'True/False', options: ['True', 'False'], category: 'React', marks: 1 }
+        ],
+
+        executionState: {
+            active: false,
+            questions: [],
+            currentIndex: 0,
+            answers: {},
+            flagged: new Set(),
+            timeLeft: 3600, // 60 minutes
+            timerInterval: null,
+            violations: 0
+        },
+
+        startExecution: () => {
+            App.executionState.questions = App.mockQuestions;
+            App.executionState.active = true;
+            App.executionState.currentIndex = 0;
+            App.executionState.answers = {};
+            App.executionState.flagged = new Set();
+            App.executionState.timeLeft = 58 * 60 + 45; // Matching screenshot start
+            App.executionState.violations = 0;
+
+            document.getElementById('executionView').classList.remove('d-none');
+            document.body.style.overflow = 'hidden';
+            App.startTimer();
+            App.renderExecutionQuestion();
+            App.renderNavigator();
+            App.updateProgress();
+        },
+
+        startTimer: () => {
+            if (App.executionState.timerInterval) clearInterval(App.executionState.timerInterval);
+            
+            App.executionState.timerInterval = setInterval(() => {
+                App.executionState.timeLeft--;
+                if (App.executionState.timeLeft <= 0) {
+                    clearInterval(App.executionState.timerInterval);
+                    App.submitTest(true);
+                }
+                App.updateTimerUI();
+            }, 1000);
+        },
+
+        updateTimerUI: () => {
+            const mins = Math.floor(App.executionState.timeLeft / 60);
+            const secs = App.executionState.timeLeft % 60;
+            const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            const timerText = document.getElementById('timerText');
+            if (timerText) {
+                timerText.textContent = timeStr;
+                const timerPill = document.getElementById('execTimer');
+                if (App.executionState.timeLeft < 300) {
+                    timerPill.classList.add('warning');
+                }
             }
-            window.skipSelectReset = false;
+        },
+
+        renderExecutionQuestion: () => {
+            const qIdx = App.executionState.currentIndex;
+            const q = App.executionState.questions[qIdx];
+            
+            document.getElementById('execQuestionProgress').textContent = `Question ${qIdx + 1} of ${App.executionState.questions.length}`;
+            document.getElementById('qIdxBadge').textContent = `Q${qIdx + 1}`;
+            document.getElementById('qTypeBadge').textContent = q.type;
+            document.getElementById('qMarksBadge').textContent = `${q.marks} mark${q.marks > 1 ? 's' : ''}`;
+            document.getElementById('qCategoryBadge').textContent = q.category;
+            document.getElementById('qTextContent').textContent = q.text;
+
+            const flagBtn = document.getElementById('flagBtn');
+            if (App.executionState.flagged.has(qIdx)) {
+                flagBtn.innerHTML = '<i class="bi bi-flag-fill"></i> Flagged';
+                flagBtn.classList.add('btn-primary-custom');
+            } else {
+                flagBtn.innerHTML = '<i class="bi bi-flag"></i> Flag Question';
+                flagBtn.classList.remove('btn-primary-custom');
+            }
+
+            const area = document.getElementById('answerArea');
+            area.innerHTML = '';
+
+            if (q.type === '2-Mark') {
+                const textarea = document.createElement('textarea');
+                textarea.className = 'form-control mt-4 p-3';
+                textarea.rows = 6;
+                textarea.placeholder = 'Write your answer here...';
+                textarea.style.borderRadius = '12px';
+                textarea.style.borderColor = '#e2e8f0';
+                textarea.value = App.executionState.answers[qIdx] || '';
+                textarea.oninput = (e) => App.saveAnswer(qIdx, e.target.value);
+                area.appendChild(textarea);
+            } else {
+                const grid = document.createElement('div');
+                grid.className = 'options-grid mt-4';
+                q.options.forEach((opt) => {
+                    const item = document.createElement('div');
+                    const isSelected = q.type === 'Multi-select'
+                        ? (App.executionState.answers[qIdx] || []).includes(opt)
+                        : App.executionState.answers[qIdx] === opt;
+                    
+                    item.className = `option-item ${isSelected ? 'selected' : ''}`;
+                    item.innerHTML = `
+                        <div class="${q.type === 'Multi-select' ? 'option-square' : 'option-circle'}"></div>
+                        <div class="option-text">${opt}</div>
+                    `;
+                    item.onclick = () => App.handleOptionClick(qIdx, opt, q.type);
+                    grid.appendChild(item);
+                });
+                area.appendChild(grid);
+            }
+
+            document.getElementById('nextQBtn').innerHTML = qIdx === App.executionState.questions.length - 1 ? 'Finish Test' : 'Next Question <i class="bi bi-chevron-right ms-2"></i>';
+        },
+
+        handleOptionClick: (qIdx, opt, type) => {
+            if (type === 'Multi-select') {
+                let selected = App.executionState.answers[qIdx] || [];
+                if (selected.includes(opt)) {
+                    selected = selected.filter(s => s !== opt);
+                } else {
+                    selected.push(opt);
+                }
+                App.saveAnswer(qIdx, selected);
+            } else {
+                App.saveAnswer(qIdx, opt);
+            }
+            App.renderExecutionQuestion();
+            App.renderNavigator();
+        },
+
+        saveAnswer: (qIdx, val) => {
+            App.executionState.answers[qIdx] = val;
+            App.updateProgress();
+        },
+
+        updateProgress: () => {
+            const total = App.executionState.questions.length;
+            const answered = Object.keys(App.executionState.answers).filter(k => {
+                const val = App.executionState.answers[k];
+                return Array.isArray(val) ? val.length > 0 : String(val).trim() !== '' && val !== undefined;
+            }).length;
+            
+            const percent = (answered / total) * 100;
+            const progressBar = document.getElementById('execProgressBar');
+            if (progressBar) progressBar.style.width = `${percent}%`;
+            
+            const answeredCount = document.getElementById('answeredCount');
+            if (answeredCount) answeredCount.textContent = answered;
+
+            const headerSubmitBtn = document.querySelector('.btn-submit-test-custom');
+            
+            if (answered === total) {
+                if (headerSubmitBtn) {
+                    headerSubmitBtn.disabled = false;
+                    headerSubmitBtn.style.opacity = "1";
+                }
+            } else {
+                if (headerSubmitBtn) {
+                    headerSubmitBtn.disabled = true;
+                    headerSubmitBtn.style.opacity = "0.5";
+                }
+            }
+        },
+
+        toggleFlagCurrent: () => {
+            const qIdx = App.executionState.currentIndex;
+            if (App.executionState.flagged.has(qIdx)) {
+                App.executionState.flagged.delete(qIdx);
+            } else {
+                App.executionState.flagged.add(qIdx);
+            }
+            const flaggedCount = document.getElementById('flaggedCount');
+            if (flaggedCount) flaggedCount.textContent = App.executionState.flagged.size;
+            App.renderExecutionQuestion();
+            App.renderNavigator();
+        },
+
+        nextQuestion: () => {
+            if (App.executionState.currentIndex < App.executionState.questions.length - 1) {
+                App.executionState.currentIndex++;
+                App.renderExecutionQuestion();
+                App.renderNavigator();
+            } else {
+                App.showSubmitConfirmation();
+            }
+        },
+
+        prevQuestion: () => {
+            if (App.executionState.currentIndex > 0) {
+                App.executionState.currentIndex--;
+                App.renderExecutionQuestion();
+                App.renderNavigator();
+            }
+        },
+
+        renderNavigator: () => {
+            const grid = document.getElementById('navGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            
+            App.executionState.questions.forEach((_, i) => {
+                const item = document.createElement('div');
+                let statusClass = 'unanswered';
+                
+                const ans = App.executionState.answers[i];
+                const isAnswered = ans !== undefined && (
+                    Array.isArray(ans) ? ans.length > 0 : String(ans).trim() !== ''
+                );
+
+                if (i === App.executionState.currentIndex) statusClass = 'current';
+                else if (App.executionState.flagged.has(i)) statusClass = 'flagged';
+                else if (isAnswered) statusClass = 'answered';
+
+                item.className = `nav-item ${statusClass}`;
+                item.textContent = i + 1;
+                item.onclick = () => {
+                    App.executionState.currentIndex = i;
+                    App.renderExecutionQuestion();
+                    App.renderNavigator();
+                };
+                grid.appendChild(item);
+            });
+        },
+
+        // --- Interaction UI Helpers ---
+        simulateViolation: () => {
+            App.executionState.violations++;
+            document.getElementById('violationOverlay').classList.add('active');
+            const dots = document.getElementById('violationDots').children;
+            for(let i=0; i<dots.length; i++) {
+                if(i < App.executionState.violations) dots[i].className = 'flex-1 bg-danger rounded-pill';
+                else dots[i].className = 'flex-1 bg-light border rounded-pill';
+            }
+            if(App.executionState.violations >= 3) {
+                document.getElementById('violationTitle').textContent = "Assessment Terminated";
+                document.getElementById('violationMsg').textContent = "Multiple violations detected. Your assessment has been automatically submitted.";
+                const btn = document.querySelector('#violationOverlay .btn');
+                btn.textContent = "Return to Dashboard";
+                btn.onclick = () => App.backToDashboard();
+            }
+        },
+
+        dismissViolation: () => {
+            if(App.executionState.violations < 3) {
+                document.getElementById('violationOverlay').classList.remove('active');
+            }
+        },
+
+        showSubmitConfirmation: () => {
+            const answered = Object.keys(App.executionState.answers).length;
+            const total = App.executionState.questions.length;
+            document.getElementById('confirmAnsweredCount').textContent = answered;
+            document.getElementById('confirmTotalCount').textContent = total;
+            document.getElementById('submitConfirmModal').classList.remove('d-none');
+        },
+
+        hideSubmitConfirmation: () => {
+            document.getElementById('submitConfirmModal').classList.add('d-none');
+        },
+
+        confirmSubmit: () => App.showSubmitConfirmation(),
+
+        submitTest: (auto = false) => {
+            clearInterval(App.executionState.timerInterval);
+            document.getElementById('submitConfirmModal').classList.add('d-none');
+            document.getElementById('executionView').classList.add('d-none');
+            document.getElementById('submissionSuccessOverlay').classList.remove('d-none');
+        },
+
+        viewSubmittedResults: () => {
+            document.getElementById('submissionSuccessOverlay').classList.add('d-none');
+            document.body.style.overflow = '';
+            switchMainTab('results');
+            App.loadCandidateResult(1);
+        },
+
+        backToDashboard: () => {
+            location.reload();
+        },
+
+        // --- Results & Evaluation ---
+        loadCandidateResult: (id) => {
+            const mockBreakdown = [
+                { cat: 'React & Frontend', q: 12, c: 11, s: '22/24', p: '92%' },
+                { cat: 'Data Structures & Algorithms', q: 8, c: 7, s: '14/16', p: '88%' },
+                { cat: 'Databases', q: 6, c: 5, s: '10/12', p: '83%' },
+                { cat: 'Software Design', q: 5, c: 5, s: '10/10', p: '100%' },
+                { cat: 'Cloud Computing', q: 4, c: 3, s: '6/8', p: '75%' },
+                { cat: 'Unit Testing', q: 5, c: 4, s: '8/10', p: '80%' }
+            ];
+            const tbody = document.getElementById('topicBreakdownTable');
+            if(tbody) tbody.innerHTML = mockBreakdown.map((item, idx) => `
+                <tr class="hover:bg-[#f8fafc] transition-colors">
+                    <td class="px-6 py-2 text-[11px] font-bold text-[#94a3b8]">${idx + 1}</td>
+                    <td class="px-6 py-2 text-[13px] font-bold text-[#334155]">${item.cat}</td>
+                    <td class="px-6 py-2 text-[13px] text-[#64748b] text-center font-medium">${item.q}</td>
+                    <td class="px-6 py-2 text-[13px] text-[#64748b] text-center font-medium">${item.c}</td>
+                    <td class="px-6 py-2 text-[13px] font-bold text-[#334155] text-center">${item.s}</td>
+                    <td class="px-6 py-2 font-bold text-[#10b981] text-right text-[13px]">${item.p}</td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('resTotalScore').textContent = '82';
+            document.getElementById('resPercentage').textContent = '82%';
+            document.getElementById('resTimeTaken').textContent = '78m';
+            document.getElementById('breakdown-cat-count').textContent = `${mockBreakdown.length} Categories`;
+        },
+
+        renderEvaluatorView: (candidateId = 1) => {
+            const list = document.getElementById('pendingEvaluationList');
+            
+            if (candidateId == "2") {
+                list.innerHTML = `
+                    <div class="py-12 text-center bg-gray-50/30 rounded-[10px] border border-dashed border-[#e2e8f0]">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-[#f0fdf4] text-[#16a34a] rounded-full mb-3">
+                            <i class="bi bi-patch-check-fill text-2xl"></i>
+                        </div>
+                        <h5 class="text-sm font-bold text-[#1e293b]">Evaluation Complete</h5>
+                        <p class="text-[11px] text-[#94a3b8] uppercase tracking-wider font-bold">This candidate has no pending subjective items</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const subjectiveQuestions = [
+                { 
+                    id: 10, 
+                    text: 'Describe the SOLID principles in object-oriented design.', 
+                    marks: 2, 
+                    answer: '"SOLID is an acronym for five design principles intended to make software designs more understandable, flexible, and maintainable. S: Single Responsibility, O: Open-Closed, L: Liskov Substitution, I: Interface Segregation, D: Dependency Inversion. Each class should have one responsibility, be open for extension but closed for modification..."' 
+                },
+                { 
+                    id: 11, 
+                    text: 'Explain the concept of closures in JavaScript.', 
+                    marks: 2, 
+                    answer: '"Candidate provided a detailed explanation of JavaScript concepts, focusing on practical implementation and best practices..."' 
+                }
+            ];
+            
+            list.innerHTML = subjectiveQuestions.map(q => `
+                <div class="bg-white border border-[#f1f5f9] rounded-[10px] p-4 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-[#eff6ff] text-[#2563eb] px-1.5 py-0.5 rounded-[3px] text-[10px] font-bold">Q${q.id}</span>
+                            <h5 class="text-[14px] font-bold text-[#1e293b] mb-0">${q.text}</h5>
+                        </div>
+                        <span class="bg-[#fefce8] text-[#a16207] px-2 py-0.5 rounded-[4px] text-[9px] font-bold border border-[#fef08a] uppercase tracking-wider">Pending Evaluation</span>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest mb-2 block">CANDIDATE ANSWER:</label>
+                        <div class="bg-[#f8fafc] border-l-[3px] border-[#e2e8f0] p-4 rounded-r-[8px]">
+                            <p class="text-[13px] text-[#475569] leading-relaxed italic mb-0">${q.answer}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between mt-4">
+                        <div class="flex items-center gap-4">
+                            <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">Award Marks:</span>
+                            <div class="flex items-center gap-2">
+                                <input type="number" class="w-[44px] h-[32px] border border-[#cbd5e1] rounded-[4px] text-center font-bold text-[14px] outline-none focus:border-[#dc2230]" value="1" max="${q.marks}" min="0">
+                                <span class="text-[#2563eb] font-bold text-[12px]">/ ${q.marks} Marks</span>
+                            </div>
+                        </div>
+                        <button class="bg-[#dc2230] hover:bg-[#c61e2b] text-white px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm" onclick="Swal.fire({ title: 'Grade Submitted', text: 'Marks for Q${q.id} have been updated.', icon: 'success' })">
+                            Submit Grade
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    };
+
+    function switchResultView(view) {
+        const btnStudent = document.getElementById('btn-view-student');
+        const btnEvaluator = document.getElementById('btn-view-evaluator');
+        const viewStudent = document.getElementById('result-student-view');
+        const viewEvaluator = document.getElementById('result-evaluator-view');
+
+        if (view === 'student') {
+            btnStudent.className = 'tab tab-active';
+            btnEvaluator.className = 'tab tab-idle';
+            viewStudent.classList.remove('hidden');
+            viewEvaluator.classList.add('hidden');
+            App.loadCandidateResult(1);
+        } else {
+            btnStudent.className = 'tab tab-idle';
+            btnEvaluator.className = 'tab tab-active';
+            viewStudent.classList.add('hidden');
+            viewEvaluator.classList.remove('hidden');
+            App.renderEvaluatorView();
         }
     }
-    
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+</script>
 
-    function updateTemplateDetails(tempId) {
-        const box = document.getElementById('template_details_section');
-        if(!tempId) { box.classList.add('hidden'); return; }
+<!-- Create Assessment Pack Modal (Test Creation Wizard) -->
+<div class="modal fade" id="createPackModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div class="w-100">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h5 class="wizard-step-title mb-0">Create New Test</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <p class="wizard-step-subtitle mb-0">Follow the 4-step wizard to configure, assign, and publish an assessment.</p>
+                </div>
+            </div>
+            <div class="modal-body pt-4">
+                <!-- Stepper -->
+                <div class="stepper mb-5" id="packStepper">
+                    <div class="step active" data-step="1">
+                        <div class="step-circle">1</div>
+                        <div class="step-label text-uppercase">Select Template</div>
+                    </div>
+                    <div class="step" data-step="2">
+                        <div class="step-circle">2</div>
+                        <div class="step-label text-uppercase">Add Questions</div>
+                    </div>
+                    <div class="step" data-step="3">
+                        <div class="step-circle">3</div>
+                        <div class="step-label text-uppercase">Assign Test</div>
+                    </div>
+                    <div class="step" data-step="4">
+                        <div class="step-circle">4</div>
+                        <div class="step-label text-uppercase">Schedule & Publish</div>
+                    </div>
+                </div>
+
+                <div class="px-md-4">
+                    <!-- Step 1: Select Template -->
+                    <div id="packStep1" class="wizard-step">
+                        <h3 class="wizard-step-title">Step 1 — Select Template</h3>
+                        <p class="wizard-step-subtitle">Choose an assessment template to configure this test.</p>
+
+                        <div class="mb-4">
+                            <label class="form-label">Assessment Template <span class="text-danger">*</span></label>
+                            <select class="form-select" id="baseTemplateSelect" onchange="App.onTemplateSelect(this.value)">
+                                <option selected disabled>— Select a template —</option>
+                                <?php foreach($templates as $t): ?>
+                                <option value="<?= $t['id'] ?>" data-json='<?= json_encode($t) ?>'><?= esc($t['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label d-block">Assessment Type <span class="text-danger">*</span></label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="packAssessmentType" id="packTypeInternal" value="internal" checked onchange="toggleCategoryVisibility(this.value)">
+                                    <label class="form-check-label small fw-medium" for="packTypeInternal">Internal</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="packAssessmentType" id="packTypeRecruitment" value="recruitment" onchange="toggleCategoryVisibility(this.value)">
+                                    <label class="form-check-label small fw-medium" for="packTypeRecruitment">Recruitment</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6" id="packCategoryField">
+                                <label class="form-label">Category</label>
+                                <select class="form-select" id="packCategorySelect">
+                                    <option>Technical</option>
+                                    <option>Soft Skills</option>
+                                    <option>Compliance</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="card-custom p-0 border-1 mb-4 hidden" id="templateSummaryCard">
+                            <div class="px-4 py-3 bg-header border-bottom d-flex justify-content-between align-items-center">
+                                <h4 class="h6 fw-bold mb-0" id="summ_temp_name">Template Name</h4>
+                                <span class="badge-custom badge-blue" id="summ_temp_type">Internal</span>
+                            </div>
+                            <div class="p-4">
+                                <div class="row g-4 mb-4">
+                                    <div class="col-md-4 border-end">
+                                        <div class="label-text mb-1">Total Questions</div>
+                                        <div class="h5 fw-bold mb-0" id="summ_q_count">0</div>
+                                    </div>
+                                    <div class="col-md-4 border-end">
+                                        <div class="label-text mb-1">Total Marks</div>
+                                        <div class="h5 fw-bold mb-0" id="summ_total_marks">0</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="label-text mb-1">Estimated Duration</div>
+                                        <div class="h5 fw-bold mb-0" id="summ_duration">0 min</div>
+                                    </div>
+                                </div>
+                                <div class="pt-3 border-top">
+                                    <div class="label-text mb-2">Structure Breakdown</div>
+                                    <div class="small fw-medium" id="summ_structure">
+                                        <!-- Dynamic structure -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Add Questions -->
+                    <!-- Step 2: Add Questions (Premium Layout) -->
+                    <div id="packStep2" class="d-none wizard-step">
+                        <h3 class="wizard-step-title">Step 2 — Add Questions</h3>
+                        <p class="wizard-step-subtitle">Choose how to populate questions for this test.</p>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <div class="card-custom text-start p-3 h-100 hover-border-primary cursor-pointer active-selection"
+                                    id="cardAutoSelect" onclick="selectPopulateMethod('Auto')">
+                                    <i class="bi bi-lightning-fill text-warning fs-4 mb-2 d-block"></i>
+                                    <h4 class="small fw-bold mb-1">Auto-select</h4>
+                                    <p class="text-xs text-secondary mb-0">Automatic selection from bank.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card-custom text-start p-3 h-100 hover-border-primary cursor-pointer"
+                                    id="cardManualOverride" onclick="selectPopulateMethod('Manual')">
+                                    <i class="bi bi-search text-info fs-4 mb-2 d-block"></i>
+                                    <h4 class="small fw-bold mb-1">Manual Override</h4>
+                                    <p class="text-xs text-secondary mb-0">Hand-pick individual questions.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card-custom text-start p-3 h-100 hover-border-primary cursor-pointer"
+                                    id="cardBulkUpload" onclick="selectPopulateMethod('Bulk')">
+                                    <i class="bi bi-file-earmark-text text-secondary fs-4 mb-2 d-block"></i>
+                                    <h4 class="small fw-bold mb-1">Bulk Upload</h4>
+                                    <p class="text-xs text-secondary mb-0">Import questions via CSV.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-pink-light p-2 px-3 rounded d-flex justify-content-between align-items-center mb-3"
+                            style="background: #fff5f5; border: 1px solid #fee2e2;">
+                            <span class="text-xs fw-medium text-secondary">Questions selected:</span>
+                            <span class="text-xs fw-bold text-danger" id="selectedQuestionsCount">0 / 40 required</span>
+                        </div>
+
+                        <!-- Manual Override Section -->
+                        <div id="manualOverrideView" class="d-none">
+                            <div class="mb-4">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i
+                                            class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control border-start-0"
+                                        placeholder="Search by question text or category...">
+                                </div>
+                            </div>
+                            <div class="table-responsive border rounded mb-4">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 40px;"><input type="checkbox"
+                                                    class="form-check-input"></th>
+                                            <th class="small fw-bold">Question</th>
+                                            <th class="small fw-bold">Category</th>
+                                            <th class="small fw-bold">Type</th>
+                                            <th class="small fw-bold">Difficulty</th>
+                                            <th class="small fw-bold">Marks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="manualQuestionTableBody">
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-gray-400 small">Select a template to view available questions</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Bulk Upload Section -->
+                        <div id="bulkUploadView" class="d-none">
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <div class="border-2 border-dashed rounded p-4 text-center h-100 d-flex flex-column justify-content-center"
+                                        style="border: 2px dashed #e5e7eb; background: #fcfcfd;">
+                                        <i class="bi bi-cloud-arrow-up fs-2 text-secondary mb-2"></i>
+                                        <h6 class="fw-bold mb-1">Drag & drop CSV</h6>
+                                        <p class="text-[10px] text-secondary mb-3">or click to browse</p>
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <button class="btn btn-primary-custom btn-sm px-3 py-1 text-xs">Browse</button>
+                                            <button class="btn btn-outline-secondary btn-sm px-3 py-1 text-xs" onclick="App.downloadTemplate()">
+                                                <i class="bi bi-download"></i> Template
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-7">
+                                    <div class="card-custom bg-light border-0 p-3 mb-0">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <i class="bi bi-info-circle text-secondary text-xs"></i>
+                                            <p class="text-[10px] fw-bold mb-0 text-uppercase">CSV Format Guide</p>
+                                        </div>
+                                        <div class="table-responsive" style="max-height: 180px; overflow-y: auto;">
+                                            <table class="table table-sm table-bordered bg-white text-[10px] mb-0">
+                                                <thead class="table-light sticky-top">
+                                                    <tr>
+                                                        <th>Column</th>
+                                                        <th>Req</th>
+                                                        <th>Usage</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td><code>question_text</code></td>
+                                                        <td class="text-danger">Yes</td>
+                                                        <td>Actual question content.</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><code>type</code></td>
+                                                        <td class="text-danger">Yes</td>
+                                                        <td>MCQ, Multi, T/F, 2-Mark</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><code>option_a...d</code></td>
+                                                        <td>Cond</td>
+                                                        <td>Required for MCQ/Multi.</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><code>correct_answer</code></td>
+                                                        <td class="text-danger">Yes</td>
+                                                        <td>'A', 'A,B', 'True', etc.</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Assign Test -->
+                    <div id="packStep3" class="d-none wizard-step">
+                        <h3 class="wizard-step-title">Step 3 — Assign Test</h3>
+                        <p class="wizard-step-subtitle">Assign the test to specific departments, roles, or individuals.</p>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Department</label>
+                                <select class="form-select">
+                                    <option>All Departments</option>
+                                    <option>Engineering</option>
+                                    <option>HR</option>
+                                    <option>Product</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Role</label>
+                                <select class="form-select">
+                                    <option>All Roles</option>
+                                    <option>Developer</option>
+                                    <option>Tester</option>
+                                    <option>Designer</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="label-text fw-bold mb-2">Target Employees (0 selected)</div>
+                        <div class="table-responsive border rounded">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 40px;"><input type="checkbox" class="form-check-input"></th>
+                                        <th class="small fw-bold">Name</th>
+                                        <th class="small fw-bold">Email</th>
+                                        <th class="small fw-bold">Role</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="checkbox" class="form-check-input" checked></td>
+                                        <td class="small fw-medium">John Doe</td>
+                                        <td class="small">john.doe@company.com</td>
+                                        <td class="small">Developer</td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" class="form-check-input"></td>
+                                        <td class="small fw-medium">Jane Smith</td>
+                                        <td class="small">jane.smith@company.com</td>
+                                        <td class="small">Designer</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Schedule & Publish -->
+                    <div id="packStep4" class="d-none wizard-step">
+                        <h3 class="wizard-step-title">Step 4 — Schedule & Publish</h3>
+                        <p class="wizard-step-subtitle">Finalize timing and publish the test pack.</p>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-8">
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label mb-1">Start Date & Time <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" class="form-control form-control-sm" id="final_start_time">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label mb-1">End Date & Time <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" class="form-control form-control-sm" id="final_end_time">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label mb-1">Duration Override (minutes)</label>
+                                        <input type="number" class="form-control form-control-sm" id="final_duration" placeholder="Default template duration">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label mb-1">Test Instructions</label>
+                                        <textarea class="form-control form-control-sm" rows="2" placeholder="Candidate instructions..."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Compact Exam Settings Section -->
+                                <div class="mt-3">
+                                    <div class="card-custom bg-white border p-3">
+                                        <div class="row g-3">
+                                            <div class="col-md-12">
+                                                <div class="row g-2">
+                                                    <div class="col-md-4">
+                                                        <div class="settings-row py-1 border-0">
+                                                            <div class="text-xs fw-bold">Shuffle Qs</div>
+                                                            <label class="toggle-switch scale-75">
+                                                                <input type="checkbox" checked>
+                                                                <span class="slider"></span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="settings-row py-1 border-0">
+                                                            <div class="text-xs fw-bold">Shuffle Opts</div>
+                                                            <label class="toggle-switch scale-75">
+                                                                <input type="checkbox" checked>
+                                                                <span class="slider"></span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="settings-row py-1 border-0">
+                                                            <div class="text-xs fw-bold">Show Timer</div>
+                                                            <label class="toggle-switch scale-75">
+                                                                <input type="checkbox" checked>
+                                                                <span class="slider"></span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="settings-row py-1 border-0">
+                                                            <div class="text-xs fw-bold">Allow Review</div>
+                                                            <label class="toggle-switch scale-75">
+                                                                <input type="checkbox" checked>
+                                                                <span class="slider"></span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="settings-row py-1 border-0">
+                                                            <div class="text-xs fw-bold">Auto-Submit</div>
+                                                            <label class="toggle-switch scale-75">
+                                                                <input type="checkbox" checked>
+                                                                <span class="slider"></span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="settings-row py-1 border-0">
+                                                            <div class="text-xs fw-bold">Immediate Result</div>
+                                                            <label class="toggle-switch scale-75">
+                                                                <input type="checkbox">
+                                                                <span class="slider"></span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12 pt-2 border-top">
+                                                <div class="row g-2">
+                                                    <div class="col-md-6">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <label class="text-xs fw-bold mb-0 flex-shrink-0">Pass %</label>
+                                                            <input type="number" class="form-control form-control-sm py-1 fw-bold text-center" value="70" style="width: 60px;">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 text-end">
+                                                        <div class="d-flex align-items-center justify-content-end gap-2">
+                                                            <label class="text-xs fw-bold mb-0">Max Attempts</label>
+                                                            <select class="form-select form-select-sm py-1 fw-bold" style="width: 120px;">
+                                                                <option value="1">1 attempt</option>
+                                                                <option value="2">2 attempts</option>
+                                                                <option value="unlimited">Unlimited</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card-custom bg-light border-0 p-3 h-100">
+                                    <h4 class="text-xs fw-bold mb-3 text-uppercase opacity-75">Review Summary</h4>
+                                    <div class="mb-2">
+                                        <div class="text-[10px] text-uppercase text-secondary fw-bold">Template</div>
+                                        <div class="small fw-bold" id="rev_template">None</div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="text-[10px] text-uppercase text-secondary fw-bold">Method</div>
+                                        <div class="small fw-bold" id="rev_method">Auto-select</div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="text-[10px] text-uppercase text-secondary fw-bold">Duration</div>
+                                        <div class="small fw-bold" id="rev_duration">90 mins</div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <div class="text-[10px] text-uppercase text-secondary fw-bold">Assigned</div>
+                                        <div class="small fw-bold" id="rev_assigned">1 Employee</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 px-md-5 pb-4">
+                <button type="button" class="btn btn-secondary-custom px-4" id="prevPackStep" style="display: none;">← Previous</button>
+                <div class="ms-auto d-flex align-items-center gap-3">
+                    <span class="small text-secondary d-none d-md-block" id="stepIndicatorText">Complete all fields to proceed.</span>
+                    <button type="button" class="btn btn-primary-custom px-4" id="nextPackStep">Next Step</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Global Helpers & Navigation ---
+    function switchMainTab(tabId) {
+        document.querySelectorAll('.module-tab').forEach(t => {
+            const attr = t.getAttribute('onclick');
+            if (attr && attr.includes(`'${tabId}'`)) t.classList.add('active');
+            else t.classList.remove('active');
+        });
+        document.querySelectorAll('#main-content-area > main').forEach(m => m.classList.add('hidden'));
+        const target = document.getElementById('tab-content-' + tabId);
+        if(target) {
+            target.classList.remove('hidden');
+            if(tabId === 'results') {
+                if (typeof switchResultView === 'function') switchResultView('student');
+                else App.loadCandidateResult(1);
+            }
+        }
+    }
+
+    function openModal(id) { 
+        if (id === 'createPackModal') { openPackWizard(); return; }
+        const el = document.getElementById(id);
+        if(el) el.classList.add('open'); 
+    }
+    function closeModal(id) { 
+        const el = document.getElementById(id);
+        if(el) el.classList.remove('open'); 
+    }
+
+    // --- Assessment Pack Wizard Logic ---
+    let currentPackStep = 1;
+    const totalPackSteps = 4;
+
+    function openPackWizard() {
+        currentPackStep = 1;
+        updatePackWizardUI();
+        const modalEl = document.getElementById('createPackModal');
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    function updatePackWizardUI() {
+        document.querySelectorAll('.wizard-step').forEach(s => s.classList.add('d-none'));
+        document.getElementById(`packStep${currentPackStep}`).classList.remove('d-none');
+
+        document.querySelectorAll('#packStepper .step').forEach(s => {
+            const stepNum = parseInt(s.dataset.step);
+            s.classList.remove('active', 'completed');
+            if (stepNum === currentPackStep) s.classList.add('active');
+            else if (stepNum < currentPackStep) s.classList.add('completed');
+        });
+
+        const prevBtn = document.getElementById('prevPackStep');
+        const nextBtn = document.getElementById('nextPackStep');
         
-        const select = document.getElementById('main_template_select');
+        prevBtn.style.display = currentPackStep === 1 ? 'none' : 'block';
+        nextBtn.textContent = currentPackStep === totalPackSteps ? 'Publish Assessment' : 'Next Step';
+        
+        nextBtn.className = currentPackStep === totalPackSteps 
+            ? 'btn btn-success px-4' 
+            : 'btn btn-primary-custom px-4';
+    }
+
+    document.getElementById('nextPackStep').addEventListener('click', () => {
+        if (currentPackStep < totalPackSteps) {
+            if (currentPackStep === 1) {
+                const temp = document.getElementById('baseTemplateSelect').value;
+                if (!temp) { Swal.fire('Required', 'Please select a template to continue.', 'warning'); return; }
+            }
+            currentPackStep++;
+            updatePackWizardUI();
+        } else {
+            publishFinalAssessment();
+        }
+    });
+
+    document.getElementById('prevPackStep').addEventListener('click', () => {
+        if (currentPackStep > 1) {
+            currentPackStep--;
+            updatePackWizardUI();
+        }
+    });
+
+    function toggleCategoryVisibility(type) {
+        const field = document.getElementById('packCategoryField');
+        if (type === 'recruitment') {
+            field.classList.add('d-none');
+        } else {
+            field.classList.remove('d-none');
+        }
+    }
+
+    App.downloadTemplate = () => {
+        const headers = ["question_text", "type", "section", "marks", "option_a", "option_b", "option_c", "option_d", "correct_answer", "rubrics"];
+        const rows = [
+            ["What is the capital of France?", "MCQ", "Geography", "1", "Paris", "London", "Berlin", "Madrid", "A", ""],
+            ["Select even numbers.", "Multi-select", "Math", "2", "2", "3", "4", "5", "A,C", ""],
+            ["The earth is flat.", "True/False", "Science", "1", "", "", "", "", "False", ""],
+            ["Explain the water cycle.", "2-Mark", "Science", "2", "", "", "", "", "Evaporation, Condensation, Precipitation", "1 mark for evaporation, 1 mark for overall flow"]
+        ];
+
+        let csvContent = "data:text/csv;charset=utf-8,"
+            + headers.join(",") + "\n"
+            + rows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "assessment_template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    function selectPopulateMethod(method) {
+        // Fix for ID mapping
+        const cardIds = { 'Auto': 'cardAutoSelect', 'Manual': 'cardManualOverride', 'Bulk': 'cardBulkUpload' };
+        Object.values(cardIds).forEach(id => document.getElementById(id).classList.remove('active-selection'));
+        document.getElementById(cardIds[method]).classList.add('active-selection');
+
+        document.getElementById('manualOverrideView').classList.toggle('d-none', method !== 'Manual');
+        document.getElementById('bulkUploadView').classList.toggle('d-none', method !== 'Bulk');
+        
+        const countEl = document.getElementById('selectedQuestionsCount');
+        if (method === 'Auto') {
+            countEl.textContent = 'Auto-selection active (40 / 40)';
+            countEl.classList.replace('text-danger', 'text-success');
+        } else {
+            countEl.textContent = '0 / 40 required';
+            countEl.classList.replace('text-success', 'text-danger');
+        }
+        
+        document.getElementById('rev_method').textContent = method + '-select';
+    }
+
+    App.onTemplateSelect = (val) => {
+        const select = document.getElementById('baseTemplateSelect');
         const option = select.options[select.selectedIndex];
         const data = JSON.parse(option.getAttribute('data-json'));
         
-        document.getElementById('det_questions').innerText = data.sections.reduce((acc, s) => acc + parseInt(s.num_questions), 0);
-        box.classList.remove('hidden');
+        document.getElementById('templateSummaryCard').classList.remove('hidden');
+        document.getElementById('summ_temp_name').textContent = data.name;
+        document.getElementById('rev_template').textContent = data.name;
+        
+        const qCount = data.sections.reduce((acc, s) => acc + parseInt(s.num_questions), 0);
+        document.getElementById('summ_q_count').textContent = qCount;
+        document.getElementById('summ_total_marks').textContent = qCount * 2; // Rough estimate
+        document.getElementById('summ_duration').textContent = '90 min';
+        
+        document.getElementById('summ_structure').innerHTML = data.sections.map(s => `
+            <span class="badge bg-gray-100 text-gray-700 me-2">${s.num_questions} ${s.type}</span>
+        `).join('');
+    };
+
+    function publishFinalAssessment() {
+        Swal.fire({
+            title: 'Publish Assessment?',
+            text: "This will make the test live for assigned employees.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Publish Now',
+            confirmButtonColor: '#dc2230'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire('Success!', 'Assessment Pack has been published.', 'success').then(() => {
+                    location.reload();
+                });
+            }
+        });
     }
 
+    // --- Legacy Actions Support ---
+    window.startExecutionMode = () => switchMainTab('execution');
+    window.changeQuestion = (dir) => {
+        if (dir > 0) App.nextQuestion();
+        else App.prevQuestion();
+    };
+    window.toggleFlag = (idx) => App.toggleFlag(idx);
+    window.confirmSubmitTest = () => App.confirmSubmit();
+
+    async function deleteAssessment(id) {
+        if(!(await Swal.fire({ title: 'Delete Assessment?', text: 'This cannot be undone.', icon: 'warning', showCancelButton: true }).then(r => r.isConfirmed))) return;
+        await fetch(`/assessment/deleteAssessment/${id}`, { method: 'POST' });
+        location.reload();
+    }
+
+    async function createAssessment() {
+        const name = document.getElementById('ass_name').value;
+        const code = document.getElementById('ass_code').value;
+        const category = document.getElementById('ass_category').value;
+        const type = document.getElementById('ass_type').value;
+        const assigned = document.getElementById('ass_assigned').value;
+        const desc = document.getElementById('ass_desc').value;
+        
+        await fetch('/assessment/createAssessment', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'}, 
+            body: `name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}&category=${encodeURIComponent(category)}&assessment_type=${encodeURIComponent(type)}&assigned_to=${encodeURIComponent(assigned)}&description=${encodeURIComponent(desc)}` 
+        });
+        Swal.fire({ title: 'Success!', text: 'Assessment category created', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => location.reload());
+    }
+
+    let tempSections = [];
     function addSectionRow() {
         const type = document.getElementById('sec_type').value;
         const count = document.getElementById('sec_count').value;
@@ -964,178 +2393,30 @@
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: `name=${name}&description=${description}&` + tempSections.map((s,i) => `sections[${i}][type]=${s.type}&sections[${i}][count]=${s.count}&sections[${i}][knowledge]=${s.knowledge}`).join('&')
         });
-        Swal.fire({
-            title: 'Template Saved',
-            text: 'Your template has been created successfully',
-            icon: 'success',
-            timer: 1500,
-            showConfirmButton: false
-        }).then(() => location.reload());
-    }
-    async function createAssessment() {
-        const name = document.getElementById('ass_name').value;
-        const code = document.getElementById('ass_code').value;
-        const category = document.getElementById('ass_category').value;
-        const type = document.getElementById('ass_type').value;
-        const assigned = document.getElementById('ass_assigned').value;
-        const desc = document.getElementById('ass_desc').value;
-        
-        await fetch('/assessment/createAssessment', { 
-            method: 'POST', 
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'}, 
-            body: `name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}&category=${encodeURIComponent(category)}&assessment_type=${encodeURIComponent(type)}&assigned_to=${encodeURIComponent(assigned)}&description=${encodeURIComponent(desc)}` 
-        });
-        Swal.fire({
-            title: 'Success!',
-            text: 'Assessment category created',
-            icon: 'success',
-            timer: 1500,
-            showConfirmButton: false
-        }).then(() => location.reload());
-    }
-    function toggleEnovaFields(val) {
-        document.getElementById('enova_fields').classList.toggle('hidden', val !== 'Enova Assessment');
-    }
-    function updateCharCount(el) {
-        document.getElementById('char_count').innerText = el.value.length + ' / 500';
-    }
-    function toggleAccordion(header, contentId) {
-        const content = document.getElementById(contentId);
-        const chevron = header.querySelector('.chevron');
-        content.classList.toggle('open');
-        chevron.classList.toggle('rotated');
+        Swal.fire({ title: 'Template Saved', text: 'Your template has been created successfully', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => location.reload());
     }
 
-    function deleteAssessment(id) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this! This will delete the assessment and all its packs.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'No, cancel!',
-            reverseButtons: true
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                await fetch(`/assessment/deleteAssessment/${id}`, { method: 'POST' });
-                location.reload();
-            }
-        });
+    function setAssessmentAndRedirect(id) {
+        const sel = document.getElementById('main_assessment_select');
+        if(sel) sel.value = id;
+        switchMainTab('test-creation');
+        openPackWizard();
     }
-    function editAssessment(id) {
-        Swal.fire('Coming Soon', 'Edit functionality for Assessment #' + id + ' is currently in development.', 'info');
-    }
+
     function deletePack(id) {
-        Swal.fire({
-            title: 'Delete this pack?',
-            text: "This action cannot be undone.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, delete pack',
-            cancelButtonText: 'Cancel'
-        }).then(async (result) => {
+        Swal.fire({ title: 'Delete this pack?', text: "This action cannot be undone.", icon: 'warning', showCancelButton: true }).then(async (result) => {
             if (result.isConfirmed) {
                 await fetch(`/assessment/deletePack/${id}`, { method: 'POST' });
                 location.reload();
             }
         });
     }
-    function editPack(id) {
-        Swal.fire('Coming Soon', 'Edit functionality for Pack #' + id + ' is currently in development.', 'info');
-    }
-    function setAssessmentAndRedirect(id) {
-        const sel = document.getElementById('main_assessment_select');
-        sel.value = id;
-        sel.disabled = true;
-        window.skipSelectReset = true;
-        switchMainTab('test-creation');
-    }
-    async function createTestPack() {
-        const ass_id = document.getElementById('tp_ass_id').value;
-        const name = document.getElementById('tp_name').value;
-        const role = document.getElementById('tp_role').value;
-        const temp_id = document.getElementById('tp_template').value;
-        await fetch('/assessment/createTestPack', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: `assessment_id=${ass_id}&pack_name=${name}&user_role=${role}&template_id=${temp_id}` });
-        Swal.fire({
-            title: 'Test Pack Created',
-            text: 'Pack saved successfully',
-            icon: 'success',
-            timer: 1500,
-            showConfirmButton: false
-        }).then(() => location.reload());
-    }
-    async function publishAssessmentPack() {
-        const ass_id = document.getElementById('main_assessment_select').value;
-        const pack_name = document.getElementById('main_pack_name').value;
-        const user_role = document.getElementById('main_pack_role').value;
-        const temp_id = document.getElementById('main_template_select').value;
-
-        if(!ass_id || !pack_name || !temp_id) {
-            Swal.fire('Error', 'Please complete Step 1 (Assessment, Pack Name, and Template) before publishing.', 'error');
-            return;
+    document.addEventListener('DOMContentLoaded', () => {
+        const resultsTab = document.getElementById('tab-content-results');
+        if (resultsTab && !resultsTab.classList.contains('hidden')) {
+            if (typeof App !== 'undefined' && App.loadCandidateResult) App.loadCandidateResult(1);
         }
-
-        await fetch('/assessment/createTestPack', { 
-            method: 'POST', 
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'}, 
-            body: `assessment_id=${ass_id}&pack_name=${encodeURIComponent(pack_name)}&user_role=${encodeURIComponent(user_role)}&template_id=${temp_id}` 
-        });
-
-        Swal.fire({
-            title: 'Published!',
-            text: 'Assessment Pack has been created and published.',
-            icon: 'success',
-            confirmButtonText: 'View Assessments'
-        }).then(() => {
-            switchMainTab('assessments');
-            location.reload();
-        });
-    }
-
-    function switchAssignTab(tabId) {
-        document.getElementById('assign-mcq').classList.add('hidden');
-        document.getElementById('assign-2m').classList.add('hidden');
-        document.getElementById(tabId).classList.remove('hidden');
-        document.getElementById('btn-assign-mcq').className = (tabId === 'assign-mcq' ? 'tab tab-active' : 'tab tab-idle');
-        document.getElementById('btn-assign-2m').className = (tabId === 'assign-2m' ? 'tab tab-active' : 'tab tab-idle');
-    }
-    function openAssignModal(id, name) {
-        document.querySelectorAll('.assign_tp_id_input').forEach(el => el.value = id);
-        document.getElementById('assign_subtitle').innerText = 'Template: ' + name;
-        openModal('assignModal');
-    }
-    function goToStep(stepNumber) {
-        // Update stepper UI
-        document.querySelectorAll('.step').forEach(s => {
-            const sn = parseInt(s.getAttribute('data-step'));
-            if(sn === stepNumber) s.classList.add('active');
-            else s.classList.remove('active');
-        });
-        
-        // Toggle content containers
-        for(let i=1; i<=4; i++) {
-            const el = document.getElementById('step-' + i + '-content');
-            if(el) el.classList.toggle('hidden', i !== stepNumber);
-        }
-    }
-
-    function updateLiveSchedule() {
-        const dur = document.getElementById('inp_duration').value;
-        const start = document.getElementById('inp_start').value;
-        const end = document.getElementById('inp_end').value;
-        
-        if(dur) document.getElementById('prev_duration').innerText = dur;
-        if(start) {
-            const d = new Date(start);
-            document.getElementById('prev_start').innerText = d.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
-            document.getElementById('prev_start_time').innerText = d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-        }
-        if(end) {
-            const d = new Date(end);
-            document.getElementById('prev_end').innerText = d.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
-            document.getElementById('prev_end_time').innerText = d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-        }
-    }
+    });
 </script>
 </body>
 </html>
