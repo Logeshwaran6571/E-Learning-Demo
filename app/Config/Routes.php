@@ -7,6 +7,8 @@ use CodeIgniter\Router\RouteCollection;
  */
 $routes->get('/', 'AssessmentController::index');
 $routes->post('/assessment/saveTemplate', 'AssessmentController::saveTemplate');
+$routes->post('assessment/deleteTemplate/(:num)', 'AssessmentController::deleteTemplate/$1');
+$routes->post('assessment/updateAssessment/(:num)', 'AssessmentController::updateAssessment/$1');
 $routes->post('assessment/createAssessment', 'AssessmentController::createAssessment');
 $routes->post('assessment/deleteAssessment/(:num)', 'AssessmentController::deleteAssessment/$1');
 $routes->post('assessment/createTestPack', 'AssessmentController::createTestPack');

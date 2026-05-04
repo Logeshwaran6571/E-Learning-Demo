@@ -47,20 +47,37 @@ class AssessmentController extends BaseController
         $templateModel = new TemplateModel();
         $sectionModel = new TemplateSectionModel();
 
-        $data = $this->request->getPost();
-        
+        // Support both JSON and Form data
+        $data = $this->request->getJSON(true);
+        if (!$data) {
+            $data = $this->request->getPost();
+        }
+
+        if (!$data) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid data']);
+        }
+
         $templateId = $templateModel->insert([
             'name' => $data['name'],
+            'paper_title' => $data['paper_title'] ?? '',
+            'duration' => $data['duration'] ?? 60,
+            'total_marks' => $data['total_marks'] ?? 0,
             'description' => $data['description'] ?? ''
         ]);
 
-        if (isset($data['sections'])) {
+        if (!$templateId) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Failed to insert template']);
+        }
+
+        if (isset($data['sections']) && is_array($data['sections'])) {
             foreach ($data['sections'] as $sec) {
                 $sectionModel->insert([
                     'template_id' => $templateId,
-                    'marks_type' => $sec['type'],
-                    'num_questions' => $sec['count'],
-                    'knowledge_type' => $sec['knowledge']
+                    'section_name' => $sec['name'] ?? '',
+                    'marks_type' => $sec['type'] ?? 'Multiple Choice',
+                    'num_questions' => $sec['count'] ?? 0,
+                    'marks_per_question' => $sec['marks'] ?? 1,
+                    'knowledge_type' => $sec['knowledge'] ?? ''
                 ]);
             }
         }
@@ -68,10 +85,26 @@ class AssessmentController extends BaseController
         return $this->response->setJSON(['status' => 'success', 'id' => $templateId]);
     }
 
+    public function deleteTemplate($id)
+    {
+        $templateModel = new TemplateModel();
+        $sectionModel = new TemplateSectionModel();
+        
+        // Delete associated sections first
+        $sectionModel->where('template_id', $id)->delete();
+        
+        // Delete the template
+        $templateModel->delete($id);
+        
+        return $this->response->setJSON(['status' => 'success']);
+    }
+
     public function createAssessment()
     {
         $model = new AssessmentModel();
-        $data = $this->request->getPost();
+        $data = $this->request->getJSON(true);
+        if (!$data) $data = $this->request->getPost();
+        
         $id = $model->insert([
             'name' => $data['name'],
             'category' => $data['category'],
@@ -84,10 +117,38 @@ class AssessmentController extends BaseController
         return $this->response->setJSON(['status' => 'success', 'id' => $id]);
     }
 
-    public function deleteAssessment($id)
+    public function updateAssessment($id)
     {
         $model = new AssessmentModel();
-        $model->delete($id);
+        $data = $this->request->getJSON(true);
+        if (!$data) $data = $this->request->getPost();
+        
+        $model->update($id, [
+            'name' => $data['name'],
+            'category' => $data['category'],
+            'code' => $data['code'],
+            'assessment_type' => $data['assessment_type'] ?? null,
+            'assigned_to' => $data['assigned_to'] ?? null,
+            'description' => substr($data['description'] ?? '', 0, 500),
+            'status' => $data['status'] ?? 'Active'
+        ]);
+        return $this->response->setJSON(['status' => 'success']);
+    }
+
+    public function deleteAssessment($id)
+    {
+        $assessmentModel = new AssessmentModel();
+        $testPackModel = new TestPackModel();
+        
+        // Delete associated test packs (and their questions)
+        $packs = $testPackModel->where('assessment_id', $id)->findAll();
+        foreach($packs as $p) {
+            $this->deletePack($p['id']);
+        }
+        
+        // Delete the assessment
+        $assessmentModel->delete($id);
+        
         return $this->response->setJSON(['status' => 'success']);
     }
 
@@ -106,8 +167,15 @@ class AssessmentController extends BaseController
 
     public function deletePack($id)
     {
-        $model = new TestPackModel();
-        $model->delete($id);
+        $testPackModel = new TestPackModel();
+        $questionModel = new QuestionModel();
+        
+        // Delete associated questions
+        $questionModel->where('test_pack_id', $id)->delete();
+        
+        // Delete the pack
+        $testPackModel->delete($id);
+        
         return $this->response->setJSON(['status' => 'success']);
     }
 
@@ -122,12 +190,13 @@ class AssessmentController extends BaseController
             $csvData = file_get_contents($file->getTempName());
             $lines = explode("\n", $csvData);
             $headers = str_getcsv(array_shift($lines));
-            
+
             foreach ($lines as $line) {
-                if (empty(trim($line))) continue;
+                if (empty(trim($line)))
+                    continue;
                 $row = str_getcsv($line);
                 $data = array_combine($headers, $row);
-                
+
                 $data['test_pack_id'] = $testPackId;
                 $data['type'] = $type;
                 $model->insert($data);
@@ -140,7 +209,7 @@ class AssessmentController extends BaseController
     public function downloadTemplate($type)
     {
         $filename = ($type == 'mcq') ? 'mcq_template.csv' : 'marks_template.csv';
-        $header = ($type == 'mcq') 
+        $header = ($type == 'mcq')
             ? "question,option_a,option_b,option_c,option_d,correct_answer,marks,knowledge_type"
             : "question,expected_answer,marks,knowledge_type";
 

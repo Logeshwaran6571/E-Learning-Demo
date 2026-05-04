@@ -565,6 +565,18 @@ if (empty($packs)) {
         .success-actions { display: flex; flex-direction: column; gap: 0.75rem; }
         .btn-view-results { background: var(--brand); color: #fff; border-radius: 12px; font-weight: 700; padding: 1rem; border: none; text-align: center; }
 
+        .custom-modal-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center; z-index: 9999;
+            padding: 20px;
+        }
+        .custom-modal {
+            background: #fff; border-radius: 20px; width: 100%; max-width: 500px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            padding: 2rem; position: relative; max-height: 90vh; overflow-y: auto;
+        }
+
         .submit-confirm-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 4000; display: flex; align-items: center; justify-content: center; }
         .confirm-card { background: #fff; border-radius: 20px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         .confirm-title { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem; }
@@ -636,6 +648,83 @@ if (empty($packs)) {
             .border-dashed { border-style: solid !important; border-width: 1px !important; border-color: #e2e8f0 !important; }
         }
     </style>
+    <style>
+        /* Template Specific Styles */
+        .template-table th { color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1.5rem 1rem; border-bottom: 1px solid #f1f5f9; }
+        .template-table td { padding: 1.25rem 1rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
+        .template-info-cell { display: flex; align-items: center; gap: 1rem; }
+        .template-icon { width: 40px; height: 40px; border-radius: 10px; background: #fff1f2; color: #dc2230; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+        .template-name { font-weight: 700; color: #1e293b; font-size: 0.95rem; margin-bottom: 2px; }
+        .template-sub { font-size: 0.75rem; color: #94a3b8; font-weight: 500; }
+        .section-count-badge { background: #fff; border: 1px solid #e2e8f0; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.75rem; color: #475569; min-width: 40px; text-align: center; }
+        .duration-text { font-weight: 800; color: #1e293b; font-size: 0.9rem; }
+        .duration-text span { color: #94a3b8; font-weight: 500; font-size: 0.75rem; margin-left: 4px; }
+        .marks-pill { background: #fff1f2; color: #dc2230; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.75rem; border: 1px solid #fee2e2; }
+        .date-text { color: #64748b; font-size: 0.85rem; font-weight: 500; }
+        
+        .action-icon-btn { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; background: #fff; color: #64748b; transition: all 0.2s; }
+        .action-icon-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .action-icon-btn.view:hover { color: #2563eb; border-color: #93c5fd; background: #eff6ff; }
+        .action-icon-btn.edit:hover { color: #059669; border-color: #6ee7b7; background: #ecfdf5; }
+        .action-icon-btn.delete:hover { color: #dc2230; border-color: #fca5a5; background: #fef2f2; }
+
+        /* Template Builder Modal */
+        .builder-modal { max-width: 1000px !important; }
+        .builder-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; }
+        .builder-form-section { display: flex; flex-direction: column; gap: 1.5rem; }
+        .preview-sidebar { background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; }
+        .preview-header { background: #1e293b; color: #fff; padding: 12px; text-align: center; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+        .preview-body { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        .preview-paper { width: 100%; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 4px; padding: 1.5rem; min-height: 300px; position: relative; }
+        .preview-logo-placeholder { width: 40px; height: 40px; border-radius: 4px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
+        .preview-title { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 8px; text-align: center; }
+        .preview-stats { display: flex; gap: 8px; margin-bottom: 16px; justify-content: center; }
+        .preview-stat-item { border: 1px solid #e2e8f0; padding: 4px 8px; border-radius: 6px; font-size: 9px; font-weight: 700; color: #475569; }
+        .preview-divider { border-top: 2px solid #dc2230; margin-bottom: 16px; }
+        .preview-instructions { background: #f8fafc; border-radius: 6px; padding: 12px; margin-bottom: 16px; }
+        .preview-instruction-title { font-size: 10px; font-weight: 800; color: #1e293b; margin-bottom: 8px; }
+        .preview-instruction-line { width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px; margin-bottom: 6px; }
+        
+        .section-row { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr 40px; gap: 1rem; align-items: center; transition: all 0.2s; }
+        .section-row:hover { border-color: #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .add-section-btn { border: 1.5px solid #dc2230; color: #dc2230; font-weight: 700; padding: 8px 16px; border-radius: 10px; font-size: 13px; background: #fff; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .add-section-btn:hover { background: #fff1f2; transform: translateY(-1px); }
+        
+        .search-container { position: relative; max-width: 300px; }
+        .search-input { width: 100%; background: #f3f4f6; border: none; border-radius: 999px; padding: 0.6rem 1rem 0.6rem 2.5rem; font-size: 13px; font-weight: 500; }
+        .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; }
+        .pagination-info { font-size: 12px; color: #64748b; font-weight: 500; }
+        .pagination-btns { display: flex; gap: 4px; }
+        .page-btn { padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid #e2e8f0; background: #fff; color: #475569; transition: all 0.2s; }
+        .page-btn:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
+        .page-btn.active { background: #dc2230; color: #fff; border-color: #dc2230; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Accordion & Pack Styles */
+        .accordion-header { cursor: pointer; transition: background 0.2s; padding: 0.75rem 1.5rem !important; }
+        .accordion-header:hover { background: #f1f5f9; }
+        .accordion-content { display: none; padding: 1rem 1.5rem; background: #fff; border-top: 1px solid #f1f5f9; }
+        .accordion-content.open { display: block; }
+        .pack-item-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; background: #f8fafc; transition: all 0.2s; display: grid; grid-template-columns: 1fr 1.5fr 1fr 1fr auto; gap: 1.5rem; align-items: center; }
+        .pack-item-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background: #fff; }
+        .pack-name-badge { width: 32px; height: 32px; border-radius: 8px; background: #fff1f2; color: #dc2230; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+        
+        .badge-status { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .status-active { background: #ecfdf5; color: #059669; }
+        .status-draft { background: #f1f5f9; color: #64748b; }
+        
+        .pack-assigned-avatars { display: flex; align-items: center; }
+        .pack-assigned-avatars img { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; margin-left: -8px; }
+        .pack-assigned-avatars img:first-child { margin-left: 0; }
+        .pack-assigned-count { font-size: 11px; color: #64748b; font-weight: 600; margin-left: 8px; }
+
+        /* Assessment Pack Tab List */
+        .pack-table th { color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.5rem; border-bottom: 1px solid #f1f5f9; }
+        .pack-table td { padding: 1.25rem 1.5rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
+    </style>
+
+
 
 </head>
 <body class="min-h-screen">
@@ -733,169 +822,304 @@ if (empty($packs)) {
                 <h3 class="text-2xl font-bold">Assessments</h3>
                 <p class="text-sm text-gray-500">Manage all assessment headers and their associated test packs.</p>
             </div>
-            <button class="btn-red-rounded" onclick="openModal('assessmentModal')">
+            <button class="btn-red-rounded" onclick="openCreateAssessment()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
                 Create New Assessment Name
             </button>
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-4">
+            <?php if(empty($assessments)): ?>
+            <div class="card p-20 text-center text-slate-400">
+                <i class="bi bi-folder2-open text-5xl mb-3 d-block"></i>
+                <p class="font-medium">No assessments created yet.</p>
+            </div>
+            <?php else: ?>
             <?php foreach ($assessments as $a): ?>
             <div class="card overflow-hidden">
-                <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-bottom accordion-header" onclick="toggleAccordion(this, 'acc-<?= $a['id'] ?>')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white rounded-lg border flex items-center justify-center text-brand font-bold">
+                <div class="bg-white flex items-center justify-between accordion-header" onclick="toggleAssessmentAccordion(<?= $a['id'] ?>)">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center font-extrabold text-lg shadow-sm border border-red-100">
                             <?= substr($a['name'], 0, 1) ?>
                         </div>
                         <div>
-                            <h4 class="font-bold text-gray-800"><?= esc($a['name']) ?></h4>
-                            <div class="flex items-center gap-2 mt-0.5">
-                                <span class="text-[10px] uppercase font-bold text-gray-400">#<?= esc($a['code'] ?? 'ASS-'.$a['id']) ?></span>
-                                <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                                <?php if($a['assessment_type']): ?>
-                                    <?php $typeClass = ($a['assessment_type'] == 'Technical') ? 'badge-tech' : 'badge-comp'; ?>
-                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded <?= $typeClass ?>"><?= esc($a['assessment_type']) ?></span>
-                                <?php endif; ?>
-                                <?php $catClass = ($a['category'] == 'Enova Assessment') ? 'badge-enova' : 'badge-fresher'; ?>
-                                <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded <?= $catClass ?>"><?= esc($a['category'] ?? 'General') ?></span>
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-bold text-slate-800 text-base mb-0"><?= esc($a['name']) ?></h4>
+                                <span class="badge-status status-active" style="padding: 2px 6px; font-size: 9px;">Active</span>
                             </div>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="text-[9px] uppercase font-bold text-slate-400 tracking-wider">#<?= esc($a['code'] ?? 'ASS-'.$a['id']) ?></span>
+                                <div class="w-1 h-1 rounded-full bg-slate-300"></div>
+                                <span class="text-[10px] font-bold text-slate-500 uppercase"><?= esc($a['category'] ?? 'General') ?></span>
+                                <div class="w-1 h-1 rounded-full bg-slate-300"></div>
+                                <span class="text-[10px] font-bold text-red-500"><?= count($a['test_packs'] ?? []) ?> Test Packs</span>
+                            </div>
+                            <?php if(!empty($a['description'])): ?>
+                            <p class="text-[10px] text-slate-400 mt-1 italic line-clamp-1 max-w-[500px]"><?= esc($a['description']) ?></p>
+                            <?php endif; ?>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <div class="action-reveal flex gap-1 mr-2">
-                            <button class="action-btn btn-edit" title="Edit Assessment" onclick="event.stopPropagation(); editAssessment(<?= $a['id'] ?>)">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <button class="w-7 h-7 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center transition-all hover:bg-blue-50 hover:text-blue-600" onclick="event.stopPropagation(); editAssessment(<?= htmlspecialchars(json_encode($a)) ?>)" title="Edit Assessment">
+                                <i class="bi bi-pencil-square text-xs"></i>
                             </button>
-                            <button class="action-btn btn-delete" title="Delete Assessment" onclick="event.stopPropagation(); deleteAssessment(<?= $a['id'] ?>)">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            <button class="w-7 h-7 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center transition-all hover:bg-red-50 hover:text-red-600" onclick="event.stopPropagation(); deleteAssessment(<?= $a['id'] ?>)" title="Delete Assessment">
+                                <i class="bi bi-trash text-xs"></i>
                             </button>
                         </div>
-                        <?php if($a['assigned_to']): ?>
-                            <?php 
-                                $roleClass = 'role-hr';
-                                if(str_contains(strtolower($a['assigned_to']), 'dev')) $roleClass = 'role-dev';
-                                if(str_contains(strtolower($a['assigned_to']), 'design')) $roleClass = 'role-design';
-                                if(str_contains(strtolower($a['assigned_to']), 'test')) $roleClass = 'role-test';
-                            ?>
-                            <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-lg <?= $roleClass ?>">FOR: <?= esc($a['assigned_to']) ?></span>
-                        <?php endif; ?>
-                        <span class="chip chip-mark"><?= esc($a['status']) ?></span>
-                        <svg class="chevron ml-2 text-gray-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                        <div class="h-6 w-px bg-slate-100"></div>
+                        <button class="w-7 h-7 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center transition-all hover:bg-slate-100 hover:text-slate-600 accordion-arrow" id="arrow-<?= $a['id'] ?>">
+                            <i class="bi bi-chevron-down text-sm"></i>
+                        </button>
                     </div>
                 </div>
                 
-                <div id="acc-<?= $a['id'] ?>" class="accordion-content">
-                    <?php if($a['description']): ?>
-                    <div class="px-6 py-3 bg-white border-b border-gray-50">
-                        <p class="text-xs text-gray-500 line-clamp-2 italic leading-relaxed">
-                            <svg class="inline-block mr-1 opacity-50" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                            <?= esc($a['description']) ?>
-                        </p>
+                <div class="accordion-content" id="content-<?= $a['id'] ?>">
+                    <div class="flex items-center justify-between mb-6">
+                        <h5 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Associated Test Packs</h5>
+                        <button class="text-xs font-bold text-red-500 hover:underline" onclick="setAssessmentAndOpenPack(<?= $a['id'] ?>)">+ Create New Pack</button>
                     </div>
-                    <?php endif; ?>
                     
-                    <div class="p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h5 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Assessment Packs</h5>
-                        <button class="text-sm font-bold text-brand hover:underline" onclick="setAssessmentAndRedirect(<?= $a['id'] ?>)">+ Add Pack</button>
-                    </div>
-                    <?php if (empty($a['test_packs'])): ?>
-                        <div class="py-4 text-center text-sm text-gray-400 italic">No packs created yet for this assessment.</div>
-                    <?php else: ?>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <?php foreach ($a['test_packs'] as $tp): ?>
-                            <div class="pack-card p-4 border rounded-xl hover:border-brand-soft hover:bg-brand-soft transition-colors cursor-pointer relative" onclick="event.stopPropagation()">
-                                <div class="action-reveal absolute top-2 right-2 flex gap-1">
-                                    <button class="action-btn btn-edit" title="Edit Pack" onclick="editPack(<?= $tp['id'] ?>)">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                    </button>
-                                    <button class="action-btn btn-delete" title="Delete Pack" onclick="deletePack(<?= $tp['id'] ?>)">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                    </button>
-                                </div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <div class="font-bold text-sm"><?= esc($tp['pack_name']) ?></div>
-                                    <span class="text-[9px] bg-white px-2 py-0.5 rounded border border-gray-100 uppercase font-extrabold text-gray-500"><?= esc($tp['user_role']) ?></span>
-                                </div>
-                                <div class="text-[11px] text-gray-500 mb-3">Template: <span class="font-semibold text-gray-700"><?= esc($tp['template']['name'] ?? 'N/A') ?></span></div>
-                                <button class="btn-ghost w-full justify-center h-8 text-[11px]" onclick="openAssignModal(<?= $tp['id'] ?>, '<?= esc($tp['template']['name'] ?? '') ?>')">Assign Questions</button>
-                            </div>
-                            <?php endforeach; ?>
+                    <div class="space-y-3">
+                        <?php if(empty($a['test_packs'])): ?>
+                        <div class="p-6 border-2 border-dashed border-slate-100 rounded-2xl text-center text-slate-400 text-sm">
+                            No test packs assigned to this assessment yet.
                         </div>
-                    <?php endif; ?>
+                        <?php else: ?>
+                        <?php foreach($a['test_packs'] as $tp): ?>
+                        <div class="pack-item-card">
+                            <div class="flex items-center gap-3">
+                                <div class="pack-name-badge"><?= substr($tp['pack_name'], 0, 1) ?></div>
+                                <div>
+                                    <div class="font-bold text-slate-800"><?= esc($tp['pack_name']) ?></div>
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"><?= esc($tp['user_role'] ?? 'Access Control') ?></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center"><i class="bi bi-file-earmark-text"></i></div>
+                                <div class="text-xs">
+                                    <div class="font-bold text-slate-700"><?= esc($tp['template']['name'] ?? 'Custom Layout') ?></div>
+                                    <div class="text-slate-400 font-medium">Standard Template</div>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="badge-status status-active">Live</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button class="action-icon-btn view" title="Manage Questions" onclick="manageQuestions(<?= $tp['id'] ?>)">
+                                    <i class="bi bi-gear-fill"></i>
+                                </button>
+                                <button class="action-icon-btn delete" title="Delete Pack" onclick="deletePack(<?= $tp['id'] ?>)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
             <?php endforeach; ?>
+            <?php endif; ?>
         </div>
     </main>
+
 
     <!-- 2. CREATE TEMPLATE TAB -->
     <main id="tab-content-create-template" class="hidden px-8 py-10">
-        <div class="flex items-center justify-between mb-8">
-            <div>
-                <h3 class="text-2xl font-bold">Template Management</h3>
-                <p class="text-sm text-gray-500">Design question paper structures</p>
-            </div>
-            <button class="btn-red-rounded" onclick="openModal('templateModal')">+ Design New Template</button>
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <?php foreach ($templates as $t): ?>
-            <article class="card p-6">
-                <header class="flex items-start justify-between mb-6">
-                    <div>
-                        <h4 class="text-lg font-bold"><?= esc($t['name']) ?></h4>
-                        <p class="text-xs text-gray-400 mt-1">Structured with <?= count($t['sections']) ?> sections</p>
-                    </div>
-                    <button class="icon-btn text-red-500 border-none bg-red-50 hover:bg-red-100 h-8 w-8">✕</button>
-                </header>
-                <div class="space-y-3">
-                    <?php foreach ($t['sections'] as $s): ?>
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                        <div class="flex items-center gap-3">
-                            <span class="chip <?= $s['marks_type'] == 'MCQ' ? 'chip-mcq' : 'chip-2m' ?>"><?= esc($s['marks_type']) ?></span>
-                            <span class="text-xs font-bold"><?= esc($s['num_questions']) ?> Questions</span>
+        <div class="card p-8">
+            <div class="flex items-start justify-between mb-8">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center">
+                            <i class="bi bi-stack"></i>
                         </div>
-                        <span class="text-[10px] font-bold text-gray-400"><?= esc($s['knowledge_type']) ?></span>
+                        <h3 class="text-xl font-extrabold text-slate-800">Saved Templates</h3>
                     </div>
-                    <?php endforeach; ?>
+                    <p class="text-sm text-slate-500 font-medium">Manage and reuse your question paper configurations.</p>
                 </div>
-            </article>
-            <?php endforeach; ?>
+                <button class="btn-red-rounded" style="padding: 10px 24px; border-radius: 999px;" onclick="openTemplateBuilder()">
+                    <i class="bi bi-plus-lg me-1"></i> Create Template
+                </button>
+            </div>
+
+            <div class="flex items-center justify-between mb-6">
+                <div class="search-container">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Search templates...">
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="w-full template-table">
+                    <thead>
+                        <tr>
+                            <th class="text-left">Template Info</th>
+                            <th class="text-center">Sections</th>
+                            <th class="text-center">Duration</th>
+                            <th class="text-center">Total Marks</th>
+                            <th class="text-center">Created Date</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if(empty($templates)): ?>
+                        <tr>
+                            <td colspan="6" class="text-center py-20">
+                                <div class="flex flex-col items-center gap-3 text-slate-400">
+                                    <i class="bi bi-folder2-open text-4xl"></i>
+                                    <p class="font-medium">No templates found. Create your first one!</p>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php else: ?>
+                        <?php foreach($templates as $t): ?>
+                        <tr>
+                            <td class="text-left">
+                                <div class="template-info-cell">
+                                    <div class="template-icon">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </div>
+                                    <div>
+                                        <div class="template-name"><?= esc($t['name']) ?></div>
+                                        <div class="template-sub"><?= esc($t['description'] ?: 'No subtitle provided') ?></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="section-count-badge"><?= count($t['sections']) ?></span>
+                            </td>
+                            <td class="text-center">
+                                <div class="duration-text"><?= esc($t['duration'] ?? '60') ?> <span>min</span></div>
+                            </td>
+                            <td class="text-center">
+                                <span class="marks-pill"><?= esc($t['total_marks'] ?? '100') ?> Marks</span>
+                            </td>
+                            <td class="text-center text-slate-500 font-medium text-sm">
+                                <?= date('d M Y', strtotime($t['created_at'])) ?>
+                            </td>
+                            <td class="text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button class="action-icon-btn view" title="Preview" onclick="previewTemplate(<?= $t['id'] ?>)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="action-icon-btn edit" title="Edit" onclick="editTemplate(<?= $t['id'] ?>)">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <button class="action-icon-btn delete" title="Delete" onclick="deleteTemplate(<?= $t['id'] ?>)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-container mt-6">
+                <div class="pagination-info">Showing 1 to <?= count($templates) ?> of <?= count($templates) ?> entries</div>
+                <div class="pagination-btns">
+                    <button class="page-btn" disabled>Previous</button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn" disabled>Next</button>
+                </div>
+            </div>
         </div>
     </main>
 
-    <!-- 3. ASSESSMENT PACK TAB (Updated to trigger Modal) -->
+    <!-- 3. ASSESSMENT PACK TAB -->
     <main id="tab-content-test-creation" class="hidden px-8 py-10">
-        <div class="flex items-center justify-between mb-8">
-            <div>
-                <h3 class="text-2xl font-bold">Assessment Packs</h3>
-                <p class="text-sm text-gray-500">Design, deploy, and analyze performance assessments across the organization.</p>
+        <div class="card p-8">
+            <div class="flex items-start justify-between mb-8">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center">
+                            <i class="bi bi-plus-circle-fill text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-extrabold text-slate-800">Assessment Packs</h3>
+                    </div>
+                    <p class="text-sm text-slate-500 font-medium">Design, deploy, and analyze performance assessments across the organization.</p>
+                </div>
+                <button class="btn-red-rounded" style="padding: 10px 24px; border-radius: 10px;" onclick="openModal('createPackModal')">
+                    <i class="bi bi-plus me-1 text-lg"></i> Create Pack
+                </button>
             </div>
-            <button class="btn-red-rounded" onclick="openPackWizard()">
-                <i class="bi bi-plus-lg me-1"></i> Create Pack
-            </button>
-        </div>
 
-        <div class="card overflow-hidden p-3 border-0 shadow-sm">
             <div class="table-responsive">
-                <table class="table table-hover mb-0 w-full" id="assessmentPacksTable">
+                <table class="w-full pack-table">
                     <thead>
-                        <tr class="bg-[#f8fafc] border-b border-[#f1f5f9]">
-                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Pack Name</th>
-                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Template</th>
-                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Status</th>
-                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase">Assigned</th>
-                            <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase text-right">Actions</th>
+                        <tr>
+                            <th class="text-left">Pack Name</th>
+                            <th class="text-left">Template</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#f1f5f9]">
-                        <!-- Dynamic content by DataTables -->
+                    <tbody>
+                        <?php 
+                            $allPacks = [];
+                            foreach($assessments as $a) {
+                                foreach($a['test_packs'] as $tp) {
+                                    $tp['assessment_name'] = $a['name'];
+                                    $allPacks[] = $tp;
+                                }
+                            }
+                        ?>
+                        <?php if(empty($allPacks)): ?>
+                        <tr>
+                            <td colspan="4" class="text-center py-20">
+                                <div class="flex flex-col items-center gap-3 text-slate-400">
+                                    <i class="bi bi-collection text-4xl"></i>
+                                    <p class="font-medium">No assessment packs created yet.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php else: ?>
+                        <?php foreach($allPacks as $tp): ?>
+                        <tr>
+                            <td>
+                                <div class="flex items-center gap-3">
+                                    <div class="pack-name-badge"><?= substr($tp['pack_name'], 0, 1) ?></div>
+                                    <div>
+                                        <div class="font-bold text-slate-800"><?= esc($tp['pack_name']) ?></div>
+                                        <div class="text-[10px] font-bold text-slate-400 uppercase"><?= esc($tp['assessment_name']) ?></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="flex items-center gap-2">
+                                    <i class="bi bi-file-earmark-text text-blue-500"></i>
+                                    <span class="text-sm font-bold text-slate-600"><?= esc($tp['template']['name'] ?? 'N/A') ?></span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge-status status-active">Active</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button class="action-icon-btn view" title="Manage" onclick="manageQuestions(<?= $tp['id'] ?>)">
+                                        <i class="bi bi-gear"></i>
+                                    </button>
+                                    <button class="action-icon-btn edit" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="action-icon-btn delete" title="Delete" onclick="deletePack(<?= $tp['id'] ?>)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
+
 
     <main id="tab-content-results" class="hidden px-8 py-10">
         <div class="flex items-center justify-between mb-8">
@@ -1098,29 +1322,156 @@ if (empty($packs)) {
     </main>
 </div>
 
-<!-- MODAL: CREATE TEMPLATE -->
-<div id="templateModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeModal('templateModal')">
-  <div class="custom-modal">
-    <h3 class="text-xl font-extrabold mb-4">Create Question Paper Template</h3>
-    <div class="grid gap-4 mb-4">
-        <input id="temp_name" class="input" placeholder="Template Name" />
-        <textarea id="temp_desc" class="input" placeholder="Description"></textarea>
-    </div>
-    <div class="border p-4 rounded-xl mb-4">
-        <div class="grid grid-cols-3 gap-3 mb-3">
-            <select id="sec_type" class="select"><option>MCQ</option><option>2 Marks</option></select>
-            <input id="sec_count" type="number" class="input" placeholder="Questions" />
-            <input id="sec_knowledge" class="input" placeholder="Knowledge Type" />
+<!-- MODAL: QUESTION PAPER TEMPLATE BUILDER -->
+<div id="templateBuilderModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeTemplateBuilder()">
+  <div class="custom-modal builder-modal">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center">
+                <i class="bi bi-pencil-fill"></i>
+            </div>
+            <h3 class="text-xl font-extrabold text-slate-800">Question Paper Template Builder</h3>
         </div>
-        <button class="btn-ghost" onclick="addSectionRow()">+ Add Section</button>
+        <button class="text-slate-400 hover:text-slate-600 transition-colors" onclick="closeTemplateBuilder()">
+            <i class="bi bi-x-lg text-xl"></i>
+        </button>
     </div>
-    <div id="section_preview" class="space-y-2 mb-4"></div>
-    <div class="flex justify-end gap-2">
-      <button class="btn-ghost" onclick="closeModal('templateModal')">Cancel</button>
-      <button class="btn-red" onclick="saveTemplate()">Save Template</button>
+
+    <div class="builder-grid">
+        <div class="builder-form-section">
+            <div class="grid gap-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Template Storage Name <span class="text-red-500">*</span></label>
+                    <input id="builder_storage_name" class="input" placeholder="e.g., Q1 Technical Exam Template" oninput="updateLivePreview()" />
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Question Paper Title <span class="text-red-500">*</span></label>
+                    <input id="builder_paper_title" class="input" placeholder="e.g., Annual Technical Competency Exam" oninput="updateLivePreview()" />
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-1">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Logo Image</label>
+                        <div class="flex gap-2">
+                            <input type="file" id="builder_logo" class="hidden" onchange="handleLogoChange(this)" />
+                            <label for="builder_logo" class="btn-ghost w-full justify-center py-2 h-[42px] cursor-pointer">Choose File</label>
+                        </div>
+                        <div id="builder_logo_name" class="text-[10px] text-slate-400 mt-1 truncate">No file chosen</div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Duration (Min) <span class="text-red-500">*</span></label>
+                        <input id="builder_duration" type="number" class="input" value="60" oninput="updateLivePreview()" />
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Total Marks <span class="text-red-500">*</span></label>
+                        <input id="builder_total_marks" type="number" class="input" value="100" oninput="updateLivePreview()" />
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest">Template Section Structure <span class="text-red-500">*</span></label>
+                    <button class="add-section-btn" onclick="addBuilderSection()">
+                        <i class="bi bi-plus-lg"></i> Add Section
+                    </button>
+                </div>
+                
+                <div id="builder_sections_container" class="space-y-3">
+                    <!-- Dynamic Section Rows -->
+                    <div class="section-row">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Section Name <span class="text-red-500">*</span></label>
+                            <input class="input py-1.5 sec-name" placeholder="Section A" value="Section A" oninput="updateLivePreview()" />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Questions <span class="text-red-500">*</span></label>
+                            <input type="number" class="input py-1.5 sec-count" value="10" oninput="calculateTotalMarks(); updateLivePreview();" />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Type <span class="text-red-500">*</span></label>
+                            <select class="select py-1.5 sec-type" onchange="updateLivePreview()">
+                                <option>Multiple Choice</option>
+                                <option>Short Answer</option>
+                                <option>True / False</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Marks <span class="text-red-500">*</span></label>
+                            <input type="number" class="input py-1.5 sec-marks" value="1" oninput="calculateTotalMarks(); updateLivePreview();" />
+                        </div>
+                        <div class="flex justify-center pt-4">
+                            <button class="text-red-400 hover:text-red-600 transition-colors" onclick="removeBuilderSection(this)">
+                                <i class="bi bi-trash text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 mt-4 pt-6 border-t border-slate-100">
+                <button class="btn-ghost py-2.5 px-8 font-bold" onclick="closeTemplateBuilder()">Cancel</button>
+                <div class="flex-1"></div>
+                <button class="btn-outline py-2.5 px-6 font-bold flex items-center gap-2" style="border: 1.5px solid #dc2230; color: #dc2230;" onclick="previewFullPaper()">
+                    Preview <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn-red py-2.5 px-6 font-bold flex items-center gap-2" style="border-radius: 10px;" onclick="saveTemplateBuilder()">
+                    Save Template Layout <i class="bi bi-save"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Live Preview Sidebar -->
+        <div class="preview-sidebar">
+            <div class="preview-header">Live Template Preview</div>
+            <div class="preview-body">
+                <div class="preview-paper">
+                    <div id="lp_logo" class="preview-logo-placeholder">
+                        <i class="bi bi-image text-slate-300"></i>
+                    </div>
+                    <div id="lp_title" class="preview-title">eNova Technology Solutions</div>
+                    <div class="preview-stats">
+                        <div class="preview-stat-item">Duration: <span id="lp_duration">60</span> Mins</div>
+                        <div class="preview-stat-item">Total Marks: <span id="lp_total_marks">10</span></div>
+                    </div>
+                    <div class="preview-divider"></div>
+                    
+                    <div class="flex gap-4 mb-4">
+                        <div class="flex-1">
+                            <div class="text-[7px] font-bold text-slate-400 uppercase mb-1">Candidate Name:</div>
+                            <div class="border-b border-dotted border-slate-300 w-full"></div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-[7px] font-bold text-slate-400 uppercase mb-1">Roll Number:</div>
+                            <div class="border-b border-dotted border-slate-300 w-full"></div>
+                        </div>
+                    </div>
+
+                    <div class="preview-instructions">
+                        <div class="preview-instruction-title">Important Instructions</div>
+                        <div class="preview-instruction-line" style="width: 80%;"></div>
+                        <div class="preview-instruction-line" style="width: 90%;"></div>
+                        <div class="preview-instruction-line" style="width: 70%;"></div>
+                    </div>
+
+                    <div id="lp_sections" class="space-y-4 mt-4">
+                        <!-- Dynamic Section Preview -->
+                        <div>
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-1 mb-2">
+                                <span class="text-[9px] font-bold text-slate-800">Q1.</span>
+                                <span class="text-[8px] font-bold text-slate-400">[1 Mark]</span>
+                            </div>
+                            <div class="preview-instruction-line" style="width: 100%; height: 3px; background: #f1f5f9;"></div>
+                            <div class="preview-instruction-line" style="width: 100%; height: 3px; background: #f1f5f9;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
   </div>
 </div>
+
 
 <!-- MODAL: NEW ASSESSMENT -->
 <div id="assessmentModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeModal('assessmentModal')">
@@ -2073,13 +2424,30 @@ if (empty($packs)) {
                         <p class="wizard-step-subtitle">Choose an assessment template to configure this test.</p>
 
                         <div class="mb-4">
-                            <label class="form-label">Assessment Template <span class="text-danger">*</span></label>
-                            <select class="form-select" id="baseTemplateSelect" onchange="App.onTemplateSelect(this.value)">
-                                <option selected disabled>— Select a template —</option>
-                                <?php foreach($templates as $t): ?>
-                                <option value="<?= $t['id'] ?>" data-json='<?= json_encode($t) ?>'><?= esc($t['name']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <label class="form-label">Test Pack Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="pack_wizard_name" placeholder="e.g., Python Developer Pack - Q1 2026" />
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Assessment Name <span class="text-danger">*</span></label>
+                                <select class="form-select" id="packAssessmentName">
+                                    <option selected disabled>— Select Assessment Name —</option>
+                                    <?php foreach($assessments as $a): ?>
+                                    <option value="<?= $a['id'] ?>"><?= esc($a['name']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <p class="text-[10px] text-slate-400 mt-1">Link this pack to a created assessment header.</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Assessment Template <span class="text-danger">*</span></label>
+                                <select class="form-select" id="baseTemplateSelect" onchange="App.onTemplateSelect(this.value)">
+                                    <option selected disabled>— Select a template —</option>
+                                    <?php foreach($templates as $t): ?>
+                                    <option value="<?= $t['id'] ?>" data-json='<?= json_encode($t) ?>'><?= esc($t['name']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="row g-3 mb-4">
@@ -2668,6 +3036,9 @@ if (empty($packs)) {
 <script>
     // --- Global Helpers & Navigation ---
     function switchMainTab(tabId) {
+        // Save current tab to localStorage
+        localStorage.setItem('activeAssessmentTab', tabId);
+
         document.querySelectorAll('.module-tab').forEach(t => {
             const attr = t.getAttribute('onclick');
             if (attr && attr.includes(`'${tabId}'`)) t.classList.add('active');
@@ -2687,6 +3058,16 @@ if (empty($packs)) {
         }
     }
 
+    // Restore tab on load
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedTab = localStorage.getItem('activeAssessmentTab');
+        if (savedTab) {
+            switchMainTab(savedTab);
+        } else {
+            switchMainTab('assessments');
+        }
+    });
+
     function openModal(id) { 
         if (id === 'createPackModal') { openPackWizard(); return; }
         const el = document.getElementById(id);
@@ -2696,6 +3077,308 @@ if (empty($packs)) {
         const el = document.getElementById(id);
         if(el) el.classList.remove('open'); 
     }
+
+    /* Template Builder Functions */
+    function openTemplateBuilder() {
+        document.getElementById('templateBuilderModal').classList.add('open');
+        calculateTotalMarks();
+        updateLivePreview();
+    }
+
+    function closeTemplateBuilder() {
+        document.getElementById('templateBuilderModal').classList.remove('open');
+    }
+
+    function addBuilderSection() {
+        const container = document.getElementById('builder_sections_container');
+        const count = container.querySelectorAll('.section-row').length;
+        const char = String.fromCharCode(65 + count);
+        
+        const row = document.createElement('div');
+        row.className = 'section-row';
+        row.innerHTML = `
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Section Name <span class="text-red-500">*</span></label>
+                <input class="input py-1.5 sec-name" placeholder="Section ${char}" value="Section ${char}" oninput="updateLivePreview()" />
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Questions <span class="text-red-500">*</span></label>
+                <input type="number" class="input py-1.5 sec-count" value="5" oninput="calculateTotalMarks(); updateLivePreview();" />
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Type <span class="text-red-500">*</span></label>
+                <select class="select py-1.5 sec-type" onchange="updateLivePreview()">
+                    <option>Multiple Choice</option>
+                    <option>Short Answer</option>
+                    <option>True / False</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Marks <span class="text-red-500">*</span></label>
+                <input type="number" class="input py-1.5 sec-marks" value="2" oninput="calculateTotalMarks(); updateLivePreview();" />
+            </div>
+            <div class="flex justify-center pt-4">
+                <button class="text-red-400 hover:text-red-600 transition-colors" onclick="removeBuilderSection(this)">
+                    <i class="bi bi-trash text-lg"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(row);
+        calculateTotalMarks();
+        updateLivePreview();
+    }
+
+    function removeBuilderSection(btn) {
+        btn.closest('.section-row').remove();
+        calculateTotalMarks();
+        updateLivePreview();
+    }
+
+    function calculateTotalMarks() {
+        let total = 0;
+        document.querySelectorAll('.section-row').forEach(row => {
+            const count = parseInt(row.querySelector('.sec-count').value) || 0;
+            const marks = parseInt(row.querySelector('.sec-marks').value) || 0;
+            total += (count * marks);
+        });
+        document.getElementById('builder_total_marks').value = total;
+        document.getElementById('lp_total_marks').textContent = total;
+    }
+
+    function handleLogoChange(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('lp_logo').innerHTML = `<img src="${e.target.result}" class="w-full h-full object-contain" />`;
+                document.getElementById('builder_logo_name').textContent = input.files[0].name;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function updateLivePreview() {
+        const title = document.getElementById('builder_paper_title').value || 'eNova Technology Solutions';
+        const duration = document.getElementById('builder_duration').value || '60';
+        const totalMarks = document.getElementById('builder_total_marks').value || '0';
+        
+        document.getElementById('lp_title').textContent = title;
+        document.getElementById('lp_duration').textContent = duration;
+        document.getElementById('lp_total_marks').textContent = totalMarks;
+        
+        const sectionsContainer = document.getElementById('lp_sections');
+        sectionsContainer.innerHTML = '';
+        
+        const sectionRows = document.querySelectorAll('.section-row');
+        if (sectionRows.length === 0) {
+            sectionsContainer.innerHTML = '<div class="text-[9px] text-slate-300 italic text-center py-4">No sections added yet</div>';
+            return;
+        }
+
+        sectionRows.forEach((row, idx) => {
+            const name = row.querySelector('.sec-name').value || `Section ${String.fromCharCode(65 + idx)}`;
+            const count = row.querySelector('.sec-count').value || '0';
+            const marks = row.querySelector('.sec-marks').value || '0';
+            
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'mb-3 animate-fadeIn';
+            sectionDiv.innerHTML = `
+                <div class="flex justify-between items-end mb-1">
+                    <div class="text-[8px] font-extrabold text-red-500 uppercase tracking-widest">${name}</div>
+                    <div class="text-[7px] font-bold text-slate-400">${count} Qns × ${marks} M</div>
+                </div>
+                <div class="space-y-1.5 border-l-2 border-slate-50 pl-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[9px] font-bold text-slate-700">Q1. [Sample Question]</span>
+                        <span class="text-[8px] font-bold text-slate-400">[${marks} M]</span>
+                    </div>
+                    <div class="h-1 bg-slate-50 rounded-full w-full"></div>
+                    <div class="h-1 bg-slate-50 rounded-full w-3/4"></div>
+                </div>
+            `;
+            sectionsContainer.appendChild(sectionDiv);
+        });
+    }
+
+    function previewFullPaper() {
+        const title = document.getElementById('builder_paper_title').value || 'Question Paper';
+        const duration = document.getElementById('builder_duration').value || '60';
+        const totalMarks = document.getElementById('builder_total_marks').value || '0';
+        const logoImg = document.getElementById('lp_logo').innerHTML;
+        
+        const container = document.getElementById('previewPaperContent');
+        
+        let sectionsHtml = '';
+        document.querySelectorAll('.section-row').forEach((row, idx) => {
+            const name = row.querySelector('.sec-name').value || 'Section';
+            const count = row.querySelector('.sec-count').value || '0';
+            const type = row.querySelector('.sec-type').value;
+            const marks = row.querySelector('.sec-marks').value || '0';
+            
+            sectionsHtml += `
+                <div class="mb-5 px-5">
+                    <div class="d-flex justify-content-between align-items-center mb-4 border-b pb-2">
+                        <h3 class="h5 fw-bold text-[#dc2230] mb-0 text-uppercase tracking-wider">${name}</h3>
+                        <div class="bg-[#fff1f2] text-[#dc2230] px-3 py-1.5 rounded-[8px] text-[11px] font-bold d-flex align-items-center gap-2">
+                             <i class="bi bi-list-ul"></i> ${count} Questions | ${marks} Marks each
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-2 text-[#64748b] text-[11px] font-bold">
+                            <i class="bi bi-info-circle-fill"></i> Question Type: ${type}
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <div class="fw-bold text-[#1e293b] text-[15px]">Q1. [Sample Question Text for ${name}]</div>
+                            <div class="text-[#1e293b] font-bold text-sm">[${marks} Mark]</div>
+                        </div>
+                        <div class="ps-2">
+                            ${type === 'Short Answer' ? `
+                                <div class="border border-2 border-dashed border-[#e2e8f0] rounded-[12px] p-4 text-gray-400 text-[12px] bg-[#fcfcfd]">
+                                    Student response area...
+                                </div>
+                            ` : `
+                                <div class="row g-3">
+                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">A) Option 1</div></div>
+                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">B) Option 2</div></div>
+                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">C) Option 3</div></div>
+                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">D) Option 4</div></div>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = `
+            <div class="bg-white mx-auto shadow-sm" style="max-width: 900px; min-height: 1000px; padding: 40px 0;">
+                <div class="text-center mb-5 px-5">
+                    <div class="mx-auto mb-4" style="width: 80px;">${logoImg.includes('bi-image') ? '<img src="https://via.placeholder.com/80" class="rounded">' : logoImg}</div>
+                    <h2 class="fw-bold text-[#1e293b] mb-4 text-2xl">${title}</h2>
+                    
+                    <div class="d-flex justify-content-center gap-4 mb-4">
+                        <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[15px] min-w-[180px] shadow-sm">
+                            <div class="w-10 h-10 bg-[#fff1f2] text-[#dc2230] rounded-full d-flex align-items-center justify-content-center"><i class="bi bi-clock"></i></div>
+                            <div class="text-start">
+                                <div class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">Duration</div>
+                                <div class="fw-bold text-[#1e293b] text-md">${duration} Minutes</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[15px] min-w-[180px] shadow-sm">
+                            <div class="w-10 h-10 bg-[#fff1f2] text-[#dc2230] rounded-full d-flex align-items-center justify-content-center"><i class="bi bi-star"></i></div>
+                            <div class="text-start">
+                                <div class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">Total Marks</div>
+                                <div class="fw-bold text-[#1e293b] text-md">${totalMarks} Marks</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="preview-divider mx-5"></div>
+                </div>
+
+                <div class="row g-3 mb-5 px-5">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-[#fcfcfd] border border-[#e2e8f0] rounded-[15px]">
+                            <label class="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mb-2 d-block">Candidate Name</label>
+                            <div class="border-b border-dotted border-[#cbd5e1] pb-1 text-gray-300 text-[10px] letter-spacing-[2px]">............................................................</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-[#fcfcfd] border border-[#e2e8f0] rounded-[15px]">
+                            <label class="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mb-2 d-block">Roll Number / ID</label>
+                            <div class="border-b border-dotted border-[#cbd5e1] pb-1 text-gray-300 text-[10px] letter-spacing-[2px]">............................................................</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mx-5 p-4 bg-[#fcfcfd] rounded-[15px] mb-5 border border-l-[4px] border-l-[#dc2230]">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-info-circle-fill text-[#dc2230]"></i>
+                        <h4 class="mb-0 fw-bold text-[#1e293b] text-md">Important Instructions</h4>
+                    </div>
+                    <ul class="text-[12px] text-[#475569] mb-0 ps-3">
+                        <li class="mb-2">Read all questions carefully before attempting.</li>
+                        <li class="mb-2">This paper consists of ${document.querySelectorAll('.section-row').length} distinct sections.</li>
+                        <li class="mb-2">All questions are mandatory unless specified otherwise.</li>
+                        <li>The total duration for this assessment is ${duration} minutes.</li>
+                    </ul>
+                </div>
+
+                <div>${sectionsHtml}</div>
+
+                <div class="text-center mt-5 pt-4 text-[#94a3b8] text-[11px]">
+                    <div class="fw-bold text-[#1e293b] mb-1">© 2026 eNova Technology Solutions</div>
+                    <div>Generated via eNova Assessment Management Portal</div>
+                </div>
+            </div>
+        `;
+
+        const modal = new bootstrap.Modal(document.getElementById('paperPreviewModal'));
+        modal.show();
+    }
+
+    async function saveTemplateBuilder() {
+        const name = document.getElementById('builder_storage_name').value;
+        const paperTitle = document.getElementById('builder_paper_title').value;
+        const duration = document.getElementById('builder_duration').value;
+        const totalMarks = document.getElementById('builder_total_marks').value;
+        
+        if (!name || !paperTitle) {
+            Swal.fire('Required Fields', 'Please fill in all required fields marked with *', 'warning');
+            return;
+        }
+
+        const sections = [];
+        document.querySelectorAll('.section-row').forEach(row => {
+            sections.push({
+                name: row.querySelector('.sec-name').value,
+                count: row.querySelector('.sec-count').value,
+                type: row.querySelector('.sec-type').value,
+                marks: row.querySelector('.sec-marks').value
+            });
+        });
+
+        if (sections.length === 0) {
+            Swal.fire('No Sections', 'Please add at least one section to your template.', 'warning');
+            return;
+        }
+
+        // Prepare data for submission
+        const data = {
+            name: name,
+            paper_title: paperTitle,
+            duration: duration,
+            total_marks: totalMarks,
+            sections: sections
+        };
+
+        try {
+            const response = await fetch('/assessment/saveTemplate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                Swal.fire({ 
+                    title: 'Template Saved', 
+                    text: 'Your template has been created successfully', 
+                    icon: 'success', 
+                    timer: 1500, 
+                    showConfirmButton: false 
+                }).then(() => {
+                    closeTemplateBuilder();
+                    location.reload();
+                });
+            } else {
+                Swal.fire('Error', result.message || 'Failed to save template', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving template:', error);
+            Swal.fire('Error', 'An unexpected error occurred', 'error');
+        }
+    }
+
 
     // --- Assessment Pack Wizard Logic ---
     let currentPackStep = 1;
@@ -3085,13 +3768,220 @@ if (empty($packs)) {
         }, { once: true });
     };
 
+    async function previewTemplate(id) {
+        // Fetch or find template data from the global templates array if we want to avoid another request
+        // But for simplicity and to ensure fresh data, let's just use what's already in the PHP array
+        // We'll pass the template data to the preview paper function
+        const templates = <?= json_encode($templates) ?>;
+        const t = templates.find(item => item.id == id);
+        if(!t) return;
+
+        const container = document.getElementById('previewPaperContent');
+        let sectionsHtml = '';
+        
+        t.sections.forEach((s, idx) => {
+            sectionsHtml += `
+                <div class="mb-5 px-5">
+                    <div class="d-flex justify-content-between align-items-center mb-4 border-b pb-2">
+                        <h3 class="h5 fw-bold text-[#dc2230] mb-0 text-uppercase tracking-wider">${s.section_name || 'Section ' + String.fromCharCode(65+idx)}</h3>
+                        <div class="bg-[#fff1f2] text-[#dc2230] px-3 py-1.5 rounded-[8px] text-[11px] font-bold d-flex align-items-center gap-2">
+                             <i class="bi bi-list-ul"></i> ${s.num_questions} Questions | ${s.marks_per_question} Marks each
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-2 text-[#64748b] text-[11px] font-bold">
+                            <i class="bi bi-info-circle-fill"></i> Question Type: ${s.marks_type}
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <div class="fw-bold text-[#1e293b] text-[15px]">Q1. [Sample Question for ${s.section_name}]</div>
+                            <div class="text-[#1e293b] font-bold text-sm">[${s.marks_per_question} Mark]</div>
+                        </div>
+                        <div class="ps-2">
+                            ${s.marks_type === 'Short Answer' || s.marks_type === '2-Mark' ? `
+                                <div class="border border-2 border-dashed border-[#e2e8f0] rounded-[12px] p-4 text-gray-400 text-[12px] bg-[#fcfcfd]">
+                                    Student response area...
+                                </div>
+                            ` : `
+                                <div class="row g-3">
+                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">A) Option 1</div></div>
+                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">B) Option 2</div></div>
+                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">C) Option 3</div></div>
+                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">D) Option 4</div></div>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = `
+            <div class="bg-white mx-auto shadow-sm" style="max-width: 900px; min-height: 1000px; padding: 40px 0;">
+                <div class="text-center mb-5 px-5">
+                    <img src="https://via.placeholder.com/80" class="mx-auto mb-4 rounded">
+                    <h2 class="fw-bold text-[#1e293b] mb-4 text-2xl">${t.paper_title || t.name}</h2>
+                    
+                    <div class="d-flex justify-content-center gap-4 mb-4">
+                        <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[15px] min-w-[180px] shadow-sm">
+                            <div class="w-10 h-10 bg-[#fff1f2] text-[#dc2230] rounded-full d-flex align-items-center justify-content-center"><i class="bi bi-clock"></i></div>
+                            <div class="text-start">
+                                <div class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">Duration</div>
+                                <div class="fw-bold text-[#1e293b] text-md">${t.duration || 60} Minutes</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[15px] min-w-[180px] shadow-sm">
+                            <div class="w-10 h-10 bg-[#fff1f2] text-[#dc2230] rounded-full d-flex align-items-center justify-content-center"><i class="bi bi-star"></i></div>
+                            <div class="text-start">
+                                <div class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">Total Marks</div>
+                                <div class="fw-bold text-[#1e293b] text-md">${t.total_marks || 0} Marks</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="preview-divider mx-5"></div>
+                </div>
+
+                <div class="row g-3 mb-5 px-5">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-[#fcfcfd] border border-[#e2e8f0] rounded-[15px]">
+                            <label class="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mb-2 d-block">Candidate Name</label>
+                            <div class="border-b border-dotted border-[#cbd5e1] pb-1 text-gray-300 text-[10px] letter-spacing-[2px]">............................................................</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-[#fcfcfd] border border-[#e2e8f0] rounded-[15px]">
+                            <label class="text-[10px] font-bold text-[#64748b] uppercase tracking-widest mb-2 d-block">Roll Number / ID</label>
+                            <div class="border-b border-dotted border-[#cbd5e1] pb-1 text-gray-300 text-[10px] letter-spacing-[2px]">............................................................</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mx-5 p-4 bg-[#fcfcfd] rounded-[15px] mb-5 border border-l-[4px] border-l-[#dc2230]">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-info-circle-fill text-[#dc2230]"></i>
+                        <h4 class="mb-0 fw-bold text-[#1e293b] text-md">Important Instructions</h4>
+                    </div>
+                    <ul class="text-[12px] text-[#475569] mb-0 ps-3">
+                        <li class="mb-2">Read all questions carefully before attempting.</li>
+                        <li class="mb-2">This paper consists of ${t.sections.length} distinct sections.</li>
+                        <li class="mb-2">All questions are mandatory unless specified otherwise.</li>
+                        <li>The total duration for this assessment is ${t.duration || 60} minutes.</li>
+                    </ul>
+                </div>
+
+                <div>${sectionsHtml}</div>
+
+                <div class="text-center mt-5 pt-4 text-[#94a3b8] text-[11px]">
+                    <div class="fw-bold text-[#1e293b] mb-1">© 2026 eNova Technology Solutions</div>
+                    <div>Generated via eNova Assessment Management Portal</div>
+                </div>
+            </div>
+        `;
+
+        const modal = new bootstrap.Modal(document.getElementById('paperPreviewModal'));
+        modal.show();
+    }
+
+    function editTemplate(id) {
+        const templates = <?= json_encode($templates) ?>;
+        const t = templates.find(item => item.id == id);
+        if(!t) return;
+
+        document.getElementById('builder_storage_name').value = t.name;
+        document.getElementById('builder_paper_title').value = t.paper_title || '';
+        document.getElementById('builder_duration').value = t.duration || 60;
+        document.getElementById('builder_total_marks').value = t.total_marks || 0;
+        
+        const container = document.getElementById('builder_sections_container');
+        container.innerHTML = '';
+        
+        t.sections.forEach(s => {
+            const div = document.createElement('div');
+            div.className = 'section-row';
+            div.innerHTML = `
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Section Name <span class="text-red-500">*</span></label>
+                    <input class="input py-1.5 sec-name" placeholder="Section Name" value="${s.section_name || ''}" oninput="updateLivePreview()" />
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Questions <span class="text-red-500">*</span></label>
+                    <input type="number" class="input py-1.5 sec-count" value="${s.num_questions}" oninput="calculateTotalMarks(); updateLivePreview();" />
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Type <span class="text-red-500">*</span></label>
+                    <select class="select py-1.5 sec-type" onchange="updateLivePreview()">
+                        <option ${s.marks_type === 'Multiple Choice' || s.marks_type === 'MCQ' ? 'selected' : ''}>Multiple Choice</option>
+                        <option ${s.marks_type === 'Short Answer' || s.marks_type === '2-Mark' ? 'selected' : ''}>Short Answer</option>
+                        <option ${s.marks_type === 'True / False' ? 'selected' : ''}>True / False</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Marks <span class="text-red-500">*</span></label>
+                    <input type="number" class="input py-1.5 sec-marks" value="${s.marks_per_question}" oninput="calculateTotalMarks(); updateLivePreview();" />
+                </div>
+                <div class="flex justify-center pt-4">
+                    <button class="text-red-400 hover:text-red-600 transition-colors" onclick="removeBuilderSection(this)">
+                        <i class="bi bi-trash text-lg"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        openTemplateBuilder();
+    }
+
+    async function deleteTemplate(id) {
+        if(!(await Swal.fire({ 
+            title: 'Delete Template?', 
+            text: 'This will permanently remove this template structure.', 
+            icon: 'warning', 
+            showCancelButton: true,
+            confirmButtonColor: '#dc2230'
+        }).then(r => r.isConfirmed))) return;
+        
+        await fetch(`/assessment/deleteTemplate/${id}`, { method: 'POST' });
+        location.reload();
+    }
+
     App.updateManualCount = () => {
         const count = document.querySelectorAll('#manualQuestionTableBody input[type="checkbox"]:checked').length;
         const countEl = document.getElementById('selectedQuestionsCount');
-        countEl.textContent = `${count} / 40 required`;
-        countEl.classList.toggle('text-danger', count < 40);
-        countEl.classList.toggle('text-success', count >= 40);
+        if (countEl) {
+            countEl.textContent = `${count} / 40 required`;
+            countEl.classList.toggle('text-danger', count < 40);
+            countEl.classList.toggle('text-success', count >= 40);
+        }
     };
+
+    function toggleAssessmentAccordion(id) {
+        const content = document.getElementById('content-' + id);
+        const arrow = document.getElementById('arrow-' + id);
+        
+        // Close others? (Optional, but usually better for UI)
+        document.querySelectorAll('.accordion-content').forEach(c => {
+            if(c.id !== 'content-' + id) c.classList.remove('open');
+        });
+        document.querySelectorAll('.accordion-arrow').forEach(a => {
+            if(a.id !== 'arrow-' + id) a.classList.remove('rotated');
+        });
+
+        content.classList.toggle('open');
+        arrow.classList.toggle('rotated');
+    }
+
+    function setAssessmentAndOpenPack(id) {
+        const select = document.getElementById('packAssessmentName');
+        if(select) select.value = id;
+        
+        // Switch to pack tab or open modal?
+        // User said "create Pack in Assessment Pack", so let's switch to that tab first then open modal
+        switchMainTab('test-creation');
+        openPackWizard();
+    }
+
+    function setAssessmentAndRedirect(id) {
+        setAssessmentAndOpenPack(id);
+    }
 
     App.onTemplateSelect = (val) => {
         const select = document.getElementById('baseTemplateSelect');
@@ -3112,16 +4002,34 @@ if (empty($packs)) {
         `).join('');
     };
 
-    function publishFinalAssessment() {
-        Swal.fire({
+    async function publishFinalAssessment() {
+        const assessment_id = document.getElementById('packAssessmentName').value;
+        const template_id = document.getElementById('baseTemplateSelect').value;
+        const pack_name = document.getElementById('pack_wizard_name').value;
+        const user_role = document.getElementById('packCategorySelect').value;
+
+        if(!assessment_id || !template_id || !pack_name) {
+            Swal.fire('Error', 'Please complete Step 1 (Assessment, Template, and Pack Name) before publishing.', 'error');
+            return;
+        }
+
+        const confirm = await Swal.fire({
             title: 'Publish Assessment?',
-            text: "This will make the test live for assigned employees.",
+            text: "This will create the test pack and link it to the selected assessment and template.",
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Yes, Publish Now',
             confirmButtonColor: '#dc2230'
-        }).then((result) => {
-            if (result.isConfirmed) {
+        });
+
+        if (confirm.isConfirmed) {
+            const response = await fetch('/assessment/createTestPack', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `assessment_id=${assessment_id}&template_id=${template_id}&pack_name=${encodeURIComponent(pack_name)}&user_role=${encodeURIComponent(user_role)}`
+            });
+            const result = await response.json();
+            if(result.status === 'success') {
                 Swal.fire('Success!', 'Assessment Pack has been published.', 'success').then(() => {
                     addPackToTable({
                         id: Date.now(),
@@ -3133,8 +4041,10 @@ if (empty($packs)) {
                     });
                     bootstrap.Modal.getInstance(document.getElementById('createPackModal')).hide();
                 });
+            } else {
+                Swal.fire('Error', 'Failed to create assessment pack.', 'error');
             }
-        });
+        }
     }
 
     // --- Legacy Actions Support ---
@@ -3145,6 +4055,62 @@ if (empty($packs)) {
     };
     window.toggleFlag = (idx) => App.toggleFlag(idx);
     window.confirmSubmitTest = () => App.confirmSubmit();
+
+    let currentEditAssessmentId = null;
+
+    function openCreateAssessment() {
+        currentEditAssessmentId = null;
+        document.getElementById('ass_name').value = '';
+        document.getElementById('ass_code').value = '';
+        document.getElementById('ass_category').value = '';
+        if(document.getElementById('ass_type')) document.getElementById('ass_type').value = '';
+        if(document.getElementById('ass_assigned')) document.getElementById('ass_assigned').value = '';
+        document.getElementById('ass_desc').value = '';
+        
+        document.querySelector('#assessmentModal h3').textContent = 'Create Assessment';
+        document.querySelector('#assessmentModal .btn-red').textContent = 'Create';
+        document.querySelector('#assessmentModal .btn-red').setAttribute('onclick', 'createAssessment()');
+        
+        openModal('assessmentModal');
+    }
+
+    function editAssessment(data) {
+        currentEditAssessmentId = data.id;
+        document.getElementById('ass_name').value = data.name;
+        document.getElementById('ass_code').value = data.code || '';
+        document.getElementById('ass_category').value = data.category || '';
+        
+        toggleEnovaFields(data.category);
+        
+        if(document.getElementById('ass_type')) document.getElementById('ass_type').value = data.assessment_type || '';
+        if(document.getElementById('ass_assigned')) document.getElementById('ass_assigned').value = data.assigned_to || '';
+        document.getElementById('ass_desc').value = data.description || '';
+        
+        document.querySelector('#assessmentModal h3').textContent = 'Edit Assessment';
+        document.querySelector('#assessmentModal .btn-red').textContent = 'Update';
+        document.querySelector('#assessmentModal .btn-red').setAttribute('onclick', 'updateAssessment()');
+        
+        openModal('assessmentModal');
+    }
+
+    async function updateAssessment() {
+        const id = currentEditAssessmentId;
+        const name = document.getElementById('ass_name').value;
+        const code = document.getElementById('ass_code').value;
+        const category = document.getElementById('ass_category').value;
+        const type = document.getElementById('ass_type') ? document.getElementById('ass_type').value : null;
+        const assigned = document.getElementById('ass_assigned') ? document.getElementById('ass_assigned').value : null;
+        const desc = document.getElementById('ass_desc').value;
+        
+        await fetch(`/assessment/updateAssessment/${id}`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({
+                name, code, category, assessment_type: type, assigned_to: assigned, description: desc
+            })
+        });
+        Swal.fire({ title: 'Updated!', text: 'Assessment has been updated', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => location.reload());
+    }
 
     async function deleteAssessment(id) {
         if(!(await Swal.fire({ title: 'Delete Assessment?', text: 'This cannot be undone.', icon: 'warning', showCancelButton: true }).then(r => r.isConfirmed))) return;
@@ -3162,10 +4128,12 @@ if (empty($packs)) {
         
         await fetch('/assessment/createAssessment', { 
             method: 'POST', 
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'}, 
-            body: `name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}&category=${encodeURIComponent(category)}&assessment_type=${encodeURIComponent(type)}&assigned_to=${encodeURIComponent(assigned)}&description=${encodeURIComponent(desc)}` 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({
+                name, code, category, assessment_type: type, assigned_to: assigned, description: desc
+            })
         });
-        Swal.fire({ title: 'Success!', text: 'Assessment category created', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => location.reload());
+        Swal.fire({ title: 'Success!', text: 'Assessment created successfully', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => location.reload());
     }
 
     let tempSections = [];
@@ -3191,8 +4159,16 @@ if (empty($packs)) {
         const description = document.getElementById('temp_desc').value;
         await fetch('/assessment/saveTemplate', {
             method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `name=${name}&description=${description}&` + tempSections.map((s,i) => `sections[${i}][type]=${s.type}&sections[${i}][count]=${s.count}&sections[${i}][knowledge]=${s.knowledge}`).join('&')
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name,
+                description,
+                sections: tempSections.map(s => ({
+                    type: s.type,
+                    count: s.count,
+                    knowledge: s.knowledge
+                }))
+            })
         });
         Swal.fire({ title: 'Template Saved', text: 'Your template has been created successfully', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => location.reload());
     }
