@@ -1,8 +1,8 @@
 <?php
 // Calculate all packs for use in tables and JS
 $allPacks = [];
-if (!empty($assessments)) {
-    foreach($assessments as $a) {
+if (!empty($Tests)) {
+    foreach($Tests as $a) {
         if (!empty($a['test_packs'])) {
             foreach($a['test_packs'] as $tp) {
                 $tp['assessment_name'] = $a['name'];
@@ -87,16 +87,16 @@ if (!empty($assessments)) {
             color: #94a3b8 !important;
         }
         .dataTables_paginate { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-        #assessmentPacksTable_wrapper { padding: 0 !important; }
-        #assessmentPacksTable { border: none !important; margin: 0 !important; }
-        #assessmentPacksTable thead th { border-bottom: 1px solid #f1f5f9 !important; padding: 10px 20px !important; font-size: 10px !important; }
-        #assessmentPacksTable tbody td { padding: 8px 20px !important; border-bottom: 1px solid #f1f5f9 !important; }
+        #TestPacksTable_wrapper { padding: 0 !important; }
+        #TestPacksTable { border: none !important; margin: 0 !important; }
+        #TestPacksTable thead th { border-bottom: 1px solid #f1f5f9 !important; padding: 10px 20px !important; font-size: 10px !important; }
+        #TestPacksTable tbody td { padding: 8px 20px !important; border-bottom: 1px solid #f1f5f9 !important; }
         .table-responsive { overflow: visible !important; }
 
         /* Nested DataTable Accordion Styles */
-        #assessmentsDataTable td.dt-control { cursor: pointer; text-align: center; font-size: 18px; }
-        #assessmentsDataTable tr.dt-hasChild td.dt-control i { color: var(--brand) !important; transform: rotate(0deg); }
-        #assessmentsDataTable tr td.dt-control i { transition: transform 0.2s ease; }
+        #TestsDataTable td.dt-control { cursor: pointer; text-align: center; font-size: 18px; }
+        #TestsDataTable tr.dt-hasChild td.dt-control i { color: var(--brand) !important; transform: rotate(0deg); }
+        #TestsDataTable tr td.dt-control i { transition: transform 0.2s ease; }
         
         .child-table-container { 
             animation: fadeIn 0.3s ease-out;
@@ -750,7 +750,7 @@ if (!empty($assessments)) {
         .sidebar-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.4);
+            background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(8px);
             z-index: 10000;
             opacity: 0;
@@ -763,20 +763,27 @@ if (!empty($assessments)) {
         }
         .sidebar-panel {
             position: fixed;
-            top: 0;
-            right: -100%;
-            width: 100%;
-            max-width: 1100px;
-            height: 100vh;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            width: 95%;
+            max-width: 1250px;
+            height: 90vh;
             background: #fff;
             z-index: 10001;
-            transition: right 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: -20px 0 50px rgba(15, 23, 42, 0.1);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             display: flex;
             flex-direction: column;
+            border-radius: 24px;
+            opacity: 0;
+            visibility: hidden;
+            overflow: hidden;
         }
         .sidebar-panel.open {
-            right: 0;
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
         }
 
         .builder-header {
@@ -1134,7 +1141,7 @@ if (!empty($assessments)) {
             .paper-card { break-inside: avoid; }
         }
 
-        /* Assessment Pack Tab List */
+        /* Batch Tab List */
         .pack-table th { color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.5rem; border-bottom: 1px solid #f1f5f9; }
         .pack-table td { padding: 1.25rem 1.5rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
     </style>
@@ -1188,85 +1195,45 @@ if (!empty($assessments)) {
   </div>
 </nav>
 
-<!-- Module Header -->
-<div class="module-header flex items-center justify-between">
-    <div class="flex items-center gap-4">
-        <div class="module-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        </div>
-        <div>
-            <h2 class="text-xl font-bold">Assessment Module</h2>
-            <p class="text-sm text-gray-500">Evaluate & track employee competencies</p>
-        </div>
-    </div>
-    <div class="flex items-center gap-3">
-        <button class="btn-outline flex items-center gap-2" onclick="switchMainTab('results')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H9H8"/></svg>
-            Results & Evaluation
-        </button>
-        <button class="btn-outline flex items-center gap-2" onclick="startExecutionMode()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-            Execution View
-        </button>
-    </div>
-</div>
 
-<!-- Module Tabs -->
-<div class="module-tabs">
-    <div class="module-tab active" onclick="switchMainTab('management')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-3-3.87"/><path d="M9 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Assessment Management
-    </div>
-</div>
 
 <!-- MAIN CONTENT CONTAINER -->
 <div id="main-content-area">
 
-    <!-- 1. ASSESSMENT MANAGEMENT HUB -->
+    <!-- 1. Test MANAGEMENT HUB -->
     <main id="tab-content-management" class="px-8 py-6">
-        <!-- Dashboard Header Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="stat-card is-active">
-                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Assessments</div>
-                <div class="text-2xl font-black text-slate-800"><?= count($assessments) ?></div>
-                <div class="text-[10px] text-green-500 font-bold mt-2"><i class="bi bi-arrow-up"></i> Active Headers</div>
-            </div>
-            <div class="stat-card">
-                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Test Packs</div>
-                <div class="text-2xl font-black text-slate-800"><?= count($allPacks) ?></div>
-                <div class="text-[10px] text-red-500 font-bold mt-2">Published Tests</div>
-            </div>
-            <div class="stat-card">
-                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Questions</div>
-                <div class="text-2xl font-black text-slate-800"><?= count($questionBank ?? []) ?></div>
-                <div class="text-[10px] text-amber-500 font-bold mt-2">Question Bank Size</div>
-            </div>
-        </div>
+
 
         <div class="flex items-center justify-between mb-8">
             <div>
-                <h3 class="text-2xl font-bold">Assessment Inventory</h3>
-                <p class="text-sm text-gray-500">Manage your assessment lifecycle from headers to test packs.</p>
+                <h3 class="text-2xl font-bold">Test Inventory</h3>
+                <p class="text-sm text-gray-500">Manage your Test lifecycle from headers to Batches.</p>
             </div>
             <div class="flex gap-3">
-                <button class="btn-red-rounded px-6" onclick="openCreateAssessment()">
-                    <i class="bi bi-plus-lg me-2"></i> New Assessment Name
+                <button class="px-5 py-2.5 rounded-xl border border-blue-100 text-[#2563eb] font-bold text-[13px] flex items-center gap-2 hover:bg-blue-50 transition-all shadow-sm" onclick="switchMainTab('results')">
+                    <i class="bi bi-file-earmark-text"></i> Results & Evaluation
+                </button>
+                <button class="px-5 py-2.5 rounded-xl border border-blue-100 text-[#2563eb] font-bold text-[13px] flex items-center gap-2 hover:bg-blue-50 transition-all shadow-sm" onclick="switchMainTab('execution')">
+                    <i class="bi bi-play-circle"></i> Execution View
+                </button>
+                <button class="btn-red-rounded px-6" onclick="openCreateTest()">
+                    <i class="bi bi-plus-lg me-2"></i> New Test Name
                 </button>
             </div>
         </div>
 
-        <!-- Assessments DataTable -->
+        <!-- Tests DataTable -->
         <div class="card overflow-hidden border-slate-200 mb-12">
             <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-0">Assessment Headers</h4>
-                <div id="assessmentsTableSearch"></div>
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-0">Test Headers</h4>
+                <div id="TestsTableSearch"></div>
             </div>
             <div class="table-responsive p-0">
-                <table id="assessmentsDataTable" class="w-full text-left">
+                <table id="TestsDataTable" class="w-full text-left">
                     <thead class="bg-white border-b border-slate-100">
                         <tr>
                             <th class="w-12"></th>
-                            <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Assessment Name</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Test Name</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Code</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Category</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Inventory</th>
@@ -1289,6 +1256,9 @@ if (!empty($assessments)) {
     <main id="tab-content-results" class="hidden px-8 py-6">
         <div class="flex items-center justify-between mb-8">
             <div>
+                <button class="mb-4 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg font-bold text-xs flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm" onclick="switchMainTab('management')">
+                    <i class="bi bi-arrow-left"></i> Back to Inventory
+                </button>
                 <h3 class="text-2xl font-bold">Results & Evaluation</h3>
                 <p class="text-sm text-gray-500">Review candidate performance and grade subjective answers.</p>
             </div>
@@ -1437,11 +1407,16 @@ if (!empty($assessments)) {
         </div>
     </main>
 
-    <!-- 5. EXECUTION VIEW TAB (Live Assessments) -->
+    <!-- 5. EXECUTION VIEW TAB (Live Tests) -->
     <main id="tab-content-execution" class="hidden px-8 py-6">
         <div class="card-custom">
             <div class="px-4 py-3 bg-header border-bottom d-flex justify-content-between align-items-center">
-                <h2 class="section-title mb-0">Scheduled & Live Assessments</h2>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-red-500 transition-all shadow-sm" onclick="switchMainTab('management')" title="Back to Inventory">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <h2 class="section-title mb-0">Scheduled & Live Tests</h2>
+                </div>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
@@ -1457,7 +1432,7 @@ if (!empty($assessments)) {
                     </thead>
                     <tbody>
                         <tr>
-                            <td><span class="fw-bold">JavaScript Developer Assessment</span></td>
+                            <td><span class="fw-bold">JavaScript Developer Test</span></td>
                             <td><span class="badge-custom badge-green">LIVE</span></td>
                             <td><span class="small">Oct 29, 2023 10:00 AM</span></td>
                             <td><span class="small">15 Employees</span></td>
@@ -1474,11 +1449,7 @@ if (!empty($assessments)) {
                             <td><span class="small">Nov 02, 2023 02:00 PM</span></td>
                             <td><span class="small">45 Candidates</span></td>
                             <td><span class="small">0 / 45</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary-custom border-0">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </button>
-                            </td>
+                            <td></td>
                         </tr>
                     </tbody>
                 </table>
@@ -1497,7 +1468,7 @@ if (!empty($assessments)) {
             </div>
             <div>
                 <h3 class="text-lg font-bold text-slate-800 mb-0">Template Builder</h3>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Create & Manage Assessment Structures</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Create & Manage Test Structures</p>
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -1557,7 +1528,7 @@ if (!empty($assessments)) {
                         </div>
                         <div class="form-group">
                             <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Template Identity</label>
-                            <input id="builder_storage_name" class="form-control w-full bg-slate-50 border-slate-100 rounded-xl text-xs h-11" placeholder="e.g. Research Ethics Assessment 2024" />
+                            <input id="builder_storage_name" class="form-control w-full bg-slate-50 border-slate-100 rounded-xl text-xs h-11" placeholder="e.g. Research Ethics Test 2024" />
                         </div>
                     </div>
 
@@ -1649,7 +1620,7 @@ if (!empty($assessments)) {
 
 
 
-<!-- MODAL: NEW ASSESSMENT -->
+<!-- MODAL: NEW Test -->
 <!-- Candidate Picker Modal -->
 <div id="candidatePickerModal" class="custom-modal-backdrop" style="z-index: 10006;" onclick="if(event.target===this)closeModal('candidatePickerModal')">
     <div class="custom-modal max-w-lg">
@@ -1680,14 +1651,14 @@ if (!empty($assessments)) {
     </div>
 </div>
 
-<div id="assessmentModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeModal('assessmentModal')">
+<div id="TestModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeModal('TestModal')">
   <div class="custom-modal modal-xl max-w-5xl">
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h3 class="text-xl font-extrabold text-slate-800">Create New Assessment</h3>
-            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">Configure assessment header and initial test pack</p>
+            <h3 class="text-xl font-extrabold text-slate-800">Create New Test</h3>
+            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">Configure Test header and initial Batch</p>
         </div>
-        <button class="text-slate-400 hover:text-slate-600" onclick="closeModal('assessmentModal')">
+        <button class="text-slate-400 hover:text-slate-600" onclick="closeModal('TestModal')">
             <i class="bi bi-x-lg text-xl"></i>
         </button>
     </div>
@@ -1697,15 +1668,15 @@ if (!empty($assessments)) {
         <div class="absolute top-5 left-20 right-20 h-0.5 bg-slate-100 -z-10"></div>
         <div class="step-item active relative" data-step="1">
             <div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold shadow-lg shadow-red-100 z-10 mx-auto">1</div>
-            <span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-800 whitespace-nowrap">General Info</span>
+            <span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-800 whitespace-nowrap">Create Test</span>
         </div>
         <div class="step-item relative" data-step="2">
             <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold z-10 mx-auto">2</div>
-            <span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400 whitespace-nowrap">Configuration</span>
+            <span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400 whitespace-nowrap">Create Template</span>
         </div>
         <div class="step-item relative" data-step="3">
             <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold z-10 mx-auto">3</div>
-            <span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400 whitespace-nowrap">Questions</span>
+            <span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400 whitespace-nowrap">QP Upload</span>
         </div>
         <div class="step-item relative" data-step="4">
             <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold z-10 mx-auto">4</div>
@@ -1714,26 +1685,26 @@ if (!empty($assessments)) {
     </div>
 
     <div class="mt-8 min-h-[400px]">
-        <!-- Step 1: General Info -->
+        <!-- Step 1: Create Test -->
         <div id="assStep1" class="wizard-pane">
             <div class="grid grid-cols-2 gap-8">
                 <div class="space-y-4">
                     <div class="form-group">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Assessment Name</label>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Test Name</label>
                         <input id="ass_name" class="input" placeholder="e.g. Annual Technical Challenge" />
-                        <span class="error-msg hidden" id="err_ass_name">Please enter assessment name</span>
+                        <span class="error-msg hidden" id="err_ass_name">Please enter Test name</span>
                     </div>
                     <div class="form-group">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Assessment Code</label>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Test Code</label>
                         <input id="ass_code" class="input" placeholder="e.g. REC2026" />
-                        <span class="error-msg hidden" id="err_ass_code">Please enter a valid assessment code</span>
+                        <span class="error-msg hidden" id="err_ass_code">Please enter a valid Test code</span>
                     </div>
                     <div class="form-group">
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Category</label>
                         <select id="ass_category" class="select text-sm h-11" onchange="toggleEnovaFields(this.value)">
                             <option value="">-- Choose Category --</option>
                             <option value="HR Recruitment-Fresher">HR Recruitment-Fresher</option>
-                            <option value="Enova Assessment">Enova Assessment</option>
+                            <option value="Enova Test">Enova Test</option>
                         </select>
                         <span class="error-msg hidden" id="err_ass_category">Please select a category</span>
                     </div>
@@ -1741,7 +1712,7 @@ if (!empty($assessments)) {
                 <div class="space-y-4">
                     <div id="enova_fields" class="hidden space-y-4">
                         <div class="form-group">
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Assessment Type</label>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Test Type</label>
                             <select id="ass_type" class="select text-sm h-11 bg-white">
                                 <option value="">-- Select Type --</option>
                                 <option>Technical</option>
@@ -1774,18 +1745,18 @@ if (!empty($assessments)) {
                     </div>
                     <div class="form-group relative">
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Short Description</label>
-                        <textarea id="ass_desc" class="input text-sm p-3" rows="5" placeholder="Briefly describe the assessment goal..." maxlength="500" oninput="updateCharCount(this)"></textarea>
+                        <textarea id="ass_desc" class="input text-sm p-3" rows="5" placeholder="Briefly describe the Test goal..." maxlength="500" oninput="updateCharCount(this)"></textarea>
                         <span id="char_count" class="absolute bottom-2 right-2 text-[10px] text-gray-400 font-bold">0 / 500</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Step 2: Configuration -->
+        <!-- Step 2: Create Template -->
         <div id="assStep2" class="wizard-pane hidden">
             <div class="max-w-2xl mx-auto space-y-6">
                 <div class="form-group">
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Test Pack Name</label>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Batch</label>
                     <input id="ass_pack_name" class="input" value="Batch-1" placeholder="e.g. Q1 Technical Round" />
                 </div>
                 <div class="form-group">
@@ -1818,7 +1789,7 @@ if (!empty($assessments)) {
             </div>
         </div>
 
-        <!-- Step 3: Questions -->
+        <!-- Step 3: QP Upload -->
         <div id="assStep3" class="wizard-pane hidden">
             <div class="flex justify-between items-center mb-6">
                 <div class="flex gap-4">
@@ -1945,7 +1916,7 @@ if (!empty($assessments)) {
                     <div class="space-y-6">
                         <div class="form-group">
                             <h4 class="text-xs font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <i class="bi bi-card-text text-red-500"></i> Assessment Instructions
+                                <i class="bi bi-card-text text-red-500"></i> Test Instructions
                             </h4>
                             <textarea id="ass_instructions" class="input text-sm p-4" rows="5" style="min-height: 120px;" placeholder="Enter instructions for candidates..."></textarea>
                         </div>
@@ -2034,16 +2005,16 @@ if (!empty($assessments)) {
             Next Step <i class="bi bi-chevron-right ms-2"></i>
         </button>
         <button id="btnWizardSubmit" class="btn-red px-10 hidden" onclick="finalizeWizard()">
-            Publish Assessment <i class="bi bi-check-lg ms-2"></i>
+            Publish Test <i class="bi bi-check-lg ms-2"></i>
         </button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: NEW TEST PACK -->
+<!-- MODAL: NEW Batch -->
 <div id="testPackModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeModal('testPackModal')">
   <div class="custom-modal">
-    <h3 class="text-xl font-extrabold mb-4">Create Test Pack</h3>
+    <h3 class="text-xl font-extrabold mb-4">Create Batch</h3>
     <input type="hidden" id="tp_ass_id" />
     <div class="grid gap-4 mb-4">
         <input id="tp_name" class="input" placeholder="Pack Name" />
@@ -2070,23 +2041,30 @@ if (!empty($assessments)) {
       <div class="modal-header border-0 px-6 pt-6 pb-0">
           <div class="w-full">
             <div class="flex items-center justify-between mb-1">
-                <h3 class="text-xl font-extrabold text-slate-800" id="assign_modal_title">Manage Test Pack</h3>
+                <h3 class="text-xl font-extrabold text-slate-800" id="assign_modal_title">Manage Batch</h3>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <p id="assign_subtitle" class="text-sm text-gray-500 font-medium"></p>
             
             <!-- Template Selection Section -->
-            <div id="assign_template_section" class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div id="assign_template_section" class="mt-4 p-4 bg-[#f8fafc] rounded-xl border border-slate-200">
                 <div class="flex items-center justify-between mb-3">
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Selected Template</label>
+                    <div class="flex items-center gap-2">
+                        <label class="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Selected Template</label>
+                        <button type="button" class="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center border-0 p-0 hover:bg-red-600 transition-all shadow-sm" onclick="openTemplateBuilder()" title="Create New Template">
+                            <i class="bi bi-plus text-xs"></i>
+                        </button>
+                    </div>
                     <span id="template_change_status" class="text-[10px] font-bold text-green-600 hidden italic">Changes saved!</span>
                 </div>
                 <div class="flex gap-3">
-                    <select id="edit_pack_template_id" class="select h-10 text-xs flex-1">
+                    <select id="edit_pack_template_id" class="form-select h-12 text-sm flex-1 bg-white border-slate-200 rounded-lg shadow-sm">
                         <option value="">-- No Template (Custom Questions Only) --</option>
-                        ${App.templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
+                        <?php if(!empty($templates)): foreach($templates as $t): ?>
+                            <option value="<?= $t['id'] ?>"><?= $t['name'] ?></option>
+                        <?php endforeach; endif; ?>
                     </select>
-                    <button class="btn-red-rounded px-6 h-10 text-xs font-bold" onclick="updatePackTemplate()">
+                    <button class="btn btn-primary-custom px-6 h-12 text-xs font-bold rounded-lg shadow-sm" onclick="updatePackTemplate()">
                         Update Template
                     </button>
                 </div>
@@ -2096,55 +2074,67 @@ if (!empty($assessments)) {
       
       <div class="modal-body px-6 pt-4">
         <!-- Sub-tabs per question type -->
-        <div class="flex gap-2 mb-6 bg-slate-50 p-1.5 rounded-xl inline-flex">
-          <button id="btn-assign-mcq" class="tab tab-active px-6 py-2" onclick="App.switchAssignTab('assign-mcq')">MCQ</button>
-          <button id="btn-assign-2m" class="tab tab-idle px-6 py-2" onclick="App.switchAssignTab('assign-2m')">2 Marks</button>
+        <div class="flex gap-2 mb-6 bg-slate-100 p-1.5 rounded-xl inline-flex">
+          <button id="btn-assign-mcq" class="tab tab-active px-8 py-2.5 rounded-lg" onclick="App.switchAssignTab('assign-mcq')">MCQ</button>
+          <button id="btn-assign-2m" class="tab tab-idle px-8 py-2.5 rounded-lg" onclick="App.switchAssignTab('assign-2m')">2 MARKS</button>
         </div>
 
         <!-- MCQ panel -->
         <div id="assign-mcq" class="assign-panel">
           <!-- Bulk Upload Section -->
-          <div class="card p-5 mb-6 flex items-center justify-between flex-wrap gap-4" style="background:#fcfcfd; border: 1.5px dashed #e2e8f0;">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                    <i class="bi bi-cloud-arrow-up-fill text-xl"></i>
+          <div class="card p-6 mb-8 flex items-center justify-between flex-wrap gap-4" style="background:#fff; border: 2px dashed #e2e8f0; border-radius: 16px;">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+                    <i class="bi bi-cloud-arrow-up-fill text-2xl"></i>
                 </div>
                 <div>
-                  <div class="font-bold text-slate-700">MCQ Bulk Upload</div>
-                  <div class="text-gray-400 text-[10px] mt-0.5 uppercase font-bold tracking-widest">CSV format required</div>
+                  <div class="text-base font-extrabold text-slate-800">MCQ Bulk Upload</div>
+                  <div class="text-slate-400 text-[10px] mt-0.5 uppercase font-black tracking-widest">CSV format required</div>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-              <a href="assessment/downloadTemplate/mcq" class="btn-ghost h-10 text-[11px] px-4 font-bold border-slate-200">Download Template</a>
-              <form action="assessment/uploadQuestions" method="POST" enctype="multipart/form-data" class="flex gap-2">
+            <div class="flex items-center gap-3">
+              <a href="Test/downloadTemplate/mcq" class="btn btn-secondary-custom h-12 text-xs px-6 font-bold border-slate-200 rounded-lg">DOWNLOAD TEMPLATE</a>
+              <form action="Test/uploadQuestions" method="POST" enctype="multipart/form-data" class="flex gap-2 m-0">
                 <input type="hidden" name="test_pack_id" class="assign_tp_id_input" />
                 <input type="hidden" name="type" value="MCQ" />
                 <input type="file" name="file" class="hidden" id="file_mcq" onchange="this.form.submit()" />
-                <label for="file_mcq" class="btn-red h-10 text-[11px] px-5 cursor-pointer font-bold">Upload CSV</label>
+                <label for="file_mcq" class="btn btn-primary-custom h-12 text-xs px-8 cursor-pointer font-bold rounded-lg shadow-md hover:shadow-lg transition-all">UPLOAD CSV</label>
               </form>
             </div>
           </div>
 
           <!-- Manual Entry Section -->
-          <div class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
-            <div class="flex items-center gap-2 mb-5">
-                <div class="w-1.5 h-4 bg-red-500 rounded-full"></div>
-                <h5 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-0">Manual MCQ Entry</h5>
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-1 h-6 bg-red-600 rounded-full"></div>
+                <h5 class="text-xs font-black text-slate-500 uppercase tracking-widest mb-0">MANUAL MCQ ENTRY</h5>
             </div>
-            <div class="grid gap-4">
-                <textarea id="mcq_content" class="input text-sm focus:ring-2 focus:ring-red-100" placeholder="Type your question content here..." rows="3"></textarea>
+            <div class="grid gap-5">
+                <textarea id="mcq_content" class="form-control text-sm focus:ring-2 focus:ring-red-100 p-4 bg-slate-50 border-slate-200" placeholder="Type your question content here..." rows="4" style="border-radius: 12px;"></textarea>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">A</span><input id="mcq_opt_a" class="input h-11 text-sm ps-8" placeholder="Option A" /></div>
-                    <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">B</span><input id="mcq_opt_b" class="input h-11 text-sm ps-8" placeholder="Option B" /></div>
-                    <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">C</span><input id="mcq_opt_c" class="input h-11 text-sm ps-8" placeholder="Option C" /></div>
-                    <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">D</span><input id="mcq_opt_d" class="input h-11 text-sm ps-8" placeholder="Option D" /></div>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-400">A</span>
+                        <input id="mcq_opt_a" class="form-control h-12 text-sm ps-10 border-slate-200 rounded-xl" placeholder="Option A" />
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-400">B</span>
+                        <input id="mcq_opt_b" class="form-control h-12 text-sm ps-10 border-slate-200 rounded-xl" placeholder="Option B" />
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-400">C</span>
+                        <input id="mcq_opt_c" class="form-control h-12 text-sm ps-10 border-slate-200 rounded-xl" placeholder="Option C" />
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-slate-400">D</span>
+                        <input id="mcq_opt_d" class="form-control h-12 text-sm ps-10 border-slate-200 rounded-xl" placeholder="Option D" />
+                    </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    <select id="mcq_correct" class="select h-12 text-sm font-bold">
+                    <select id="mcq_correct" class="form-select h-12 text-sm font-bold border-slate-200 rounded-lg shadow-sm">
                         <option value="">-- Choose Correct Answer --</option>
                         <option value="A">Option A</option><option value="B">Option B</option><option value="C">Option C</option><option value="D">Option D</option>
                     </select>
-                    <button class="btn-red h-12 text-[12px] font-extrabold justify-center" onclick="App.addManualAssignQuestion('MCQ')">
+                    <button class="btn btn-primary-custom h-12 text-[12px] font-extrabold justify-center rounded-lg shadow-md hover:shadow-lg transition-all" onclick="App.addManualAssignQuestion('MCQ')">
                         <i class="bi bi-plus-circle-fill me-1"></i> Add Question to Pack
                     </button>
                 </div>
@@ -2154,26 +2144,42 @@ if (!empty($assessments)) {
 
         <!-- 2 Marks panel -->
         <div id="assign-2m" class="assign-panel hidden">
-          <div class="card p-5 mb-6 flex items-center justify-between flex-wrap gap-4" style="background:#fcfcfd; border: 1.5px dashed #e2e8f0;">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center"><i class="bi bi-file-earmark-spreadsheet-fill text-xl"></i></div>
-                <div><div class="font-bold text-slate-700">2 Marks Bulk Upload</div><div class="text-gray-400 text-[10px] mt-0.5 uppercase font-bold tracking-widest">CSV format required</div></div>
+          <!-- Bulk Upload Section -->
+          <div class="card p-6 mb-8 flex items-center justify-between flex-wrap gap-4" style="background:#fff; border: 2px dashed #e2e8f0; border-radius: 16px;">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center shadow-sm">
+                    <i class="bi bi-file-earmark-spreadsheet-fill text-2xl"></i>
+                </div>
+                <div>
+                  <div class="text-base font-extrabold text-slate-800">2 MARKS Bulk Upload</div>
+                  <div class="text-slate-400 text-[10px] mt-0.5 uppercase font-black tracking-widest">CSV format required</div>
+                </div>
             </div>
-            <div class="flex items-center gap-2">
-              <a href="assessment/downloadTemplate/2m" class="btn-ghost h-10 text-[11px] px-4 font-bold border-slate-200">Download Template</a>
-              <form action="assessment/uploadQuestions" method="POST" enctype="multipart/form-data" class="flex gap-2">
-                <input type="hidden" name="test_pack_id" class="assign_tp_id_input" /><input type="hidden" name="type" value="2 Marks" />
-                <input type="file" name="file" class="hidden" id="file_2m" onchange="this.form.submit()" /><label for="file_2m" class="btn-red h-10 text-[11px] px-5 cursor-pointer font-bold">Upload CSV</label>
+            <div class="flex items-center gap-3">
+              <a href="Test/downloadTemplate/2m" class="btn btn-secondary-custom h-12 text-xs px-6 font-bold border-slate-200 rounded-lg">DOWNLOAD TEMPLATE</a>
+              <form action="Test/uploadQuestions" method="POST" enctype="multipart/form-data" class="flex gap-2 m-0">
+                <input type="hidden" name="test_pack_id" class="assign_tp_id_input" />
+                <input type="hidden" name="type" value="2 Marks" />
+                <input type="file" name="file" class="hidden" id="file_2m" onchange="this.form.submit()" />
+                <label for="file_2m" class="btn btn-primary-custom h-12 text-xs px-8 cursor-pointer font-bold rounded-lg shadow-md hover:shadow-lg transition-all">UPLOAD CSV</label>
               </form>
             </div>
           </div>
 
-          <div class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
-            <div class="flex items-center gap-2 mb-5"><div class="w-1.5 h-4 bg-red-500 rounded-full"></div><h5 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-0">Manual 2-Mark Entry</h5></div>
-            <div class="grid gap-4">
-                <textarea id="m2_content" class="input text-sm" placeholder="Type the 2-mark question..." rows="3"></textarea>
-                <textarea id="m2_correct" class="input text-sm" placeholder="Expected answer for evaluation..." rows="3"></textarea>
-                <div class="flex justify-end pt-2"><button class="btn-red h-12 px-10 text-[12px] font-extrabold justify-center" onclick="App.addManualAssignQuestion('2-Mark')"><i class="bi bi-plus-circle-fill me-1"></i> Add Question to Pack</button></div>
+          <!-- Manual Entry Section -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-1 h-6 bg-red-600 rounded-full"></div>
+                <h5 class="text-xs font-black text-slate-500 uppercase tracking-widest mb-0">MANUAL 2-MARK ENTRY</h5>
+            </div>
+            <div class="grid gap-5">
+                <textarea id="m2_content" class="form-control text-sm p-4 bg-slate-50 border-slate-200" placeholder="Type the 2-mark question..." rows="3" style="border-radius: 12px;"></textarea>
+                <textarea id="m2_correct" class="form-control text-sm p-4 bg-slate-50 border-slate-200" placeholder="Expected answer for evaluation..." rows="3" style="border-radius: 12px;"></textarea>
+                <div class="flex justify-end pt-2">
+                    <button class="btn btn-primary-custom h-12 px-10 text-[12px] font-extrabold justify-center rounded-lg shadow-md" onclick="App.addManualAssignQuestion('2-Mark')">
+                        <i class="bi bi-plus-circle-fill me-1"></i> Add Question to Pack
+                    </button>
+                </div>
             </div>
           </div>
         </div>
@@ -2201,7 +2207,7 @@ if (!empty($assessments)) {
                      <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop" class="w-full h-full object-cover">
                 </div>
                 <div>
-                    <h1 id="execTestTitle" class="exec-test-name">JavaScript Developer Assessment</h1>
+                    <h1 id="execTestTitle" class="exec-test-name">JavaScript Developer Test</h1>
                     <div id="execQuestionProgress" class="exec-test-step">Question 10 of 15</div>
                 </div>
             </div>
@@ -2231,7 +2237,7 @@ if (!empty($assessments)) {
                 </div>
             </div>
             <button class="btn btn-submit-test-custom" onclick="App.confirmSubmit()">
-                Submit Assessment <i class="bi bi-send-fill ms-2"></i>
+                Submit Test <i class="bi bi-send-fill ms-2"></i>
             </button>
         </div>
     </header>
@@ -2382,16 +2388,17 @@ if (!empty($assessments)) {
             Dismiss & Continue
         </button>
     </div>
-</div><script>
+</div>
+<script>
     // Global Data
     const App = {
-        assessments: <?= json_encode($assessments) ?>,
+        Tests: <?= json_encode($Tests) ?>,
         templates: <?= json_encode($templates) ?>,
         employees: <?= json_encode($employees) ?>,
-        selectedCandidates: {} // Stores { assessmentId: [empId1, empId2] }
+        selectedCandidates: {} // Stores { TestId: [empId1, empId2] }
     };
 
-    // --- Assessment Execution Engine ---
+    // --- Test Execution Engine ---
     // Modal Helpers
     function openModal(id) {
         const modalEl = document.getElementById(id);
@@ -2430,19 +2437,19 @@ if (!empty($assessments)) {
         });
         
         if (tabId === 'management') {
-            initAssessmentsDataTable();
+            initTestsDataTable();
         }
     }
 
-    // --- Assessments DataTable with Accordion ---
-    let assessmentsDataTable = null;
-    function initAssessmentsDataTable() {
-        if ($.fn.dataTable.isDataTable('#assessmentsDataTable')) {
+    // --- Tests DataTable with Accordion ---
+    let TestsDataTable = null;
+    function initTestsDataTable() {
+        if ($.fn.dataTable.isDataTable('#TestsDataTable')) {
             return;
         }
 
-        assessmentsDataTable = $('#assessmentsDataTable').DataTable({
-            data: App.assessments,
+        TestsDataTable = $('#TestsDataTable').DataTable({
+            data: App.Tests,
             columns: [
                 {
                     className: 'dt-control',
@@ -2478,17 +2485,17 @@ if (!empty($assessments)) {
                 { 
                     data: 'test_packs',
                     className: 'text-center',
-                    render: (data) => `<span class="font-bold text-slate-700">${data ? data.length : 0} <span class="text-slate-400 text-[10px] uppercase">Packs</span></span>`
+                    render: (data) => `<span class="font-bold text-slate-700">${data ? data.length : 0} <span class="text-slate-400 text-[10px] uppercase">Batches</span></span>`
                 },
                 {
                     data: null,
                     className: 'text-right px-6',
                     render: (data, type, row) => `
                         <div class="flex items-center justify-end gap-2">
-                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-all" onclick="event.stopPropagation(); editAssessment(${JSON.stringify(row).replace(/"/g, '&quot;')})">
+                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-all" onclick="event.stopPropagation(); editTest(${JSON.stringify(row).replace(/"/g, '&quot;')})">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition-all" onclick="event.stopPropagation(); deleteAssessment(${row.id})">
+                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition-all" onclick="event.stopPropagation(); deleteTest(${row.id})">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -2499,7 +2506,7 @@ if (!empty($assessments)) {
             dom: '<"px-6 py-3 border-b border-slate-100 flex justify-end"f>rt<"px-6 py-4 flex justify-between items-center"ip>',
             language: {
                 search: "",
-                searchPlaceholder: "Search Assessments..."
+                searchPlaceholder: "Search Tests..."
             },
             drawCallback: function() {
                 $('.dataTables_filter input').addClass('form-control form-control-sm border-slate-200 rounded-lg text-xs w-[250px] shadow-none focus:border-red-500');
@@ -2507,23 +2514,23 @@ if (!empty($assessments)) {
         });
 
         // Add event listener for opening and closing details
-        $('#assessmentsDataTable tbody').on('click', 'td.dt-control', function () {
+        $('#TestsDataTable tbody').on('click', 'td.dt-control', function () {
             var tr = $(this).closest('tr');
-            var row = assessmentsDataTable.row(tr);
+            var row = TestsDataTable.row(tr);
 
             if (row.child.isShown()) {
                 row.child.hide();
                 tr.removeClass('dt-hasChild');
                 $(this).find('i').removeClass('bi-dash-circle text-red-500').addClass('bi-plus-circle text-slate-300');
             } else {
-                row.child(formatAssessmentPacks(row.data())).show();
+                row.child(formatTestPacks(row.data())).show();
                 tr.addClass('dt-hasChild');
                 $(this).find('i').removeClass('bi-plus-circle text-slate-300').addClass('bi-dash-circle text-red-500');
             }
         });
     }
 
-    function formatAssessmentPacks(d) {
+    function formatTestPacks(d) {
         let packs = d.test_packs || [];
         
         // Find default template from the first existing pack, if any
@@ -2535,9 +2542,9 @@ if (!empty($assessments)) {
         let html = `
             <div class="bg-slate-50/50 p-6 border-y border-slate-100 child-table-container">
                 <div class="flex items-center justify-between mb-4 px-2">
-                    <h5 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0">Assigned Test Packs (${packs.length})</h5>
+                    <h5 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0">Assigned Batches (${packs.length})</h5>
                     <button class="btn-red-rounded text-[10px] py-1.5 px-4" id="btnAddPack_${d.id}" onclick="toggleInlinePackForm(${d.id})">
-                        <i class="bi bi-plus-lg me-1"></i> Add New Pack
+                        <i class="bi bi-plus-lg me-1"></i> Add New Batch
                     </button>
                 </div>
 
@@ -2545,12 +2552,17 @@ if (!empty($assessments)) {
                 <div id="inlinePackForm_${d.id}" class="hidden mb-6 bg-white p-5 rounded-2xl border border-red-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div class="form-group">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Test Pack Name</label>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Batch</label>
                             <input id="inline_pack_name_${d.id}" class="input h-10 text-xs" placeholder="e.g. Phase 1 Test" />
                         </div>
                         <div class="form-group">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Choose Template</label>
-                            <select id="inline_template_id_${d.id}" class="select h-10 text-xs py-0">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Choose Template</label>
+                                <button type="button" class="text-red-500 hover:text-red-700 bg-red-50 rounded-full w-5 h-5 flex items-center justify-center p-0 border-0" onclick="openTemplateBuilder()" title="Create New Template">
+                                    <i class="bi bi-plus text-xs"></i>
+                                </button>
+                            </div>
+                            <select id="inline_template_id_${d.id}" class="select h-10 text-xs py-0 w-full">
                                 <option value="">-- Select Template --</option>
                                 ${App.templates.map(t => `<option value="${t.id}" ${t.id == defaultTemplateId ? 'selected' : ''}>${t.name}</option>`).join('')}
                             </select>
@@ -2577,7 +2589,7 @@ if (!empty($assessments)) {
         `;
 
         if (packs.length === 0) {
-            html += `<div class="text-center py-8 text-slate-400 text-xs italic bg-white rounded-xl border border-dashed border-slate-200">No test packs found for this assessment.</div>`;
+            html += `<div class="text-center py-8 text-slate-400 text-xs italic bg-white rounded-xl border border-dashed border-slate-200">No Batches found for this Test.</div>`;
         } else {
             packs.forEach(tp => {
                 html += `
@@ -2598,7 +2610,6 @@ if (!empty($assessments)) {
                             </div>
                             <div class="flex items-center gap-2">
                                 <button class="action-icon-btn view" onclick="App.previewTestPack(${tp.id})" title="Preview"><i class="bi bi-eye"></i></button>
-                                <button class="action-icon-btn edit text-blue-600 bg-blue-50 border-blue-100 hover:bg-blue-100" onclick="editTestPack(${tp.id}, '${tp.template_id}', '${tp.pack_name.replace(/'/g, "\\'")}')" title="Edit Pack"><i class="bi bi-pencil-square"></i></button>
                                 <button class="action-icon-btn delete" onclick="deletePack(${tp.id})" title="Delete"><i class="bi bi-trash"></i></button>
                             </div>
                         </div>
@@ -2620,14 +2631,14 @@ if (!empty($assessments)) {
             btn.classList.replace('btn-red-rounded', 'btn-outline');
         } else {
             form.classList.add('hidden');
-            btn.innerHTML = '<i class="bi bi-plus-lg me-1"></i> Add New Pack';
+            btn.innerHTML = '<i class="bi bi-plus-lg me-1"></i> Add New Batch';
             btn.classList.replace('btn-outline', 'btn-red-rounded');
         }
     }
 
-    let cpActiveAssessmentId = null;
-    function openCandidatePicker(assessmentId, rolesStr) {
-        cpActiveAssessmentId = assessmentId;
+    let cpActiveTestId = null;
+    function openCandidatePicker(TestId, rolesStr) {
+        cpActiveTestId = TestId;
         const roles = (rolesStr && rolesStr !== 'undefined' && rolesStr !== 'null') ? rolesStr.split(',') : [];
         const container = document.getElementById('cp_list_container');
         const roleLabel = document.getElementById('cp_role_label');
@@ -2642,7 +2653,7 @@ if (!empty($assessments)) {
 
         roleLabel.textContent = `${filtered.length} ${roles.length > 0 ? roles.join('/') : 'Candidates'} Available`;
         
-        const selected = App.selectedCandidates[assessmentId] || [];
+        const selected = App.selectedCandidates[TestId] || [];
         
         container.innerHTML = filtered.map(emp => `
             <label class="flex items-center gap-3 p-3 hover:bg-white rounded-xl cursor-pointer transition-colors border border-transparent hover:border-slate-100 mb-1">
@@ -2677,18 +2688,18 @@ if (!empty($assessments)) {
 
     function confirmCandidateSelection() {
         const selected = Array.from(document.querySelectorAll('.cp-check:checked')).map(cb => cb.value);
-        App.selectedCandidates[cpActiveAssessmentId] = selected;
+        App.selectedCandidates[cpActiveTestId] = selected;
         
-        const label = document.getElementById(`candidateCountLabel_${cpActiveAssessmentId}`);
+        const label = document.getElementById(`candidateCountLabel_${cpActiveTestId}`);
         if (label) label.textContent = `${selected.length} Selected`;
         
         closeModal('candidatePickerModal');
     }
 
-    async function saveInlinePack(assessmentId) {
-        const packName = document.getElementById(`inline_pack_name_${assessmentId}`).value;
-        const templateId = document.getElementById(`inline_template_id_${assessmentId}`).value;
-        const candidates = App.selectedCandidates[assessmentId] || [];
+    async function saveInlinePack(TestId) {
+        const packName = document.getElementById(`inline_pack_name_${TestId}`).value;
+        const templateId = document.getElementById(`inline_template_id_${TestId}`).value;
+        const candidates = App.selectedCandidates[TestId] || [];
 
         if (!packName || !templateId) {
             Swal.fire('Incomplete Data', 'Please provide a pack name and choose a template.', 'warning');
@@ -2696,19 +2707,19 @@ if (!empty($assessments)) {
         }
 
         Swal.fire({
-            title: 'Creating Test Pack...',
+            title: 'Creating Batch...',
             didOpen: () => { Swal.showLoading(); }
         });
 
         try {
             const formData = new FormData();
-            formData.append('assessment_id', assessmentId);
+            formData.append('assessment_id', TestId);
             formData.append('pack_name', packName);
             formData.append('template_id', templateId);
             formData.append('user_role', 'Assigned Roles'); // or pass actual roles
             // We might need to save candidate assignments separately or pass them here
             
-            const response = await fetch('assessment/createTestPack', {
+            const response = await fetch('Test/createTestPack', {
                 method: 'POST',
                 body: formData
             });
@@ -2717,12 +2728,12 @@ if (!empty($assessments)) {
             if (result.status === 'success') {
                 Swal.fire({
                     title: 'Success!',
-                    text: 'Test pack has been created.',
+                    text: 'Batch has been created.',
                     icon: 'success',
                     timer: 1500
                 }).then(() => location.reload());
             } else {
-                Swal.fire('Error', result.message || 'Failed to create test pack', 'error');
+                Swal.fire('Error', result.message || 'Failed to create Batch', 'error');
             }
         } catch (error) {
             Swal.fire('Error', 'An unexpected error occurred.', 'error');
@@ -2994,8 +3005,8 @@ if (!empty($assessments)) {
                 else dots[i].className = 'flex-1 bg-light border rounded-pill';
             }
             if(App.executionState.violations >= 3) {
-                document.getElementById('violationTitle').textContent = "Assessment Terminated";
-                document.getElementById('violationMsg').textContent = "Multiple violations detected. Your assessment has been automatically submitted.";
+                document.getElementById('violationTitle').textContent = "Test Terminated";
+                document.getElementById('violationMsg').textContent = "Multiple violations detected. Your Test has been automatically submitted.";
                 const btn = document.querySelector('#violationOverlay .btn');
                 btn.textContent = "Return to Dashboard";
                 btn.onclick = () => App.backToDashboard();
@@ -3080,7 +3091,7 @@ if (!empty($assessments)) {
         },
 
         downloadBulkEvaluationTemplate: () => {
-            const headers = ["candidate_id", "candidate_name", "test_id", "question_count", "marks_obtained"];
+            const headers = ["candidate_id", "candidate_name", "assessment_id", "question_count", "marks_obtained"];
             const candidates = [
                 ["C001", "Arjun Sharma", "T882", "40", ""],
                 ["C002", "Priya Patel", "T882", "40", ""],
@@ -3091,7 +3102,7 @@ if (!empty($assessments)) {
             const instructions = "# EVALUATION UPLOAD INSTRUCTIONS:\n"
                                + "# 1. Keep candidate_id and candidate_name as provided.\n"
                                + "# 2. Fill the 'marks_obtained' column for each candidate.\n"
-                               + "# 3. Ensure test_id matches the current assessment.\n";
+                               + "# 3. Ensure assessment_id matches the current Test.\n";
 
             let csvContent = "data:text/csv;charset=utf-8," 
                 + instructions
@@ -3277,14 +3288,14 @@ if (!empty($assessments)) {
             }
 
             try {
-                const response = await fetch('assessment/saveQuestion', {
+                const response = await fetch('Test/saveQuestion', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
                 const result = await response.json();
                 if (result.status === 'success') {
-                    Swal.fire('Added!', 'Question has been added to the test pack.', 'success');
+                    Swal.fire('Added!', 'Question has been added to the Batch.', 'success');
                     if (type === 'MCQ') {
                         document.getElementById('mcq_content').value = '';
                         document.getElementById('mcq_opt_a').value = '';
@@ -3306,7 +3317,7 @@ if (!empty($assessments)) {
 
         previewTestPack: async (packId) => {
             try {
-                const response = await fetch(`assessment/getPackQuestions/${packId}`);
+                const response = await fetch(`Test/getPackQuestions/${packId}`);
                 const result = await response.json();
                 
                 if (result.status === 'success') {
@@ -3406,15 +3417,15 @@ if (!empty($assessments)) {
                                     <li class="mb-2">Read all questions carefully before attempting.</li>
                                     <li class="mb-2">This paper consists of ${sections.length} distinct sections.</li>
                                     <li class="mb-2">All questions are mandatory unless specified otherwise.</li>
-                                    <li>The total duration for this assessment is _______ minutes.</li>
+                                    <li>The total duration for this Test is _______ minutes.</li>
                                 </ul>
                             </div>
 
-                            <div>${sectionsHtml || '<div class="text-center py-20 text-slate-400 italic">No questions have been added to this test pack yet.</div>'}</div>
+                            <div>${sectionsHtml || '<div class="text-center py-20 text-slate-400 italic">No questions have been added to this Batch yet.</div>'}</div>
 
                             <div class="text-center mt-5 pt-4 text-[#94a3b8] text-[11px]">
                                 <div class="fw-bold text-[#1e293b] mb-1">© 2026 eNova Technology Solutions</div>
-                                <div>Generated via eNova Assessment Management Portal</div>
+                                <div>Generated via eNova Test Management Portal</div>
                             </div>
                         </div>
                     `;
@@ -3466,7 +3477,7 @@ if (!empty($assessments)) {
     });
 </script>
 
-<!-- Create Assessment Pack Modal (Test Creation Wizard) -->
+<!-- Create Batch Modal (Test Creation Wizard) -->
 <div class="modal fade" id="createPackModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
@@ -3476,7 +3487,7 @@ if (!empty($assessments)) {
                         <h5 class="wizard-step-title mb-0">Create New Test</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <p class="wizard-step-subtitle mb-0">Follow the 4-step wizard to configure, assign, and publish an assessment.</p>
+                    <p class="wizard-step-subtitle mb-0">Follow the 4-step wizard to configure, assign, and publish an Test.</p>
                 </div>
             </div>
             <div class="modal-body pt-4">
@@ -3501,11 +3512,11 @@ if (!empty($assessments)) {
                     <div id="packStep1" class="wizard-step">
                         <div class="mb-5">
                             <h3 class="wizard-step-title mb-1">Configuration</h3>
-                            <p class="text-slate-400 text-[12px]">Configure assessment header and initial test pack</p>
+                            <p class="text-slate-400 text-[12px]">Configure Test header and initial Batch</p>
                         </div>
 
                         <div class="mb-5">
-                            <label class="form-label text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Test Pack Name</label>
+                            <label class="form-label text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Batch</label>
                             <input type="text" class="form-control h-[48px] rounded-[12px] border-slate-200 px-4 text-[14px] font-medium shadow-sm focus:border-red-500 focus:ring-0 transition-all" id="pack_wizard_name" placeholder="e.g., Batch-1" />
                         </div>
 
@@ -3534,10 +3545,10 @@ if (!empty($assessments)) {
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Assessment Name</label>
-                            <select class="form-select h-[48px] rounded-[12px] border-slate-200 px-4 text-[14px] font-medium shadow-sm" id="packAssessmentName" onchange="handleAssessmentNameChange(this.value)">
-                                <option value="" selected disabled>— Select Assessment Name —</option>
-                                <?php foreach($assessments as $a): ?>
+                            <label class="form-label text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Test Name</label>
+                            <select class="form-select h-[48px] rounded-[12px] border-slate-200 px-4 text-[14px] font-medium shadow-sm" id="packTestName" onchange="handleTestNameChange(this.value)">
+                                <option value="" selected disabled>— Select Test Name —</option>
+                                <?php foreach($Tests as $a): ?>
                                 <option value="<?= $a['id'] ?>"><?= esc($a['name']) ?></option>
                                 <?php endforeach; ?>
                             </select>
@@ -3714,7 +3725,7 @@ if (!empty($assessments)) {
                     <!-- Step 3: Schedule & Publish -->
                     <div id="packStep3" class="d-none wizard-step">
                         <h3 class="wizard-step-title">Step 3 — Schedule & Publish</h3>
-                        <p class="wizard-step-subtitle">Finalize timing and publish the test pack.</p>
+                        <p class="wizard-step-subtitle">Finalize timing and publish the Batch.</p>
 
                         <div class="row g-3 mb-4">
                             <div class="col-md-8">
@@ -3848,7 +3859,7 @@ if (!empty($assessments)) {
             <div class="modal-footer border-0 px-md-5 pb-4">
                 <button type="button" class="btn btn-secondary-custom px-4" id="prevPackStep" style="display: none;">← Previous</button>
                 <div class="ms-auto d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-light px-4 border" onclick="saveDraftAssessment()">Save as Draft</button>
+                    <button type="button" class="btn btn-light px-4 border" onclick="saveDraftTest()">Save as Draft</button>
                     <button type="button" class="btn btn-primary-custom px-4" id="nextPackStep">Next Step</button>
                 </div>
             </div>
@@ -3982,7 +3993,7 @@ if (!empty($assessments)) {
     // --- Global Helpers & Navigation ---
     function switchMainTab(tabId) {
         // Save current tab to localStorage
-        localStorage.setItem('activeAssessmentTab', tabId);
+        localStorage.setItem('activeTestTab', tabId);
 
         document.querySelectorAll('.module-tab').forEach(t => {
             const attr = t.getAttribute('onclick');
@@ -4005,11 +4016,11 @@ if (!empty($assessments)) {
 
     // Restore tab on load
     window.addEventListener('DOMContentLoaded', () => {
-        const savedTab = localStorage.getItem('activeAssessmentTab');
+        const savedTab = localStorage.getItem('activeTestTab');
         if (savedTab) {
             switchMainTab(savedTab);
         } else {
-            switchMainTab('assessments');
+            switchMainTab('Tests');
         }
     });
 
@@ -4057,13 +4068,12 @@ if (!empty($assessments)) {
 
     function loadSidebarTemplates() {
         const list = document.getElementById('sidebar_list');
-        // Mock data - in real app, this would be an AJAX call
-        const templates = [
-            { id: 1, name: 'Faculty Research Ethics', category: 'Compliance', marks: 100, sections: 4 },
-            { id: 2, name: 'Annual Performance Review', category: 'Performance', marks: 50, sections: 2 },
-            { id: 3, name: 'Technical Skills Assessment', category: 'General', marks: 75, sections: 3 },
-            { id: 4, name: 'Safety & Regulatory Quiz', category: 'Compliance', marks: 20, sections: 1 }
-        ];
+        const templates = App.templates || [];
+
+        if (templates.length === 0) {
+            list.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs italic">No templates found.</div>`;
+            return;
+        }
 
         list.innerHTML = templates.map(t => `
             <div class="template-item-card" onclick="loadTemplateToBuilder(${t.id}, this)" data-category="${t.category}">
@@ -4073,8 +4083,8 @@ if (!empty($assessments)) {
                 <div class="flex-1 min-w-0">
                     <h6 class="text-xs font-bold text-slate-800 mb-0 truncate">${t.name}</h6>
                     <div class="flex items-center gap-2 mt-1">
-                        <span class="text-[9px] font-black text-red-500 uppercase tracking-widest">${t.category}</span>
-                        <span class="text-[9px] font-bold text-slate-400">• ${t.marks} Marks</span>
+                        <span class="text-[9px] font-black text-red-500 uppercase tracking-widest">${t.category || 'General'}</span>
+                        <span class="text-[9px] font-bold text-slate-400">• ${t.total_marks || 0} Marks</span>
                     </div>
                 </div>
             </div>
@@ -4108,18 +4118,21 @@ if (!empty($assessments)) {
         });
     }
 
-    function addSelectedSection(type) {
+    function addSelectedSection(type, name = null, count = 10, marks = null) {
         if (!type) return;
         
         const container = document.getElementById('builder_sections_container');
         const emptyState = document.getElementById('builder_empty_state');
-        if (emptyState) emptyState.remove();
+        if (emptyState) emptyState.style.display = 'none';
 
-        const sectionId = Date.now();
+        const sectionId = Date.now() + Math.random();
         const sectionCard = document.createElement('div');
         sectionCard.className = 'section-builder-card animate-fadeIn';
         sectionCard.dataset.type = type;
         
+        const displayName = name || `${type} Section`;
+        const displayMarks = marks !== null ? marks : (type === '2 Marks' ? 2 : 1);
+
         sectionCard.innerHTML = `
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3">
@@ -4127,7 +4140,7 @@ if (!empty($assessments)) {
                         <i class="bi bi-grip-vertical text-lg"></i>
                     </div>
                     <div>
-                        <input type="text" class="bg-transparent border-0 font-bold text-slate-800 p-0 focus:ring-0 text-sm" value="${type} Section">
+                        <input type="text" class="bg-transparent border-0 font-bold text-slate-800 p-0 focus:ring-0 text-sm" value="${displayName}">
                         <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">${type} Component</p>
                     </div>
                 </div>
@@ -4140,11 +4153,11 @@ if (!empty($assessments)) {
             <div class="grid grid-cols-3 gap-4">
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
                     <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">Questions</label>
-                    <input type="number" class="w-full bg-transparent border-0 p-0 font-bold text-slate-800 text-xs focus:ring-0 sec-count" value="10" oninput="updateBuilderStats()">
+                    <input type="number" class="w-full bg-transparent border-0 p-0 font-bold text-slate-800 text-xs focus:ring-0 sec-count" value="${count}" oninput="updateBuilderStats()">
                 </div>
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
                     <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">Marks Each</label>
-                    <input type="number" class="w-full bg-transparent border-0 p-0 font-bold text-slate-800 text-xs focus:ring-0 sec-marks" value="${type === '2 Marks' ? 2 : 1}" oninput="updateBuilderStats()">
+                    <input type="number" class="w-full bg-transparent border-0 p-0 font-bold text-slate-800 text-xs focus:ring-0 sec-marks" value="${displayMarks}" oninput="updateBuilderStats()">
                 </div>
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
                     <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">Pass %</label>
@@ -4173,41 +4186,69 @@ if (!empty($assessments)) {
         document.getElementById('builder_section_count').textContent = totalSections + ' Sections';
     }
 
+    let currentEditingTemplateId = null;
+
     function loadTemplateToBuilder(id, btn) {
-        // Highlight active card
+        currentEditingTemplateId = id;
         document.querySelectorAll('.template-item-card').forEach(el => el.classList.remove('active'));
-        btn.classList.add('active');
+        if (btn) btn.classList.add('active');
 
-        // Mock loading data
-        // In reality, you'd fetch template data by ID
-        const mockTemplates = {
-            1: { name: 'Faculty Research Ethics', category: 'Compliance', duration: 90, sections: ['MCQ', '2 Marks'] },
-            2: { name: 'Annual Performance Review', category: 'Performance', duration: 45, sections: ['2 Marks'] }
-        };
+        const template = App.templates.find(t => t.id == id);
+        if (!template) return;
 
-        const data = mockTemplates[id] || mockTemplates[1];
-        
-        document.getElementById('builder_storage_name').value = data.name;
-        document.getElementById('builder_category').value = data.category;
-        document.getElementById('builder_duration').value = data.duration;
+        document.getElementById('builder_storage_name').value = template.name;
+        document.getElementById('builder_category').value = template.category || 'General';
+        document.getElementById('builder_duration').value = template.duration || 60;
+        document.getElementById('builder_start_date').value = template.start_date || '';
+        document.getElementById('builder_end_date').value = template.end_date || '';
         
         const container = document.getElementById('builder_sections_container');
         container.innerHTML = '';
-        data.sections.forEach(type => addSelectedSection(type));
         
-        document.getElementById('builder_last_sync').textContent = 'Last saved 2m ago';
+        try {
+            const structure = JSON.parse(template.structure || '[]');
+            if (structure.length > 0) {
+                structure.forEach(s => {
+                    addSelectedSection(s.type, s.name, s.count, s.marks);
+                });
+            } else {
+                // Fallback for older data or empty templates
+                const emptyState = `<div class="empty-state py-12 text-center bg-slate-50 border border-dashed border-slate-200 rounded-3xl" id="builder_empty_state">
+                    <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-300">
+                        <i class="bi bi-stack text-3xl"></i>
+                    </div>
+                    <h5 class="text-sm font-bold text-slate-600 mb-1">No Sections Added</h5>
+                    <p class="text-xs text-slate-400">Select a section blueprint above to start building your paper structure</p>
+                </div>`;
+                container.innerHTML = emptyState;
+            }
+        } catch (e) {
+            console.error("Failed to parse template structure", e);
+        }
         
-        // Show success toast
+        document.getElementById('builder_last_sync').textContent = 'Loaded: ' + new Date().toLocaleTimeString();
+        
         Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: 'Template loaded successfully',
-            showConfirmButton: false,
-            timer: 1500,
-            background: '#fff',
-            color: '#1e293b'
+            toast: true, position: 'top-end', icon: 'success', title: 'Template loaded', showConfirmButton: false, timer: 1000
         });
+    }
+
+    function resetBuilder() {
+        currentEditingTemplateId = null;
+        document.querySelectorAll('.template-item-card').forEach(el => el.classList.remove('active'));
+        document.getElementById('builder_storage_name').value = '';
+        document.getElementById('builder_duration').value = 60;
+        document.getElementById('builder_start_date').value = '';
+        document.getElementById('builder_end_date').value = '';
+        document.getElementById('builder_sections_container').innerHTML = `<div class="empty-state py-12 text-center bg-slate-50 border border-dashed border-slate-200 rounded-3xl" id="builder_empty_state">
+            <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-300">
+                <i class="bi bi-stack text-3xl"></i>
+            </div>
+            <h5 class="text-sm font-bold text-slate-600 mb-1">No Sections Added</h5>
+            <p class="text-xs text-slate-400">Select a section blueprint above to start building your paper structure</p>
+        </div>`;
+        updateBuilderStats();
+        document.getElementById('builder_last_sync').textContent = 'New Template';
     }
 
     async function saveTemplateBuilder() {
@@ -4246,6 +4287,7 @@ if (!empty($assessments)) {
 
         try {
             const data = {
+                id: currentEditingTemplateId,
                 name: name,
                 category: category,
                 duration: duration,
@@ -4254,7 +4296,7 @@ if (!empty($assessments)) {
                 sections: sections
             };
 
-            const response = await fetch('/assessment/saveTemplate', {
+            const response = await fetch('/Test/saveTemplate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -4262,36 +4304,35 @@ if (!empty($assessments)) {
 
             const result = await response.json();
             if (result.status === 'success') {
+                // Update local App.templates state
+                if (currentEditingTemplateId) {
+                    const idx = App.templates.findIndex(t => t.id == currentEditingTemplateId);
+                    if (idx !== -1) App.templates[idx] = result.template;
+                } else {
+                    App.templates.push(result.template);
+                    currentEditingTemplateId = result.template.id;
+                }
+
                 Swal.fire({
                     icon: 'success',
                     title: 'Template Saved',
-                    text: 'The assessment structure has been persisted.',
+                    text: 'The Test structure has been persisted.',
                     timer: 2000,
                     showConfirmButton: false
                 });
-                document.getElementById('builder_last_sync').textContent = 'Saved just now';
+                document.getElementById('builder_last_sync').textContent = 'Saved at ' + new Date().toLocaleTimeString();
                 loadSidebarTemplates(); // Refresh sidebar
             } else {
                 Swal.fire('Error', result.message || 'Failed to save template', 'error');
             }
         } catch (error) {
             console.error('Save Error:', error);
-            // Fallback for demo if endpoint doesn't exist yet
-            setTimeout(() => {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Template Saved (Local)',
-                    text: 'Endpoint /assessment/saveTemplate not found, but structure is valid.',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-                document.getElementById('builder_last_sync').textContent = 'Saved locally (Demo)';
-            }, 1000);
+            Swal.fire('Error', 'An unexpected error occurred.', 'error');
         }
     }
 
 
-    // --- Assessment Pack Wizard Logic ---
+    // --- Batch Wizard Logic ---
     let currentPackStep = 1;
     const totalPackSteps = 3;
 
@@ -4300,7 +4341,7 @@ if (!empty($assessments)) {
         currentEditPackId = null;
         
         document.getElementById('pack_wizard_name').value = '';
-        document.getElementById('packAssessmentName').value = '';
+        document.getElementById('packTestName').value = '';
         document.getElementById('baseTemplateSelect').value = '';
         document.getElementById('final_duration').value = 60;
         document.getElementById('rev_duration').textContent = '60 mins';
@@ -4310,7 +4351,7 @@ if (!empty($assessments)) {
         if (document.getElementById('packTypeInternal')) {
             document.getElementById('packTypeInternal').checked = true;
         }
-        handleAssessmentTypeChange('internal');
+        handleTestTypeChange('internal');
         
         updatePackWizardUI();
         const modalEl = document.getElementById('createPackModal');
@@ -4335,7 +4376,7 @@ if (!empty($assessments)) {
         const nextBtn = document.getElementById('nextPackStep');
         
         prevBtn.style.display = currentPackStep === 1 ? 'none' : 'block';
-        nextBtn.textContent = currentPackStep === totalPackSteps ? 'Publish Assessment' : 'Next Step';
+        nextBtn.textContent = currentPackStep === totalPackSteps ? 'Publish Test' : 'Next Step';
         
         nextBtn.className = currentPackStep === totalPackSteps 
             ? 'btn btn-success px-4' 
@@ -4347,12 +4388,12 @@ if (!empty($assessments)) {
             // Validate Step 1
             if (currentPackStep === 1) {
                 const name = document.getElementById('pack_wizard_name').value.trim();
-                const assessId = document.getElementById('packAssessmentName').value;
+                const assessId = document.getElementById('packTestName').value;
                 const temp = document.getElementById('baseTemplateSelect').value;
                 
-                if (!name) { Swal.fire('Required', 'Please enter a Test Pack Name.', 'warning'); return; }
-                if (!assessId) { Swal.fire('Required', 'Please select an Assessment Name.', 'warning'); return; }
-                if (!temp) { Swal.fire('Required', 'Please select an Assessment Template.', 'warning'); return; }
+                if (!name) { Swal.fire('Required', 'Please enter a Batch.', 'warning'); return; }
+                if (!assessId) { Swal.fire('Required', 'Please select an Test Name.', 'warning'); return; }
+                if (!temp) { Swal.fire('Required', 'Please select an Test Template.', 'warning'); return; }
                 
                 const internalVisible = document.getElementById('step1InternalAssign') && !document.getElementById('step1InternalAssign').classList.contains('d-none');
                 const type = internalVisible ? 'internal' : 'recruitment';
@@ -4368,7 +4409,7 @@ if (!empty($assessments)) {
             if (currentPackStep === 2) {
                 const checkedQuestions = document.querySelectorAll('#manualQuestionTableBody input[type="checkbox"]:checked').length;
                 if (checkedQuestions === 0) {
-                    Swal.fire('Required', 'Please add and select at least one question for this test pack.', 'warning');
+                    Swal.fire('Required', 'Please add and select at least one question for this Batch.', 'warning');
                     return;
                 }
             }
@@ -4376,7 +4417,7 @@ if (!empty($assessments)) {
             currentPackStep++;
             updatePackWizardUI();
         } else {
-            publishFinalAssessment();
+            publishFinalTest();
         }
     });
 
@@ -4387,16 +4428,16 @@ if (!empty($assessments)) {
         }
     });
 
-    function handleAssessmentNameChange(value) {
+    function handleTestNameChange(value) {
         // Trigger the visibility logic
-        handleAssessmentTypeChange('internal');
+        handleTestTypeChange('internal');
     }
 
-    function handleAssessmentTypeChange(type) {
+    function handleTestTypeChange(type) {
         // Toggle Assignment Views in Step 1
         const internalView = document.getElementById('step1InternalAssign');
         const recruitmentView = document.getElementById('step1RecruitmentAssign');
-        const hasName = document.getElementById('packAssessmentName').value;
+        const hasName = document.getElementById('packTestName').value;
         
         if (internalView) {
             internalView.classList.toggle('d-none', type !== 'internal' || !hasName);
@@ -4460,7 +4501,7 @@ if (!empty($assessments)) {
         currentEditingPackId = id;
         
         // Update Title & Subtitle
-        document.getElementById('assign_modal_title').textContent = `Edit Test Pack: ${packName}`;
+        document.getElementById('assign_modal_title').textContent = `Edit Batch: ${packName}`;
         document.getElementById('assign_subtitle').textContent = `Manage template and questions for this pack.`;
         
         // Pre-select current template
@@ -4490,7 +4531,7 @@ if (!empty($assessments)) {
         const templateId = document.getElementById('edit_pack_template_id').value;
         
         try {
-            const resp = await fetch('/assessment/updateTestPackTemplate', {
+            const resp = await fetch('/Test/updateTestPackTemplate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -4823,7 +4864,7 @@ if (!empty($assessments)) {
                     <div class="d-flex align-items-center gap-3">
                         <div style="width: 1px; height: 50px; background: #e2e8f0; margin: 0 10px;"></div>
                         <div class="text-end">
-                            <h2 class="fw-bold text-slate-800 mb-2 text-xl tracking-tight text-uppercase">Manual Assessment Paper</h2>
+                            <h2 class="fw-bold text-slate-800 mb-2 text-xl tracking-tight text-uppercase">Manual Test Paper</h2>
                             <div class="d-flex justify-content-end gap-2">
                                 <div class="preview-pill">
                                     <i class="bi bi-clock text-primary"></i> Duration: 60 Minutes
@@ -4853,7 +4894,7 @@ if (!empty($assessments)) {
 
                 <div class="text-center mt-10 pt-8 border-top mx-8">
                     <div class="font-black text-slate-800 text-[12px] mb-1">© 2026 ENOVA TECHNOLOGY SOLUTIONS</div>
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Official Assessment Document</div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Official Test Document</div>
                 </div>
             </div>
         `;
@@ -5019,7 +5060,7 @@ if (!empty($assessments)) {
 
                 <div class="text-center mt-10 pt-8 border-top mx-8">
                     <div class="font-black text-slate-800 text-[12px] mb-1">© 2026 ENOVA TECHNOLOGY SOLUTIONS</div>
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Official Assessment Document</div>
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Official Test Document</div>
                 </div>
             </div>
         `;
@@ -5077,7 +5118,7 @@ if (!empty($assessments)) {
             confirmButtonColor: '#dc2230'
         }).then(r => r.isConfirmed))) return;
         
-        await fetch(`/assessment/deleteTemplate/${id}`, { method: 'POST' });
+        await fetch(`/Test/deleteTemplate/${id}`, { method: 'POST' });
         location.reload();
     }
 
@@ -5117,7 +5158,7 @@ if (!empty($assessments)) {
 
     // Initialize on load
     document.addEventListener('DOMContentLoaded', () => {
-        initAssessmentsDataTable();
+        initTestsDataTable();
 
         const previewModal = document.getElementById('paperPreviewModal');
         if (previewModal) {
@@ -5195,8 +5236,8 @@ if (!empty($assessments)) {
         }
     }
 
-    function setAssessmentAndOpenPack(id) {
-        const select = document.getElementById('packAssessmentName');
+    function setTestAndOpenPack(id) {
+        const select = document.getElementById('packTestName');
         if(select) select.value = id;
         openPackWizard();
     }
@@ -5233,8 +5274,8 @@ if (!empty($assessments)) {
         }
     };
 
-    async function publishFinalAssessment() {
-        const assessment_id = document.getElementById('packAssessmentName').value;
+    async function publishFinalTest() {
+        const assessment_id = document.getElementById('packTestName').value;
         const template_id = document.getElementById('baseTemplateSelect').value;
         const pack_name = document.getElementById('pack_wizard_name').value;
         const duration = document.getElementById('final_duration').value;
@@ -5253,8 +5294,8 @@ if (!empty($assessments)) {
         }
 
         const confirm = await Swal.fire({
-            title: 'Publish Assessment?',
-            text: "This will create the test pack and link it to the selected assessment and template.",
+            title: 'Publish Test?',
+            text: "This will create the Batch and link it to the selected Test and template.",
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Yes, Publish Now',
@@ -5271,12 +5312,12 @@ if (!empty($assessments)) {
 
             Swal.fire({
                 title: 'Publishing...',
-                text: 'Creating your assessment pack.',
+                text: 'Creating your Batch.',
                 allowOutsideClick: false,
                 didOpen: () => { Swal.showLoading(); }
             });
 
-            const response = await fetch('/assessment/createTestPack', {
+            const response = await fetch('/Test/createTestPack', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: `assessment_id=${assessment_id}&template_id=${template_id}&pack_name=${encodeURIComponent(pack_name)}&user_role=${encodeURIComponent(user_role)}&duration=${duration}`
@@ -5285,7 +5326,7 @@ if (!empty($assessments)) {
             if(result.status === 'success') {
                 Swal.fire({
                     title: 'Success!',
-                    text: 'Assessment Pack has been published.',
+                    text: 'Batch has been published.',
                     icon: 'success',
                     timer: 2000,
                     showConfirmButton: false
@@ -5307,12 +5348,12 @@ if (!empty($assessments)) {
     window.toggleFlag = (idx) => App.toggleFlag(idx);
     window.confirmSubmitTest = () => App.confirmSubmit();
 
-    let currentEditAssessmentId = null;
+    let currentEditTestId = null;
 
     function toggleEnovaFields(category) {
         const enovaFields = document.getElementById('enova_fields');
         if (enovaFields) {
-            if (category === 'Enova Assessment') {
+            if (category === 'Enova Test') {
                 enovaFields.classList.remove('hidden');
             } else {
                 enovaFields.classList.add('hidden');
@@ -5366,8 +5407,8 @@ if (!empty($assessments)) {
 
     function validateWizardStep(step) {
         if (step === 1) {
-            if (!document.getElementById('ass_name').value.trim()) { Swal.fire('Error', 'Assessment Name is required', 'error'); return false; }
-            if (!document.getElementById('ass_code').value.trim()) { Swal.fire('Error', 'Assessment Code is required', 'error'); return false; }
+            if (!document.getElementById('ass_name').value.trim()) { Swal.fire('Error', 'Test Name is required', 'error'); return false; }
+            if (!document.getElementById('ass_code').value.trim()) { Swal.fire('Error', 'Test Code is required', 'error'); return false; }
             return true;
         }
         if (step === 2) {
@@ -5517,32 +5558,32 @@ if (!empty($assessments)) {
         };
 
         try {
-            const resp = await fetch('/assessment/createAssessment', {
+            const resp = await fetch('/Test/createTest', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
             const res = await resp.json();
-            if (res.status === 'success') Swal.fire('Success!', 'Assessment & Test Pack Published!', 'success').then(() => location.reload());
+            if (res.status === 'success') Swal.fire('Success!', 'Test & Batch Published!', 'success').then(() => location.reload());
             else Swal.fire('Error', res.message, 'error');
-        } catch (e) { Swal.fire('Error', 'Failed to save assessment.', 'error'); }
+        } catch (e) { Swal.fire('Error', 'Failed to save Test.', 'error'); }
     }
 
-    function openCreateAssessment() {
+    function openCreateTest() {
         wizardStep = 1;
         selectedWizardQuestions.clear();
-        document.querySelectorAll('#assessmentModal input, #assessmentModal select, #assessmentModal textarea').forEach(el => {
+        document.querySelectorAll('#TestModal input, #TestModal select, #TestModal textarea').forEach(el => {
             if (el.type === 'checkbox') el.checked = false;
             else if (el.tagName === 'SELECT') el.selectedIndex = 0;
             else el.value = '';
         });
         document.getElementById('ass_pack_name').value = 'Batch-1';
         updateWizardUI();
-        openModal('assessmentModal');
+        openModal('TestModal');
     }
 
-    function editAssessment(data) {
-        currentEditAssessmentId = data.id;
+    function editTest(data) {
+        currentEditTestId = data.id;
         document.getElementById('ass_name').value = data.name;
         document.getElementById('ass_code').value = data.code || '';
         document.getElementById('ass_category').value = data.category || '';
@@ -5560,25 +5601,25 @@ if (!empty($assessments)) {
         }
         document.getElementById('ass_desc').value = data.description || '';
         
-        document.querySelector('#assessmentModal h3').textContent = 'Edit Assessment';
-        document.querySelector('#assessmentModal .btn-red').textContent = 'Update';
-        document.querySelector('#assessmentModal .btn-red').setAttribute('onclick', 'updateAssessment()');
+        document.querySelector('#TestModal h3').textContent = 'Edit Test';
+        document.querySelector('#TestModal .btn-red').textContent = 'Update';
+        document.querySelector('#TestModal .btn-red').setAttribute('onclick', 'updateTest()');
         
         clearValidationErrors();
-        openModal('assessmentModal');
+        openModal('TestModal');
     }
 
-    async function updateAssessment() {
-        if(!validateAssessmentForm()) return;
+    async function updateTest() {
+        if(!validateTestForm()) return;
 
         // Hide modal immediately
-        const modalEl = document.getElementById('assessmentModal');
+        const modalEl = document.getElementById('TestModal');
         if(modalEl) {
             const inst = bootstrap.Modal.getInstance(modalEl);
             if(inst) inst.hide();
         }
 
-        const id = currentEditAssessmentId;
+        const id = currentEditTestId;
         const name = document.getElementById('ass_name').value;
         const code = document.getElementById('ass_code').value;
         const category = document.getElementById('ass_category').value;
@@ -5595,7 +5636,7 @@ if (!empty($assessments)) {
         });
 
         try {
-            const response = await fetch(`/assessment/updateAssessment/${id}`, { 
+            const response = await fetch(`/Test/updateTest/${id}`, { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify({
@@ -5603,34 +5644,34 @@ if (!empty($assessments)) {
                 })
             });
             if(response.ok) {
-                Swal.fire({ title: 'Updated!', text: 'Assessment has been updated', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
+                Swal.fire({ title: 'Updated!', text: 'Test has been updated', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
             } else {
                 throw new Error();
             }
         } catch (e) {
-            Swal.fire('Error', 'Failed to update assessment.', 'error');
+            Swal.fire('Error', 'Failed to update Test.', 'error');
         }
     }
 
-    async function deleteAssessment(id) {
-        if(!(await Swal.fire({ title: 'Delete Assessment?', text: 'This cannot be undone.', icon: 'warning', showCancelButton: true }).then(r => r.isConfirmed))) return;
+    async function deleteTest(id) {
+        if(!(await Swal.fire({ title: 'Delete Test?', text: 'This cannot be undone.', icon: 'warning', showCancelButton: true }).then(r => r.isConfirmed))) return;
         
         Swal.fire({
             title: 'Deleting...',
-            text: 'Removing the assessment.',
+            text: 'Removing the Test.',
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
         });
 
-        await fetch(`/assessment/deleteAssessment/${id}`, { method: 'POST' });
+        await fetch(`/Test/deleteTest/${id}`, { method: 'POST' });
         location.reload();
     }
 
-    async function createAssessment() {
-        if(!validateAssessmentForm()) return;
+    async function createTest() {
+        if(!validateTestForm()) return;
 
         // Hide modal immediately
-        const modalEl = document.getElementById('assessmentModal');
+        const modalEl = document.getElementById('TestModal');
         if(modalEl) {
             const inst = bootstrap.Modal.getInstance(modalEl);
             if(inst) inst.hide();
@@ -5648,13 +5689,13 @@ if (!empty($assessments)) {
         
         Swal.fire({
             title: 'Creating...',
-            text: 'Setting up new assessment and initial pack.',
+            text: 'Setting up new Test and initial pack.',
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
         });
 
         try {
-            const response = await fetch('/assessment/createAssessment', { 
+            const response = await fetch('/Test/createTest', { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify({
@@ -5667,12 +5708,12 @@ if (!empty($assessments)) {
                 })
             });
             if(response.ok) {
-                Swal.fire({ title: 'Success!', text: 'Assessment created successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
+                Swal.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
             } else {
                 throw new Error();
             }
         } catch (e) {
-            Swal.fire('Error', 'Failed to create assessment.', 'error');
+            Swal.fire('Error', 'Failed to create Test.', 'error');
         }
     }
 
@@ -5697,7 +5738,7 @@ if (!empty($assessments)) {
     async function saveTemplate() {
         const name = document.getElementById('temp_name').value;
         const description = document.getElementById('temp_desc').value;
-        await fetch('/assessment/saveTemplate', {
+        await fetch('/Test/saveTemplate', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -5713,8 +5754,8 @@ if (!empty($assessments)) {
         Swal.fire({ title: 'Template Saved', text: 'Your template has been created successfully', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => location.reload());
     }
 
-    function setAssessmentAndRedirect(id) {
-        const sel = document.getElementById('main_assessment_select');
+    function setTestAndRedirect(id) {
+        const sel = document.getElementById('main_Test_select');
         if(sel) sel.value = id;
         switchMainTab('test-creation');
         openPackWizard();
@@ -5724,7 +5765,7 @@ if (!empty($assessments)) {
     function editPack(data) {
         currentEditPackId = data.id;
         document.getElementById('pack_wizard_name').value = data.pack_name;
-        document.getElementById('packAssessmentName').value = data.assessment_id || '';
+        document.getElementById('packTestName').value = data.assessment_id || '';
         document.getElementById('baseTemplateSelect').value = data.template_id || '';
         document.getElementById('final_duration').value = data.duration || 60;
         document.getElementById('rev_duration').textContent = (data.duration || 60) + ' mins';
@@ -5734,7 +5775,7 @@ if (!empty($assessments)) {
             App.onTemplateSelect(data.template_id);
         }
         
-        document.querySelector('#createPackModal h5').textContent = 'Edit Test Pack';
+        document.querySelector('#createPackModal h5').textContent = 'Edit Batch';
         const nextBtn = document.getElementById('nextPackStep');
         nextBtn.textContent = 'Update & Next';
         
@@ -5749,26 +5790,26 @@ if (!empty($assessments)) {
     function deletePack(id) {
         Swal.fire({ title: 'Delete this pack?', text: "This action cannot be undone.", icon: 'warning', showCancelButton: true }).then(async (result) => {
             if (result.isConfirmed) {
-                await fetch(`/assessment/deletePack/${id}`, { method: 'POST' });
+                await fetch(`/Test/deletePack/${id}`, { method: 'POST' });
                 location.reload();
             }
         });
     }
 
-    function saveDraftAssessment() {
+    function saveDraftTest() {
         Swal.fire({
             title: 'Save as Draft?',
-            text: "You can return later to complete and publish this assessment.",
+            text: "You can return later to complete and publish this Test.",
             icon: 'info',
             showCancelButton: true,
             confirmButtonText: 'Yes, Save Draft',
             confirmButtonColor: '#475569'
         }).then((result) => {
             if (result.isConfirmed) {
-                Swal.fire('Saved!', 'Assessment has been saved as a draft.', 'success').then(() => {
+                Swal.fire('Saved!', 'Test has been saved as a draft.', 'success').then(() => {
                     addPackToTable({
                         id: Date.now(),
-                        pack_name: 'Draft Assessment ' + (new Date().getHours() + ":" + new Date().getMinutes()),
+                        pack_name: 'Draft Test ' + (new Date().getHours() + ":" + new Date().getMinutes()),
                         created_at: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
                         template_name: 'In Progress...',
                         status: 'Draft',
@@ -5782,7 +5823,7 @@ if (!empty($assessments)) {
 
     function reusePack(id) {
         Swal.fire({
-            title: 'Reuse Assessment?',
+            title: 'Reuse Test?',
             text: "This will copy the template and questions, jumping directly to candidate assignment.",
             icon: 'question',
             showCancelButton: true,
@@ -5800,7 +5841,7 @@ if (!empty($assessments)) {
                     // Create a duplicated row in background for demo
                     addPackToTable({
                         id: Date.now(),
-                        pack_name: 'Copy of Previous Assessment',
+                        pack_name: 'Copy of Previous Test',
                         created_at: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
                         template_name: 'Duplicated Template',
                         status: 'Draft',
@@ -5822,14 +5863,14 @@ if (!empty($assessments)) {
 
     let packsDataTable = null;
     function initPacksDataTable() {
-        if ($.fn.dataTable.isDataTable('#assessmentPacksTable')) {
-            packsDataTable = $('#assessmentPacksTable').DataTable();
+        if ($.fn.dataTable.isDataTable('#TestPacksTable')) {
+            packsDataTable = $('#TestPacksTable').DataTable();
             return;
         }
         
         const initialPacks = <?= json_encode($allPacks) ?>;
         
-        packsDataTable = $('#assessmentPacksTable').DataTable({
+        packsDataTable = $('#TestPacksTable').DataTable({
             data: initialPacks,
             columns: [
                 { 
@@ -5861,8 +5902,7 @@ if (!empty($assessments)) {
                     render: (data, type, row) => `
                         <button class="action-btn text-slate-400 hover:text-blue-600 me-2" onclick="App.previewTestPack(${row.id})" title="Preview Paper"><i class="bi bi-eye"></i></button>
                         <button class="action-btn text-slate-400 hover:text-slate-600 me-2" onclick="manageQuestions(${row.id})" title="Manage Questions"><i class="bi bi-gear"></i></button>
-                        <button class="action-btn text-slate-400 hover:text-blue-600 me-2" onclick="editPack(${JSON.stringify(row).replace(/"/g, '&quot;')})" title="Edit Pack"><i class="bi bi-pencil"></i></button>
-                        <button class="action-btn text-red-400 hover:text-red-600" onclick="deletePack(${row.id})" title="Delete Pack"><i class="bi bi-trash"></i></button>
+                        <button class="action-btn text-red-400 hover:text-red-600" onclick="deletePack(${row.id})" title="Delete Batch"><i class="bi bi-trash"></i></button>
                     `
                 }
             ],
@@ -5874,7 +5914,7 @@ if (!empty($assessments)) {
             dom: '<"flex justify-between items-center mb-3"f>rtp',
             language: {
                 search: "",
-                searchPlaceholder: "Search Assessments...",
+                searchPlaceholder: "Search Tests...",
                 paginate: {
                     previous: '<i class="bi bi-chevron-left"></i>',
                     next: '<i class="bi bi-chevron-right"></i>'
@@ -5931,7 +5971,7 @@ if (!empty($assessments)) {
         document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
     }
 
-    function validateAssessmentForm() {
+    function validateTestForm() {
         let isValid = true;
         const name = document.getElementById('ass_name');
         const code = document.getElementById('ass_code');
@@ -5941,7 +5981,7 @@ if (!empty($assessments)) {
         if(!code || !code.value.trim()) { showError('ass_code', true); isValid = false; } else { showError('ass_code', false); }
         if(!category || !category.value) { showError('err_ass_category', true, 'ass_category'); isValid = false; } else { showError('err_ass_category', false, 'ass_category'); }
         
-        if(category && category.value === 'Enova Assessment') {
+        if(category && category.value === 'Enova Test') {
             const type = document.getElementById('ass_type');
             if(!type || !type.value) { showError('ass_type', true); isValid = false; } else { showError('ass_type', false); }
             
@@ -5974,7 +6014,7 @@ if (!empty($assessments)) {
             const el = document.getElementById(id);
             if(el) {
                 el.addEventListener('blur', () => {
-                    if(id === 'ass_type' && document.getElementById('ass_category').value !== 'Enova Assessment') return;
+                    if(id === 'ass_type' && document.getElementById('ass_category').value !== 'Enova Test') return;
                     showError(id, !el.value.trim());
                 });
                 el.addEventListener('input', () => {

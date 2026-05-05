@@ -5,15 +5,15 @@ use CodeIgniter\Router\RouteCollection;
 /**
  * @var RouteCollection $routes
  */
-$routes->get('/', 'AssessmentController::index');
-$routes->post('/assessment/saveTemplate', 'AssessmentController::saveTemplate');
-$routes->post('assessment/deleteTemplate/(:num)', 'AssessmentController::deleteTemplate/$1');
-$routes->post('assessment/updateAssessment/(:num)', 'AssessmentController::updateAssessment/$1');
-$routes->post('assessment/createAssessment', 'AssessmentController::createAssessment');
-$routes->post('assessment/deleteAssessment/(:num)', 'AssessmentController::deleteAssessment/$1');
-$routes->post('assessment/createTestPack', 'AssessmentController::createTestPack');
-$routes->post('assessment/deletePack/(:num)', 'AssessmentController::deletePack/$1');
-$routes->post('assessment/uploadQuestions', 'AssessmentController::uploadQuestions');
-$routes->post('assessment/saveQuestion', 'AssessmentController::saveQuestion');
-$routes->get('/assessment/downloadTemplate/(:any)', 'AssessmentController::downloadTemplate/$1');
-$routes->get('assessment/getPackQuestions/(:num)', 'AssessmentController::getPackQuestions/$1');
+$routes->get('/', 'TestController::index');
+$routes->post('/Test/saveTemplate', 'TestController::saveTemplate');
+$routes->post('Test/deleteTemplate/(:num)', 'TestController::deleteTemplate/$1');
+$routes->post('Test/updateTest/(:num)', 'TestController::updateTest/$1');
+$routes->post('Test/createTest', 'TestController::createTest');
+$routes->post('Test/deleteTest/(:num)', 'TestController::deleteTest/$1');
+$routes->post('Test/createTestPack', 'TestController::createTestPack');
+$routes->post('Test/deletePack/(:num)', 'TestController::deletePack/$1');
+$routes->post('Test/uploadQuestions', 'TestController::uploadQuestions');
+$routes->post('Test/saveQuestion', 'TestController::saveQuestion');
+$routes->get('/Test/downloadTemplate/(:any)', 'TestController::downloadTemplate/$1');
+$routes->get('Test/getPackQuestions/(:num)', 'TestController::getPackQuestions/$1');

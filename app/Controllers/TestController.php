@@ -4,20 +4,20 @@ namespace App\Controllers;
 
 use App\Models\TemplateModel;
 use App\Models\TemplateSectionModel;
-use App\Models\AssessmentModel;
+use App\Models\TestModel;
 use App\Models\TestPackModel;
 use App\Models\QuestionModel;
 use App\Models\EmployeeModel;
 use App\Models\QuestionBankModel;
 use CodeIgniter\Controller;
 
-class AssessmentController extends BaseController
+class TestController extends BaseController
 {
     public function index()
     {
         $templateModel = new TemplateModel();
         $sectionModel = new TemplateSectionModel();
-        $assessmentModel = new AssessmentModel();
+        $TestModel = new TestModel();
         $testPackModel = new TestPackModel();
 
         $templates = $templateModel->findAll();
@@ -25,8 +25,8 @@ class AssessmentController extends BaseController
             $t['sections'] = $sectionModel->where('template_id', $t['id'])->findAll();
         }
 
-        $assessments = $assessmentModel->findAll();
-        foreach ($assessments as &$a) {
+        $Tests = $TestModel->findAll();
+        foreach ($Tests as &$a) {
             $a['test_packs'] = $testPackModel->where('assessment_id', $a['id'])->findAll();
             foreach ($a['test_packs'] as &$tp) {
                 $tp['template'] = $templateModel->find($tp['template_id']);
@@ -64,7 +64,7 @@ class AssessmentController extends BaseController
 
         return view('workflow', [
             'templates' => $templates,
-            'assessments' => $assessments,
+            'Tests' => $Tests,
             'employees' => $employees,
             'questionBank' => $questionBank
         ]);
@@ -75,7 +75,6 @@ class AssessmentController extends BaseController
         $templateModel = new TemplateModel();
         $sectionModel = new TemplateSectionModel();
 
-        // Support both JSON and Form data
         $data = $this->request->getJSON(true);
         if (!$data) {
             $data = $this->request->getPost();
@@ -85,16 +84,26 @@ class AssessmentController extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid data']);
         }
 
-        $templateId = $templateModel->insert([
+        $id = $data['id'] ?? null;
+        $templateData = [
             'name' => $data['name'],
-            'paper_title' => $data['paper_title'] ?? '',
+            'paper_title' => $data['name'], // Defaulting to name if not provided separately
             'duration' => $data['duration'] ?? 60,
-            'total_marks' => $data['total_marks'] ?? 0,
-            'description' => $data['description'] ?? ''
-        ]);
+            'total_marks' => $this->calculateTotalMarks($data['sections'] ?? []),
+            'description' => $data['category'] ?? '' // Storing category in description for now
+        ];
+
+        if ($id) {
+            $templateModel->update($id, $templateData);
+            $templateId = $id;
+            // Clean up old sections before re-inserting
+            $sectionModel->where('template_id', $id)->delete();
+        } else {
+            $templateId = $templateModel->insert($templateData);
+        }
 
         if (!$templateId) {
-            return $this->response->setJSON(['status' => 'error', 'message' => 'Failed to insert template']);
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Failed to save template']);
         }
 
         if (isset($data['sections']) && is_array($data['sections'])) {
@@ -104,13 +113,27 @@ class AssessmentController extends BaseController
                     'section_name' => $sec['name'] ?? '',
                     'marks_type' => $sec['type'] ?? 'MCQ',
                     'num_questions' => $sec['count'] ?? 0,
-                    'marks_per_question' => $sec['marks'] ?? 1,
-                    'knowledge_type' => $sec['knowledge'] ?? ''
+                    'marks_per_question' => $sec['marks'] ?? 1
                 ]);
             }
         }
 
-        return $this->response->setJSON(['status' => 'success', 'id' => $templateId]);
+        // Fetch the fresh data to return
+        $savedTemplate = $templateModel->find($templateId);
+        $savedTemplate['structure'] = json_encode($data['sections'] ?? []);
+
+        return $this->response->setJSON([
+            'status' => 'success', 
+            'template' => $savedTemplate
+        ]);
+    }
+
+    private function calculateTotalMarks($sections) {
+        $total = 0;
+        foreach($sections as $s) {
+            $total += ($s['count'] ?? 0) * ($s['marks'] ?? 0);
+        }
+        return $total;
     }
 
     public function deleteTemplate($id)
@@ -127,9 +150,9 @@ class AssessmentController extends BaseController
         return $this->response->setJSON(['status' => 'success']);
     }
 
-    public function createAssessment()
+    public function createTest()
     {
-        $model = new AssessmentModel();
+        $model = new TestModel();
         $data = $this->request->getJSON(true);
         if (!$data) $data = $this->request->getPost();
         
@@ -182,9 +205,9 @@ class AssessmentController extends BaseController
         return $this->response->setJSON(['status' => 'success']);
     }
 
-    public function updateAssessment($id)
+    public function updateTest($id)
     {
-        $model = new AssessmentModel();
+        $model = new TestModel();
         $data = $this->request->getJSON(true);
         if (!$data) $data = $this->request->getPost();
         
@@ -200,9 +223,9 @@ class AssessmentController extends BaseController
         return $this->response->setJSON(['status' => 'success']);
     }
 
-    public function deleteAssessment($id)
+    public function deleteTest($id)
     {
-        $assessmentModel = new AssessmentModel();
+        $TestModel = new TestModel();
         $testPackModel = new TestPackModel();
         
         // Delete associated test packs (and their questions)
@@ -211,8 +234,8 @@ class AssessmentController extends BaseController
             $this->deletePack($p['id']);
         }
         
-        // Delete the assessment
-        $assessmentModel->delete($id);
+        // Delete the Test
+        $TestModel->delete($id);
         
         return $this->response->setJSON(['status' => 'success']);
     }
@@ -255,7 +278,7 @@ class AssessmentController extends BaseController
         // Get the limit from template
         $tpModel = new \App\Models\TestPackModel();
         $tp = $tpModel->find($testPackId);
-        if (!$tp) return redirect()->back()->with('error', 'Test pack not found');
+        if (!$tp) return redirect()->back()->with('error', 'Batch not found');
 
         $tsModel = new \App\Models\TemplateSectionModel();
         
@@ -345,7 +368,7 @@ class AssessmentController extends BaseController
         if (!$data) $data = $this->request->getPost();
 
         if (empty($data['test_pack_id'])) {
-            return $this->response->setJSON(['status' => 'error', 'message' => 'Test Pack ID is missing']);
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Batch ID is missing']);
         }
 
         $id = $model->insert($data);
