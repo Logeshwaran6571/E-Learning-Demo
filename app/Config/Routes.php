@@ -14,4 +14,6 @@ $routes->post('assessment/deleteAssessment/(:num)', 'AssessmentController::delet
 $routes->post('assessment/createTestPack', 'AssessmentController::createTestPack');
 $routes->post('assessment/deletePack/(:num)', 'AssessmentController::deletePack/$1');
 $routes->post('assessment/uploadQuestions', 'AssessmentController::uploadQuestions');
+$routes->post('assessment/saveQuestion', 'AssessmentController::saveQuestion');
 $routes->get('/assessment/downloadTemplate/(:any)', 'AssessmentController::downloadTemplate/$1');
+$routes->get('assessment/getPackQuestions/(:num)', 'AssessmentController::getPackQuestions/$1');
