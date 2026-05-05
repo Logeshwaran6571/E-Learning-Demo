@@ -1232,6 +1232,7 @@ if (!empty($Tests)) {
                 <table id="TestsDataTable" class="w-full text-left">
                     <thead class="bg-white border-b border-slate-100">
                         <tr>
+                            <th class="hidden">ID</th>
                             <th class="w-12"></th>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Test Name</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Code</th>
@@ -1652,362 +1653,98 @@ if (!empty($Tests)) {
 </div>
 
 <div id="TestModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeModal('TestModal')">
-  <div class="custom-modal modal-xl max-w-5xl">
+  <div class="custom-modal max-w-2xl">
     <div class="flex justify-between items-center mb-6">
-        <div>
-            <h3 class="text-xl font-extrabold text-slate-800">Create New Test</h3>
-            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">Configure Test header and initial Batch</p>
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 shadow-sm border border-red-100">
+                <i class="bi bi-plus-circle-fill text-2xl"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-extrabold text-slate-800">Create New Test</h3>
+                <p class="text-sm text-slate-500 font-medium">Initialize a new evaluation process.</p>
+            </div>
         </div>
-        <button class="text-slate-400 hover:text-slate-600" onclick="closeModal('TestModal')">
+        <button class="text-slate-400 hover:text-red-500 transition-colors" onclick="closeModal('TestModal')">
             <i class="bi bi-x-lg text-xl"></i>
         </button>
     </div>
 
-    <!-- Stepper -->
-    <div class="flex items-center justify-between mb-8 px-12 relative h-16">
-        <div class="absolute top-5 left-20 right-20 h-0.5 bg-slate-100 -z-10"></div>
-        <div class="step-item active relative" data-step="1">
-            <div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold shadow-lg shadow-red-100 z-10 mx-auto">1</div>
-            <span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-800 whitespace-nowrap">Create Test</span>
+    <div class="grid grid-cols-2 gap-6 mb-6">
+        <div class="form-group">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test Name <span class="text-red-500">*</span></label>
+            <input id="ass_name" class="input h-12 bg-slate-50 border-slate-100 rounded-xl px-4 text-sm" placeholder="e.g., Technical Proficiency Test" />
+            <span class="error-msg hidden" id="err_ass_name">Test name is required</span>
         </div>
-        <div class="step-item relative" data-step="2">
-            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold z-10 mx-auto">2</div>
-            <span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400 whitespace-nowrap">Create Template</span>
-        </div>
-        <div class="step-item relative" data-step="3">
-            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold z-10 mx-auto">3</div>
-            <span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400 whitespace-nowrap">QP Upload</span>
-        </div>
-        <div class="step-item relative" data-step="4">
-            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold z-10 mx-auto">4</div>
-            <span class="absolute top-12 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400 whitespace-nowrap">Publish</span>
+        <div class="form-group">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test Code <span class="text-red-500">*</span></label>
+            <input id="ass_code" class="input h-12 bg-slate-50 border-slate-100 rounded-xl px-4 text-sm" placeholder="QA-2026" />
+            <span class="error-msg hidden" id="err_ass_code">Test code is required</span>
         </div>
     </div>
 
-    <div class="mt-8 min-h-[400px]">
-        <!-- Step 1: Create Test -->
-        <div id="assStep1" class="wizard-pane">
-            <div class="grid grid-cols-2 gap-8">
-                <div class="space-y-4">
-                    <div class="form-group">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Test Name</label>
-                        <input id="ass_name" class="input" placeholder="e.g. Annual Technical Challenge" />
-                        <span class="error-msg hidden" id="err_ass_name">Please enter Test name</span>
-                    </div>
-                    <div class="form-group">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Test Code</label>
-                        <input id="ass_code" class="input" placeholder="e.g. REC2026" />
-                        <span class="error-msg hidden" id="err_ass_code">Please enter a valid Test code</span>
-                    </div>
-                    <div class="form-group">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Category</label>
-                        <select id="ass_category" class="select text-sm h-11" onchange="toggleEnovaFields(this.value)">
-                            <option value="">-- Choose Category --</option>
-                            <option value="HR Recruitment-Fresher">HR Recruitment-Fresher</option>
-                            <option value="Enova Test">Enova Test</option>
-                        </select>
-                        <span class="error-msg hidden" id="err_ass_category">Please select a category</span>
-                    </div>
-                </div>
-                <div class="space-y-4">
-                    <div id="enova_fields" class="hidden space-y-4">
-                        <div class="form-group">
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Test Type</label>
-                            <select id="ass_type" class="select text-sm h-11 bg-white">
-                                <option value="">-- Select Type --</option>
-                                <option>Technical</option>
-                                <option>Compliance</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Assigned To</label>
-                            <div class="custom-multiselect" id="ass_assigned_container">
-                                <button type="button" class="multiselect-btn" id="multiselect_btn" onclick="toggleMultiselect()">
-                                    <span id="multiselect_label">-- Select Roles --</span>
-                                    <i class="bi bi-chevron-down"></i>
-                                </button>
-                                <div class="multiselect-options" id="multiselect_options">
-                                    <label class="option-item"><input type="checkbox" value="Developers" onchange="updateMultiselectLabel()"> Developers</label>
-                                    <label class="option-item"><input type="checkbox" value="Designers" onchange="updateMultiselectLabel()"> Designers</label>
-                                    <label class="option-item"><input type="checkbox" value="Testers" onchange="updateMultiselectLabel()"> Testers</label>
-                                    <label class="option-item"><input type="checkbox" value="HR" onchange="updateMultiselectLabel()"> HR</label>
-                                    <label class="option-item"><input type="checkbox" value="Client Advocate" onchange="updateMultiselectLabel()"> Client Advocate</label>
-                                </div>
-                            </div>
-                            <select id="ass_assigned" class="hidden" multiple>
-                                <option value="Developers">Developers</option>
-                                <option value="Designers">Designers</option>
-                                <option value="Testers">Testers</option>
-                                <option value="HR">HR</option>
-                                <option value="Client Advocate">Client Advocate</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group relative">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Short Description</label>
-                        <textarea id="ass_desc" class="input text-sm p-3" rows="5" placeholder="Briefly describe the Test goal..." maxlength="500" oninput="updateCharCount(this)"></textarea>
-                        <span id="char_count" class="absolute bottom-2 right-2 text-[10px] text-gray-400 font-bold">0 / 500</span>
-                    </div>
-                </div>
+    <div class="form-group mb-6">
+        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test Category <span class="text-red-500">*</span></label>
+        <select id="ass_category" class="select h-12 bg-slate-50 border-slate-100 rounded-xl px-4 text-sm" onchange="toggleEnovaFields(this.value)">
+            <option value="Enova">Enova</option>
+            <option value="HR Recruitment-Fresher">HR Recruitment-Fresher</option>
+        </select>
+        <span class="error-msg hidden" id="err_ass_category">Please select a category</span>
+    </div>
+
+    <div id="enova_extra_fields">
+        <div class="grid grid-cols-2 gap-6 mb-6">
+            <div class="form-group">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test Type <span class="text-red-500">*</span></label>
+                <select id="ass_type" class="select h-12 bg-slate-50 border-slate-100 rounded-xl px-4 text-sm">
+                    <option value="">Select type...</option>
+                    <option>Technical</option>
+                    <option>Compliance</option>
+                    <option>Behavioral</option>
+                </select>
+                <span class="error-msg hidden" id="err_ass_type">Test type is required</span>
             </div>
-        </div>
-
-        <!-- Step 2: Create Template -->
-        <div id="assStep2" class="wizard-pane hidden">
-            <div class="max-w-2xl mx-auto space-y-6">
-                <div class="form-group">
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Batch</label>
-                    <input id="ass_pack_name" class="input" value="Batch-1" placeholder="e.g. Q1 Technical Round" />
-                </div>
-                <div class="form-group">
-                    <div class="flex items-center gap-2 mb-1.5">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0">Select Template</label>
-                        <button class="text-red-500 hover:text-red-700 font-black text-sm" onclick="openTemplateBuilder()" title="Create New Template">
-                            <i class="bi bi-plus-circle-fill"></i>
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <select id="ass_pack_template" class="select text-sm h-11" onchange="updateTemplatePreview(this.value)">
-                            <option value="">-- Choose Template --</option>
-                            <?php foreach($templates as $t): ?>
-                                <option value="<?= $t['id'] ?>" data-json='<?= json_encode($t) ?>'><?= esc($t['name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <button class="btn-outline text-xs h-11" onclick="previewTemplate(document.getElementById('ass_pack_template').value)">
-                            <i class="bi bi-eye me-2"></i> Preview Selected Template
-                        </button>
-                    </div>
-                </div>
-
-                <div id="template_info_card" class="hidden p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-start gap-4">
-                    <i class="bi bi-info-circle text-blue-500 mt-1"></i>
-                    <div>
-                        <div class="text-[11px] font-bold text-blue-800 uppercase tracking-wider">Template Summary</div>
-                        <div id="template_summary_text" class="text-xs text-blue-600 mt-1"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Step 3: QP Upload -->
-        <div id="assStep3" class="wizard-pane hidden">
-            <div class="flex justify-between items-center mb-6">
-                <div class="flex gap-4">
-                    <button class="btn-tab active" id="btn-q-manual" onclick="switchQuestionMethod('manual')">Manual Selection</button>
-                    <button class="btn-tab" id="btn-q-bulk" onclick="switchQuestionMethod('bulk')">Bulk Upload</button>
-                </div>
-                <div class="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-xs font-bold border border-red-100">
-                    Questions: <span id="ass_selected_q_count">0</span> / <span id="ass_required_q_count">--</span>
-                </div>
-            </div>
-
-            <div id="q_manual_view" class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <div class="relative w-72">
-                        <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" class="input pl-10 h-10 text-xs" placeholder="Search questions..." oninput="filterWizardQuestions(this.value)">
-                    </div>
-                    <button class="btn-red-rounded text-xs px-4 h-10" onclick="App.openAddManualQuestionModal()">
-                        <i class="bi bi-plus-lg me-2"></i> Create New Question
+            <div class="form-group">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Assign To <span class="text-red-500">*</span></label>
+                <div class="custom-multiselect" id="ass_assigned_container">
+                    <button type="button" class="multiselect-btn h-12 bg-slate-50 border-slate-100 rounded-xl px-4 text-sm" id="multiselect_btn" onclick="toggleMultiselect()">
+                        <span id="multiselect_label">Select roles...</span>
+                        <i class="bi bi-chevron-down"></i>
                     </button>
-                </div>
-                <div class="border border-slate-100 rounded-xl overflow-y-auto max-h-[400px]">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
-                            <tr>
-                                <th class="p-4 w-12"><input type="checkbox" onchange="selectAllWizardQuestions(this.checked)"></th>
-                                <th class="p-4 font-bold text-slate-500 uppercase">Question</th>
-                                <th class="p-4 font-bold text-slate-500 uppercase">Type</th>
-                                <th class="p-4 font-bold text-slate-500 uppercase">Category</th>
-                                <th class="p-4 font-bold text-slate-500 uppercase text-center">Marks</th>
-                            </tr>
-                        </thead>
-                        <tbody id="wizard_question_list">
-                            <?php foreach($questionBank as $q): ?>
-                            <tr class="hover:bg-slate-50 border-b border-slate-50 wizard-q-row">
-                                <td class="p-4"><input type="checkbox" class="wizard-q-check" value="<?= $q['id'] ?>" onchange="toggleWizardQuestion('<?= $q['id'] ?>', this.checked)"></td>
-                                <td class="p-4">
-                                    <div class="font-bold text-slate-700"><?= esc($q['text']) ?></div>
-                                </td>
-                                <td class="p-4"><span class="bg-slate-100 px-2 py-0.5 rounded text-[10px] font-bold text-slate-500"><?= esc($q['type']) ?></span></td>
-                                <td class="p-4 text-slate-500"><?= esc($q['category'] ?? 'General') ?></td>
-                                <td class="p-4 text-center font-bold text-slate-700"><?= esc($q['marks']) ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="q_bulk_view" class="hidden">
-                <div class="max-w-md mx-auto text-center py-12 space-y-6">
-                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-300">
-                        <i class="bi bi-cloud-upload text-4xl"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-slate-800">Upload Questions via CSV</h4>
-                        <p class="text-xs text-slate-400 mt-1">Download our template, fill in your questions, and upload.</p>
-                    </div>
-                    <div class="flex flex-col gap-3">
-                        <button class="btn-outline h-12 w-full justify-center" onclick="downloadQuestionTemplate()">
-                            <i class="bi bi-download me-2"></i> Download Template
-                        </button>
-                        <label class="btn-red h-12 w-full justify-center cursor-pointer">
-                            <i class="bi bi-file-earmark-arrow-up me-2"></i> Upload CSV File
-                            <input type="file" class="hidden" accept=".csv" onchange="handleBulkQuestionUpload(this)">
-                        </label>
+                    <div class="multiselect-options" id="multiselect_options">
+                        <label class="option-item"><input type="checkbox" value="Developers" onchange="updateMultiselectLabel()"> Developers</label>
+                        <label class="option-item"><input type="checkbox" value="Designers" onchange="updateMultiselectLabel()"> Designers</label>
+                        <label class="option-item"><input type="checkbox" value="Testers" onchange="updateMultiselectLabel()"> Testers</label>
+                        <label class="option-item"><input type="checkbox" value="HR" onchange="updateMultiselectLabel()"> HR</label>
+                        <label class="option-item"><input type="checkbox" value="Client Advocate" onchange="updateMultiselectLabel()"> Client Advocate</label>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Step 4: Publish -->
-        <div id="assStep4" class="wizard-pane hidden">
-            <div class="max-w-5xl mx-auto">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6">
-                    
-                    <!-- Left Column: Scheduling & Limits -->
-                    <div class="space-y-6">
-                        <div>
-                            <h4 class="text-xs font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <i class="bi bi-calendar-event text-red-500"></i> Schedule & Finalize
-                            </h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Scheduled Date</label>
-                                    <input type="date" id="ass_publish_date" class="input h-11" value="<?= date('Y-m-d') ?>" />
-                                </div>
-                                <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Duration (Mins)</label>
-                                    <input type="number" id="ass_wizard_duration" class="input h-11" value="60" />
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4 mt-4">
-                                <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Start Time</label>
-                                    <input type="time" id="ass_start_time" class="input h-11" value="09:00" />
-                                </div>
-                                <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">End Time</label>
-                                    <input type="time" id="ass_end_time" class="input h-11" value="10:00" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 class="text-xs font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <i class="bi bi-shield-check text-red-500"></i> Passing Criteria & Attempts
-                            </h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Pass Mark (%)</label>
-                                    <input type="number" id="ass_pass_mark" class="input h-11" value="50" placeholder="e.g. 50" />
-                                </div>
-                                <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">No. of Attempts</label>
-                                    <input type="number" id="ass_attempts" class="input h-11" value="1" placeholder="e.g. 1" />
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- Right Column: Instructions & Config -->
-                    <div class="space-y-6">
-                        <div class="form-group">
-                            <h4 class="text-xs font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <i class="bi bi-card-text text-red-500"></i> Test Instructions
-                            </h4>
-                            <textarea id="ass_instructions" class="input text-sm p-4" rows="5" style="min-height: 120px;" placeholder="Enter instructions for candidates..."></textarea>
-                        </div>
-
-                        <div class="settings-card mt-0">
-                            <div class="flex items-center gap-2 mb-4">
-                                <div class="w-1.5 h-4 bg-red-500 rounded-full"></div>
-                                <h4 class="text-xs font-black text-slate-700 uppercase tracking-widest mb-0">Exam Configuration</h4>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                                <div class="settings-row py-2">
-                                    <div>
-                                        <div class="text-[12px] font-bold text-slate-700">Shuffle Questions</div>
-                                        <div class="text-[9px] text-slate-400 font-medium leading-tight">Randomize order</div>
-                                    </div>
-                                    <label class="toggle-switch scale-75 origin-right">
-                                        <input type="checkbox" id="set_shuffle_q" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="settings-row py-2">
-                                    <div>
-                                        <div class="text-[12px] font-bold text-slate-700">Shuffle Options</div>
-                                        <div class="text-[9px] text-slate-400 font-medium leading-tight">Randomize MCQ choices</div>
-                                    </div>
-                                    <label class="toggle-switch scale-75 origin-right">
-                                        <input type="checkbox" id="set_shuffle_o" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="settings-row py-2">
-                                    <div>
-                                        <div class="text-[12px] font-bold text-slate-700">Proctored Exam</div>
-                                        <div class="text-[9px] text-slate-400 font-medium leading-tight">AI & Camera proctoring</div>
-                                    </div>
-                                    <label class="toggle-switch scale-75 origin-right">
-                                        <input type="checkbox" id="set_proctored">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="settings-row py-2">
-                                    <div>
-                                        <div class="text-[12px] font-bold text-slate-700">Browser Lockdown</div>
-                                        <div class="text-[9px] text-slate-400 font-medium leading-tight">Restrict tab switches</div>
-                                    </div>
-                                    <label class="toggle-switch scale-75 origin-right">
-                                        <input type="checkbox" id="set_lockdown" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="settings-row py-2">
-                                    <div>
-                                        <div class="text-[12px] font-bold text-slate-700">Show Results</div>
-                                        <div class="text-[9px] text-slate-400 font-medium leading-tight">Instant score display</div>
-                                    </div>
-                                    <label class="toggle-switch scale-75 origin-right">
-                                        <input type="checkbox" id="set_show_results" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="settings-row py-2">
-                                    <div>
-                                        <div class="text-[12px] font-bold text-slate-700">Allow Backtracking</div>
-                                        <div class="text-[9px] text-slate-400 font-medium leading-tight">Navigation to previous qns</div>
-                                    </div>
-                                    <label class="toggle-switch scale-75 origin-right">
-                                        <input type="checkbox" id="set_backtracking" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <select id="ass_assigned" class="hidden" multiple>
+                    <option value="Developers">Developers</option>
+                    <option value="Designers">Designers</option>
+                    <option value="Testers">Testers</option>
+                    <option value="HR">HR</option>
+                    <option value="Client Advocate">Client Advocate</option>
+                </select>
+                <span class="error-msg hidden" id="err_ass_assigned">Please assign to at least one role</span>
             </div>
         </div>
     </div>
 
-    <div class="flex justify-between items-center mt-12 pt-8 border-t border-slate-50">
-        <button id="btnWizardPrev" class="btn-ghost hidden" onclick="navigateWizard(-1)">
-            <i class="bi bi-chevron-left me-2"></i> Previous
-        </button>
-        <div class="flex-1"></div>
-        <button id="btnWizardNext" class="btn-red px-10" onclick="navigateWizard(1)">
-            Next Step <i class="bi bi-chevron-right ms-2"></i>
-        </button>
-        <button id="btnWizardSubmit" class="btn-red px-10 hidden" onclick="finalizeWizard()">
-            Publish Test <i class="bi bi-check-lg ms-2"></i>
+    <div class="form-group mb-8">
+        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Description <span class="text-red-500">*</span></label>
+        <textarea id="ass_desc" class="input bg-slate-50 border-slate-100 rounded-xl p-4 text-sm" rows="4" placeholder="Briefly describe the purpose..."></textarea>
+        <span class="error-msg hidden" id="err_ass_desc">Description is required</span>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+        <button class="px-8 py-3 bg-slate-50 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all text-sm" onclick="closeModal('TestModal')">Cancel</button>
+        <button class="px-8 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all text-sm flex items-center gap-2 shadow-lg shadow-red-100" onclick="createTest()">
+            Initialize Test <i class="bi bi-rocket-takeoff"></i>
         </button>
     </div>
+  </div>
+</div>
+
   </div>
 </div>
 
@@ -2450,7 +2187,9 @@ if (!empty($Tests)) {
 
         TestsDataTable = $('#TestsDataTable').DataTable({
             data: App.Tests,
+            order: [[0, 'desc']],
             columns: [
+                { data: 'id', visible: false },
                 {
                     className: 'dt-control',
                     orderable: false,
@@ -2524,6 +2263,7 @@ if (!empty($Tests)) {
                 $(this).find('i').removeClass('bi-dash-circle text-red-500').addClass('bi-plus-circle text-slate-300');
             } else {
                 row.child(formatTestPacks(row.data())).show();
+                initBatchDataTable(row.data().id, row.data().test_packs);
                 tr.addClass('dt-hasChild');
                 $(this).find('i').removeClass('bi-plus-circle text-slate-300').addClass('bi-dash-circle text-red-500');
             }
@@ -2533,107 +2273,94 @@ if (!empty($Tests)) {
     function formatTestPacks(d) {
         let packs = d.test_packs || [];
         
-        // Find default template from the first existing pack, if any
-        let defaultTemplateId = '';
-        if (packs.length > 0) {
-            defaultTemplateId = packs[0].template_id || '';
-        }
-
         let html = `
             <div class="bg-slate-50/50 p-6 border-y border-slate-100 child-table-container">
                 <div class="flex items-center justify-between mb-4 px-2">
                     <h5 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0">Assigned Batches (${packs.length})</h5>
-                    <button class="btn-red-rounded text-[10px] py-1.5 px-4" id="btnAddPack_${d.id}" onclick="toggleInlinePackForm(${d.id})">
+                    <button type="button" class="btn-red-rounded text-[10px] py-1.5 px-4" onclick="openPackWizard('${d.id}')">
                         <i class="bi bi-plus-lg me-1"></i> Add New Batch
                     </button>
                 </div>
 
-                <!-- Inline Create Form -->
-                <div id="inlinePackForm_${d.id}" class="hidden mb-6 bg-white p-5 rounded-2xl border border-red-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                        <div class="form-group">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Batch</label>
-                            <input id="inline_pack_name_${d.id}" class="input h-10 text-xs" placeholder="e.g. Phase 1 Test" />
-                        </div>
-                        <div class="form-group">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Choose Template</label>
-                                <button type="button" class="text-red-500 hover:text-red-700 bg-red-50 rounded-full w-5 h-5 flex items-center justify-center p-0 border-0" onclick="openTemplateBuilder()" title="Create New Template">
-                                    <i class="bi bi-plus text-xs"></i>
-                                </button>
-                            </div>
-                            <select id="inline_template_id_${d.id}" class="select h-10 text-xs py-0 w-full">
-                                <option value="">-- Select Template --</option>
-                                ${App.templates.map(t => `<option value="${t.id}" ${t.id == defaultTemplateId ? 'selected' : ''}>${t.name}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Assign Candidates</label>
-                            <div class="h-10 flex items-center bg-slate-50 rounded-xl border border-slate-200 px-3 cursor-pointer hover:bg-slate-100 transition-colors" onclick="openCandidatePicker(${d.id}, '${d.assigned_to}')">
-                                <i class="bi bi-people text-slate-400 me-2"></i>
-                                <span id="candidateCountLabel_${d.id}" class="text-[11px] font-bold text-slate-600">0 Selected</span>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button class="btn-red-rounded h-10 flex-1 justify-center text-xs" onclick="saveInlinePack(${d.id})">
-                                <i class="bi bi-check-lg me-1"></i> Create
-                            </button>
-                            <button class="btn-outline h-10 px-3" onclick="toggleInlinePackForm(${d.id})">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                        </div>
-                    </div>
+                <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                    <table id="BatchTable_${d.id}" class="w-full text-left">
+                        <thead class="bg-slate-50 border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Batch Name</th>
+                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Template</th>
+                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
+                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
-
-                <div class="grid grid-cols-1 gap-3">
-        `;
-
-        if (packs.length === 0) {
-            html += `<div class="text-center py-8 text-slate-400 text-xs italic bg-white rounded-xl border border-dashed border-slate-200">No Batches found for this Test.</div>`;
-        } else {
-            packs.forEach(tp => {
-                html += `
-                    <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center font-bold">
-                                ${tp.pack_name.charAt(0)}
-                            </div>
-                            <div>
-                                <div class="font-bold text-slate-800 text-sm">${tp.pack_name}</div>
-                                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${tp.user_role || 'General Access'}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-8">
-                            <div class="flex items-center gap-2">
-                                <i class="bi bi-file-earmark-text text-blue-500"></i>
-                                <span class="text-xs font-bold text-slate-600">${tp.template ? tp.template.name : 'Custom Layout'}</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button class="action-icon-btn view" onclick="App.previewTestPack(${tp.id})" title="Preview"><i class="bi bi-eye"></i></button>
-                                <button class="action-icon-btn delete" onclick="deletePack(${tp.id})" title="Delete"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        html += `</div></div>`;
+            </div>`;
         return html;
     }
 
+    function initBatchDataTable(testId, packs) {
+        $(`#BatchTable_${testId}`).DataTable({
+            data: packs,
+            columns: [
+                {
+                    data: 'pack_name',
+                    render: (data) => `
+                        <div class="flex items-center gap-3 py-1">
+                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center font-bold text-[10px] border border-slate-100">
+                                ${data.charAt(0)}
+                            </div>
+                            <span class="font-bold text-slate-700 text-sm">${data}</span>
+                        </div>`
+                },
+                {
+                    data: 'template',
+                    render: (data) => `<div class="flex items-center gap-2 text-xs font-bold text-slate-600"><i class="bi bi-file-earmark-text text-blue-500"></i> ${data ? data.name : 'Custom Layout'}</div>`
+                },
+                {
+                    data: 'user_role',
+                    render: (data) => `<span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 px-2 py-1 rounded">${data || 'General Access'}</span>`
+                },
+                {
+                    data: null,
+                    className: 'text-right',
+                    render: (data, type, row) => `
+                        <div class="flex items-center justify-end gap-2 px-6">
+                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-all" onclick="App.previewTestPack(${row.id})" title="Preview"><i class="bi bi-eye"></i></button>
+                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition-all" onclick="deletePack(${row.id})" title="Delete"><i class="bi bi-trash"></i></button>
+                        </div>`
+                }
+            ],
+            dom: 't',
+            ordering: false,
+            language: {
+                emptyTable: "No Batches found for this Test."
+            }
+        });
+    }
+
+    let currentTestIdForPack = null;
     function toggleInlinePackForm(id) {
-        const form = document.getElementById(`inlinePackForm_${id}`);
-        const btn = document.getElementById(`btnAddPack_${id}`);
-        if (form.classList.contains('hidden')) {
-            form.classList.remove('hidden');
-            btn.innerHTML = '<i class="bi bi-x-lg me-1"></i> Cancel';
-            btn.classList.replace('btn-red-rounded', 'btn-outline');
-        } else {
-            form.classList.add('hidden');
-            btn.innerHTML = '<i class="bi bi-plus-lg me-1"></i> Add New Batch';
-            btn.classList.replace('btn-outline', 'btn-red-rounded');
-        }
+        currentTestIdForPack = id;
+        
+        // Reset form
+        document.getElementById('pack_wizard_name').value = '';
+        document.getElementById('baseTemplateSelect').selectedIndex = 0;
+        document.getElementById('pack_duration').value = '60';
+        document.getElementById('pack_user_role').value = 'General Access';
+        document.getElementById('pack_start_time').value = '';
+        document.getElementById('pack_end_time').value = '';
+        
+        // Reset candidates
+        App.selectedCandidates[id] = [];
+        updateWizardCandidateLabel();
+        
+        clearValidationErrors();
+        
+        // Open modal
+        const modalEl = document.getElementById('createPackModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
     }
 
     let cpActiveTestId = null;
@@ -2693,7 +2420,471 @@ if (!empty($Tests)) {
         const label = document.getElementById(`candidateCountLabel_${cpActiveTestId}`);
         if (label) label.textContent = `${selected.length} Selected`;
         
+        // Also update wizard label if active
+        updateWizardCandidateLabel();
+        
         closeModal('candidatePickerModal');
+    }
+
+    function openCandidatePickerForWizard() {
+        if (!currentTestIdForPack) return;
+        const test = App.Tests.find(t => t.id == currentTestIdForPack);
+        openCandidatePicker(currentTestIdForPack, test ? test.assigned_to : '');
+    }
+
+    function updateWizardCandidateLabel() {
+        if (!currentTestIdForPack) return;
+        const count = App.selectedCandidates[currentTestIdForPack] ? App.selectedCandidates[currentTestIdForPack].length : 0;
+        const label = document.getElementById('wizardCandidateCountLabel');
+        if (label) {
+            label.textContent = count > 0 ? `${count} Candidates Selected` : 'Select Candidates';
+        }
+    }
+
+    function selectTemplate(templateId) {
+        document.getElementById('baseTemplateSelect').value = templateId;
+        
+        // Update UI Highlights
+        document.querySelectorAll('.template-card').forEach(card => {
+            card.classList.remove('border-red-600', 'bg-red-50');
+            card.querySelector('.check-badge').classList.add('opacity-0');
+        });
+        
+        const selectedCard = document.getElementById('temp_card_' + templateId);
+        if (selectedCard) {
+            selectedCard.classList.add('border-red-600', 'bg-red-50');
+            selectedCard.querySelector('.check-badge').classList.remove('opacity-0');
+        }
+        
+        // Update Center Column Details
+        updateTemplateDetails(templateId);
+        
+        // Find template data and update duration
+        const t = App.templates.find(item => item.id == templateId);
+        if (t) {
+            const duration = t.duration || 60;
+            document.getElementById('pack_duration').value = duration;
+            updateSummary();
+        }
+    }
+
+    function syncSidebarToMain(mainId, value) {
+        const mainEl = document.getElementById(mainId);
+        if (mainEl) {
+            if (mainEl.type === 'checkbox') {
+                mainEl.checked = value;
+            } else {
+                mainEl.value = value;
+            }
+            updateSummary();
+        }
+    }
+
+    function toggleSidebarOption(mainId) {
+        const mainEl = document.getElementById(mainId);
+        if (mainEl) {
+            mainEl.checked = !mainEl.checked;
+            updateSummary();
+        }
+    }
+
+    function updateSummary() {
+        const start = document.getElementById('pack_start_time').value;
+        const end = document.getElementById('pack_end_time').value;
+        const date = document.getElementById('pack_scheduled_date').value;
+        const duration = document.getElementById('pack_duration').value;
+        const instructions = document.getElementById('pack_instructions').value;
+        const passMark = document.getElementById('pack_pass_mark').value;
+        const attempts = document.getElementById('pack_attempts').value;
+        const name = document.getElementById('pack_wizard_name').value;
+        const category = document.getElementById('pack_user_role').value;
+        
+        const shuffle = document.getElementById('pack_shuffle').checked;
+        const shuffle_options = document.getElementById('pack_shuffle_options').checked;
+        const proctored = document.getElementById('pack_proctored').checked;
+        const lockdown = document.getElementById('pack_lockdown').checked;
+        const show_results = document.getElementById('pack_show_results').checked;
+        const allow_backtracking = document.getElementById('pack_allow_backtracking').checked;
+
+        // Sync Sidebar Inputs (Two-way)
+        if (document.getElementById('summary_name')) document.getElementById('summary_name').value = name;
+        if (document.getElementById('summary_category')) document.getElementById('summary_category').value = category;
+        if (document.getElementById('summary_date_input')) document.getElementById('summary_date_input').value = date;
+        if (document.getElementById('summary_start_input')) document.getElementById('summary_start_input').value = start;
+        if (document.getElementById('summary_end_input')) document.getElementById('summary_end_input').value = end;
+        if (document.getElementById('summary_duration_input')) document.getElementById('summary_duration_input').value = duration;
+        if (document.getElementById('summary_instructions_input')) document.getElementById('summary_instructions_input').value = instructions;
+        if (document.getElementById('summary_pass_mark_input')) document.getElementById('summary_pass_mark_input').value = passMark;
+        if (document.getElementById('summary_attempts_input')) document.getElementById('summary_attempts_input').value = attempts;
+
+        // Security Toggles (Visual Sync)
+        const updateToggle = (id, state) => {
+            const el = document.getElementById(id);
+            if (el) {
+                const track = el.querySelector('.toggle-track');
+                const thumb = el.querySelector('.toggle-thumb');
+                if (state) {
+                    track.classList.replace('bg-slate-200', 'bg-red-600');
+                    thumb.classList.add('translate-x-4');
+                } else {
+                    track.classList.replace('bg-red-600', 'bg-slate-200');
+                    thumb.classList.remove('translate-x-4');
+                }
+            }
+        };
+
+        updateToggle('summary_shuffle_wrap', shuffle);
+        updateToggle('summary_shuffle_options_wrap', shuffle_options);
+        updateToggle('summary_proctored_wrap', proctored);
+        updateToggle('summary_lockdown_wrap', lockdown);
+        updateToggle('summary_show_results_wrap', show_results);
+        updateToggle('summary_allow_backtracking_wrap', allow_backtracking);
+
+        // Instructions Count
+        if (document.getElementById('summary_instructions_count')) {
+            document.getElementById('summary_instructions_count').textContent = `${instructions.length} / 2000 characters`;
+        }
+    }
+
+
+    async function savePackFromWizard() {
+        if (!validatePackWizard()) return;
+
+        const testId = currentTestIdForPack;
+        const packName = document.getElementById('pack_wizard_name').value;
+        const templateId = document.getElementById('baseTemplateSelect').value;
+        const duration = document.getElementById('pack_duration').value;
+        const userRole = document.getElementById('pack_user_role').value;
+        const startTime = document.getElementById('pack_scheduled_date').value + ' ' + document.getElementById('pack_start_time').value;
+        const endTime = document.getElementById('pack_scheduled_date').value + ' ' + document.getElementById('pack_end_time').value;
+        const candidates = App.selectedCandidates[testId] || [];
+
+        Swal.fire({
+            title: 'Initializing Batch...',
+            text: 'Setting up the test phase and assignments.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        try {
+            const formData = new FormData();
+            if (currentEditPackId) {
+                formData.append('id', currentEditPackId);
+            }
+            formData.append('assessment_id', testId);
+            formData.append('template_id', templateId);
+            formData.append('pack_name', packName);
+            formData.append('user_role', userRole);
+            formData.append('duration', duration);
+            formData.append('start_time', startTime);
+            formData.append('end_time', endTime);
+            formData.append('instructions', document.getElementById('pack_instructions').value);
+            formData.append('pass_mark', document.getElementById('pack_pass_mark').value);
+            formData.append('max_attempts', document.getElementById('pack_attempts').value);
+            formData.append('shuffle_questions', document.getElementById('pack_shuffle').checked ? 1 : 0);
+            formData.append('shuffle_options', document.getElementById('pack_shuffle_options').checked ? 1 : 0);
+            formData.append('proctored_exam', document.getElementById('pack_proctored').checked ? 1 : 0);
+            formData.append('browser_lockdown', document.getElementById('pack_lockdown').checked ? 1 : 0);
+            formData.append('show_results', document.getElementById('pack_show_results').checked ? 1 : 0);
+            formData.append('allow_backtracking', document.getElementById('pack_allow_backtracking').checked ? 1 : 0);
+            formData.append('candidates', candidates.join(','));
+
+            const response = await fetch('/Test/createTestPack', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                Swal.fire({ title: 'Success!', text: 'Batch initialized successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
+            } else {
+                throw new Error(result.message || 'Failed to create batch');
+            }
+        } catch (e) {
+            Swal.fire('Error', e.message || 'Failed to initialize Batch.', 'error');
+        }
+    }
+
+    function toggleWizardView(view) {
+        const configView = document.getElementById('batchWizardConfigView');
+        const builderView = document.getElementById('templateBuilderInlineView');
+        const discoverySidebar = document.querySelector('.w-\\[360px\\].bg-white.border-e'); // Left sidebar
+
+        if (view === 'template') {
+            configView.classList.add('hidden');
+            builderView.classList.remove('hidden');
+            if (discoverySidebar) discoverySidebar.classList.add('opacity-50', 'pointer-events-none');
+        } else {
+            configView.classList.remove('hidden');
+            builderView.classList.add('hidden');
+            if (discoverySidebar) discoverySidebar.classList.remove('opacity-50', 'pointer-events-none');
+        }
+    }
+
+    function addSelectedSectionInline(type, name = null, count = 10, marks = null) {
+        if (!type) return;
+        const container = document.getElementById('builder_sections_container_inline');
+        const emptyState = document.getElementById('builder_empty_state_inline');
+        if (emptyState) emptyState.style.display = 'none';
+
+        const sectionCard = document.createElement('div');
+        sectionCard.className = 'p-5 bg-slate-50 border border-slate-100 rounded-2xl animate-fadeIn relative group';
+        sectionCard.dataset.type = type;
+        const displayName = name || `${type} Section`;
+        const displayMarks = marks !== null ? marks : (type === '2 Marks' ? 2 : 1);
+
+        sectionCard.innerHTML = `
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-300">
+                        <i class="bi bi-grip-vertical text-lg"></i>
+                    </div>
+                    <div>
+                        <input type="text" class="bg-transparent border-0 font-bold text-slate-800 p-0 focus:ring-0 text-[13px]" value="${displayName}">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">${type} Component</p>
+                    </div>
+                </div>
+                <button class="w-8 h-8 rounded-lg bg-white text-slate-300 hover:text-red-500 transition-all shadow-sm" onclick="this.closest('.p-5').remove(); updateBuilderStatsInline();">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                    <label class="block text-[8px] font-black text-slate-400 uppercase mb-1">Questions</label>
+                    <input type="number" class="w-full bg-transparent border-0 p-0 font-bold text-slate-800 text-[12px] focus:ring-0 sec-count-inline" value="${count}" oninput="updateBuilderStatsInline()">
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                    <label class="block text-[8px] font-black text-slate-400 uppercase mb-1">Marks Each</label>
+                    <input type="number" class="w-full bg-transparent border-0 p-0 font-bold text-slate-800 text-[12px] focus:ring-0 sec-marks-inline" value="${displayMarks}" oninput="updateBuilderStatsInline()">
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                    <label class="block text-[8px] font-black text-slate-400 uppercase mb-1">Pass %</label>
+                    <input type="number" class="w-full bg-transparent border-0 p-0 font-bold text-slate-800 text-[12px] focus:ring-0" value="40">
+                </div>
+            </div>
+        `;
+        container.appendChild(sectionCard);
+        document.getElementById('task_selector_inline').value = '';
+        updateBuilderStatsInline();
+    }
+
+    function updateBuilderStatsInline() {
+        const sections = document.querySelectorAll('#builder_sections_container_inline > div:not(.empty-state)');
+        let totalMarks = 0;
+        let totalSections = sections.length;
+        sections.forEach(s => {
+            const count = parseInt(s.querySelector('.sec-count-inline').value) || 0;
+            const marks = parseInt(s.querySelector('.sec-marks-inline').value) || 0;
+            totalMarks += (count * marks);
+        });
+        document.getElementById('builder_total_marks_inline').textContent = totalMarks + ' Marks';
+        document.getElementById('builder_section_count_inline').textContent = totalSections + ' Sections';
+    }
+
+    async function saveTemplateFromWizard() {
+        const name = document.getElementById('builder_storage_name_inline').value.trim();
+        if (!name) { Swal.fire('Required', 'Please enter a Template Name', 'warning'); return; }
+        
+        const sections = [];
+        document.querySelectorAll('#builder_sections_container_inline > div:not(.empty-state)').forEach(card => {
+            sections.push({
+                name: card.querySelector('input[type="text"]').value,
+                type: card.dataset.type,
+                count: parseInt(card.querySelector('.sec-count-inline').value) || 0,
+                marks: parseInt(card.querySelector('.sec-marks-inline').value) || 0
+            });
+        });
+
+        if (sections.length === 0) { Swal.fire('Required', 'Please add at least one section', 'warning'); return; }
+
+        Swal.fire({ title: 'Saving Template...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const data = {
+                name: name,
+                category: document.getElementById('builder_category_inline').value,
+                duration: document.getElementById('builder_duration_inline').value || 60,
+                pass_mark: document.getElementById('builder_pass_mark_inline').value || 60,
+                max_attempts: document.getElementById('builder_attempts_inline').value || 2,
+                sections: sections
+            };
+
+            const response = await fetch('/Test/saveTemplate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                // Add to sidebar templates and select it
+                const newTemplate = result.template;
+                
+                // Add to local list
+                const discoveryList = document.getElementById('templateDiscoveryList');
+                const newCard = document.createElement('div');
+                newCard.className = 'p-2.5 rounded-xl border border-slate-50 bg-white hover:border-red-200 cursor-pointer transition-all group relative template-card';
+                newCard.id = `temp_card_${newTemplate.id}`;
+                newCard.onclick = () => selectTemplate(newTemplate.id);
+                newCard.innerHTML = `
+                    <div class="flex items-start gap-2.5">
+                        <div class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-red-600 transition-colors flex-shrink-0">
+                            <i class="bi bi-file-earmark-text text-base"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <h5 class="text-[12px] font-bold text-slate-800 mb-0 leading-tight truncate">${newTemplate.name}</h5>
+                            <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">${newTemplate.category} • ${data.sections.length} Sections</span>
+                        </div>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity check-badge">
+                             <div class="w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[8px]">
+                                <i class="bi bi-check-lg"></i>
+                             </div>
+                        </div>
+                    </div>
+                `;
+                discoveryList.prepend(newCard);
+                
+                // Add to hidden select
+                const select = document.getElementById('baseTemplateSelect');
+                const option = document.createElement('option');
+                option.value = newTemplate.id;
+                option.textContent = newTemplate.name;
+                select.appendChild(option);
+                
+                // Select it
+                selectTemplate(newTemplate.id);
+                
+                // Switch back
+                toggleWizardView('batch');
+                
+                Swal.fire({ icon: 'success', title: 'Template Saved!', timer: 1500, showConfirmButton: false });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (e) {
+            Swal.fire('Error', e.message || 'Failed to save template', 'error');
+        }
+    }
+
+    function switchQuestionMode(mode, btn) {
+        // Toggle Buttons
+        const parent = btn.parentElement;
+        parent.querySelectorAll('button').forEach(b => {
+            b.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+            b.classList.add('text-slate-400');
+        });
+        btn.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+        btn.classList.remove('text-slate-400');
+
+        // Toggle Views
+        document.getElementById('question_mode_bulk').classList.add('hidden');
+        document.getElementById('question_mode_manual').classList.add('hidden');
+        document.getElementById(`question_mode_${mode}`).classList.remove('hidden');
+    }
+
+    function updateTemplateDetails(templateId) {
+        const template = App.templates.find(t => t.id == templateId);
+        const placeholder = document.getElementById('template_details_placeholder');
+        const activeView = document.getElementById('template_details_active');
+
+        if (!template) {
+            placeholder.classList.remove('hidden');
+            activeView.classList.add('hidden');
+            return;
+        }
+
+        placeholder.classList.add('hidden');
+        activeView.classList.remove('hidden');
+
+        document.getElementById('active_template_name').textContent = template.name;
+        
+        let structure = [];
+        try { structure = JSON.parse(template.structure || '[]'); } catch(e) {}
+        
+        let totalMarks = 0;
+        structure.forEach(s => totalMarks += (parseInt(s.count) * parseInt(s.marks)));
+
+        document.getElementById('active_template_marks').textContent = totalMarks + ' Marks';
+        document.getElementById('active_template_sections').textContent = structure.length + ' Sections';
+
+        const tagContainer = document.getElementById('active_template_tags');
+        tagContainer.innerHTML = '';
+        structure.forEach(s => {
+            const badge = document.createElement('span');
+            badge.className = 'px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[9px] font-bold text-slate-500 uppercase tracking-tight';
+            badge.textContent = `${s.name} (${s.count} Qs)`;
+            tagContainer.appendChild(badge);
+        });
+    }
+
+    function openManualQuestionModal() {
+        $('#manualQuestionModal').modal('show');
+    }
+
+    function addManualQuestion() {
+        const type = document.getElementById('manual_q_type').value;
+        const text = document.getElementById('manual_q_text').value.trim();
+        const marks = document.getElementById('manual_q_marks').value;
+
+        if (!text) { Swal.fire('Required', 'Please enter question text', 'warning'); return; }
+
+        const list = document.getElementById('manual_questions_list');
+        const empty = document.getElementById('manual_q_empty');
+        if (empty) empty.style.display = 'none';
+
+        const qId = Date.now();
+        const card = document.createElement('div');
+        card.className = 'p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-start justify-between animate-fadeIn group';
+        card.innerHTML = `
+            <div class="flex gap-3">
+                <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-indigo-600 font-bold text-xs shadow-sm">${list.children.length + 1}</div>
+                <div>
+                    <p class="text-[12px] font-bold text-slate-700 mb-1">${text}</p>
+                    <div class="flex gap-2">
+                        <span class="text-[8px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded">${type}</span>
+                        <span class="text-[8px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">${marks} Marks</span>
+                    </div>
+                </div>
+            </div>
+            <button class="w-7 h-7 rounded-lg bg-white text-slate-300 hover:text-red-500 transition-all shadow-sm opacity-0 group-hover:opacity-100" onclick="this.closest('.p-4').remove(); updateManualQCount();">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        list.appendChild(card);
+        updateManualQCount();
+        $('#manualQuestionModal').modal('hide');
+        
+        // Reset form
+        document.getElementById('manual_q_text').value = '';
+    }
+
+    function updateManualQCount() {
+        const count = document.querySelectorAll('#manual_questions_list > div:not(#manual_q_empty)').length;
+        document.getElementById('manual_q_count').textContent = count + ' Questions';
+        if (count === 0 && document.getElementById('manual_q_empty')) {
+            document.getElementById('manual_q_empty').style.display = 'block';
+        }
+    }
+
+    function validatePackWizard() {
+        let isValid = true;
+        const name = document.getElementById('pack_wizard_name');
+        const template = document.getElementById('baseTemplateSelect');
+        const duration = document.getElementById('pack_duration');
+        const candidates = App.selectedCandidates[currentTestIdForPack] || [];
+
+        if (!name.value.trim()) { showError('pack_wizard_name', true); isValid = false; } else { showError('pack_wizard_name', false); }
+        if (!template.value) { showError('baseTemplateSelect', true); isValid = false; } else { showError('baseTemplateSelect', false); }
+        if (!duration.value) { showError('pack_duration', true); isValid = false; } else { showError('pack_duration', false); }
+        
+        if (candidates.length === 0) {
+            showError('wizardCandidateCountLabel', true);
+            isValid = false;
+        } else {
+            showError('wizardCandidateCountLabel', false);
+        }
+
+        return isValid;
     }
 
     async function saveInlinePack(TestId) {
@@ -3387,14 +3578,7 @@ if (!empty($Tests)) {
                                         <div class="w-10 h-10 bg-[#fff1f2] text-[#dc2230] rounded-full d-flex align-items-center justify-content-center"><i class="bi bi-clock"></i></div>
                                         <div class="text-start">
                                             <div class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">Duration</div>
-                                            <div class="fw-bold text-[#1e293b] text-md"></div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[15px] min-w-[180px] shadow-sm">
-                                        <div class="w-10 h-10 bg-[#fff1f2] text-[#dc2230] rounded-full d-flex align-items-center justify-content-center"><i class="bi bi-clock"></i></div>
-                                        <div class="text-start">
-                                            <div class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">Duration</div>
-                                            <div class="fw-bold text-[#1e293b] text-md"></div>
+                                            <div class="fw-bold text-[#1e293b] text-md">${pack.duration} Mins</div>
                                         </div>
                                     </div>
                                     <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[15px] min-w-[180px] shadow-sm">
@@ -3417,7 +3601,7 @@ if (!empty($Tests)) {
                                     <li class="mb-2">Read all questions carefully before attempting.</li>
                                     <li class="mb-2">This paper consists of ${sections.length} distinct sections.</li>
                                     <li class="mb-2">All questions are mandatory unless specified otherwise.</li>
-                                    <li>The total duration for this Test is _______ minutes.</li>
+                                    <li>The total duration for this Test is ${pack.duration} minutes.</li>
                                 </ul>
                             </div>
 
@@ -3477,390 +3661,597 @@ if (!empty($Tests)) {
     });
 </script>
 
-<!-- Create Batch Modal (Test Creation Wizard) -->
 <div class="modal fade" id="createPackModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <div class="w-100">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <h5 class="wizard-step-title mb-0">Create New Test</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content border-0">
+            <div class="modal-header border-0 px-8 py-4 bg-white sticky-top flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-4">
+                    <button type="button" class="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-colors" data-bs-dismiss="modal">
+                        <i class="bi bi-arrow-left text-xl"></i>
+                    </button>
+                    <div>
+                        <h3 class="text-xl font-extrabold text-slate-800 mb-0">Create Test from Template</h3>
+                        <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-0">Select a template and configure your test</p>
                     </div>
-                    <p class="wizard-step-subtitle mb-0">Follow the 4-step wizard to configure, assign, and publish an Test.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-50 transition-all shadow-sm">Save Draft</button>
+                    <button class="px-6 py-2.5 bg-red-600 text-white font-bold rounded-xl text-xs hover:bg-red-700 transition-all flex items-center gap-2 shadow-lg shadow-red-200" onclick="savePackFromWizard()">
+                        Next: Add Questions <i class="bi bi-arrow-right"></i>
+                    </button>
                 </div>
             </div>
-            <div class="modal-body pt-4">
-                <!-- Stepper -->
-                <div class="stepper mb-5" id="packStepper">
-                    <div class="step active" data-step="1">
-                        <div class="step-circle">1</div>
-                        <div class="step-label text-uppercase">Select Template</div>
-                    </div>
-                    <div class="step" data-step="2">
-                        <div class="step-circle">2</div>
-                        <div class="step-label text-uppercase">Add Questions</div>
-                    </div>
-                    <div class="step" data-step="3">
-                        <div class="step-circle">3</div>
-                        <div class="step-label text-uppercase">Schedule & Publish</div>
-                    </div>
-                </div>
-
-                <div class="px-md-4">
-                    <!-- Step 1: Select Template -->
-                    <div id="packStep1" class="wizard-step">
-                        <div class="mb-5">
-                            <h3 class="wizard-step-title mb-1">Configuration</h3>
-                            <p class="text-slate-400 text-[12px]">Configure Test header and initial Batch</p>
-                        </div>
-
-                        <div class="mb-5">
-                            <label class="form-label text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Batch</label>
-                            <input type="text" class="form-control h-[48px] rounded-[12px] border-slate-200 px-4 text-[14px] font-medium shadow-sm focus:border-red-500 focus:ring-0 transition-all" id="pack_wizard_name" placeholder="e.g., Batch-1" />
-                        </div>
-
-                        <div class="mb-5">
-                            <div class="d-flex align-items-center gap-2 mb-3">
-                                <label class="form-label mb-0 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Select Template</label>
-                                <button class="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center border-0 p-0 hover:bg-red-600 transition-all shadow-sm" onclick="openTemplateBuilder()" title="Create New Template">
-                                    <i class="bi bi-plus text-[16px]"></i>
-                                </button>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-md-7">
-                                    <select class="form-select h-[48px] rounded-[12px] border-slate-200 px-4 text-[14px] font-medium shadow-sm focus:border-red-500 focus:ring-0 transition-all appearance-none" id="baseTemplateSelect" onchange="handleWizardTemplateChange(this.value)">
-                                        <option value="" selected disabled>-- Choose Template --</option>
-                                        <?php foreach($templates as $t): ?>
-                                        <option value="<?= $t['id'] ?>" data-json='<?= json_encode($t) ?>'><?= esc($t['name']) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="col-md-5">
-                                    <button id="previewTemplateBtn" class="btn btn-outline-secondary w-100 h-[48px] rounded-[12px] text-[13px] font-bold d-flex align-items-center justify-content-center gap-2 border-slate-200 hover:bg-slate-50 transition-all" onclick="previewSelectedTemplate()">
-                                        <i class="bi bi-eye text-slate-400"></i> <span class="text-slate-600">Preview Selected Template</span>
-                                    </button>
-                                </div>
+            
+            <div class="modal-body p-0 bg-[#f8fafc] overflow-hidden">
+                <div class="flex h-full">
+                    <!-- LEFT SIDEBAR: Discovery -->
+                    <div class="w-[360px] bg-white border-e flex flex-col p-6 overflow-y-auto">
+                        <div class="flex items-center gap-2.5 mb-5">
+                            <i class="bi bi-stack text-red-600 text-lg"></i>
+                            <div>
+                                <h4 class="text-[13px] font-black text-slate-800 mb-0">Template Builder</h4>
+                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Manage test structures</p>
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Test Name</label>
-                            <select class="form-select h-[48px] rounded-[12px] border-slate-200 px-4 text-[14px] font-medium shadow-sm" id="packTestName" onchange="handleTestNameChange(this.value)">
-                                <option value="" selected disabled>— Select Test Name —</option>
-                                <?php foreach($Tests as $a): ?>
-                                <option value="<?= $a['id'] ?>"><?= esc($a['name']) ?></option>
+                        <div class="mb-6">
+                            <h5 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Discovery</h5>
+                            <div class="flex gap-1.5 mb-3">
+                                <button class="px-2.5 py-1.5 rounded-lg bg-red-600 text-white text-[10px] font-bold shadow-md shadow-red-100">All</button>
+                                <button class="px-2.5 py-1.5 rounded-lg bg-slate-50 text-slate-500 text-[10px] font-bold hover:bg-slate-100">Performance</button>
+                                <button class="px-2.5 py-1.5 rounded-lg bg-slate-50 text-slate-500 text-[10px] font-bold hover:bg-slate-100">Compliance</button>
+                            </div>
+                            <div class="relative">
+                                <input type="text" class="w-full bg-slate-50 border-0 rounded-xl px-4 py-2.5 text-[11px] font-medium focus:ring-2 focus:ring-red-100 transition-all" placeholder="Search templates...">
+                                <i class="bi bi-search absolute right-4 top-1/2 -translate-y-1/2 text-slate-300"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="flex-1 space-y-2 mb-6" id="templateDiscoveryList">
+                            <?php foreach($templates as $t): ?>
+                            <div class="p-2.5 rounded-xl border border-slate-50 bg-white hover:border-red-200 cursor-pointer transition-all group relative template-card" 
+                                 onclick="selectTemplate('<?= $t['id'] ?>')" id="temp_card_<?= $t['id'] ?>">
+                                <div class="flex items-start gap-2.5">
+                                    <div class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-red-600 transition-colors flex-shrink-0">
+                                        <i class="bi bi-file-earmark-text text-base"></i>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <h5 class="text-[12px] font-bold text-slate-800 mb-0 leading-tight truncate"><?= esc($t['name']) ?></h5>
+                                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">GENERAL • 20 Marks</span>
+                                    </div>
+                                    <div class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity check-badge">
+                                         <div class="w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[8px]">
+                                            <i class="bi bi-check-lg"></i>
+                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        
+                        <button class="w-full py-3.5 border-2 border-dashed border-red-100 rounded-2xl text-red-600 font-bold text-[11px] uppercase tracking-widest hover:bg-red-50 hover:border-red-200 transition-all" onclick="openTemplateBuilder()">
+                            <i class="bi bi-plus-lg me-2"></i> Create New Template
+                        </button>
+                    </div>
+
+                    <!-- MAIN CONTENT -->
+                    <div class="flex-1 overflow-y-auto px-8 py-10" id="wizardMainColumn">
+                        <!-- BATCH CONFIG VIEW -->
+                        <div class="w-full space-y-6" id="batchWizardConfigView">
+                            
+                            <!-- 1. TEMPLATE DETAILS SECTION -->
+                            <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white" id="wizard_template_section">
+                                <div class="p-6">
+                                    <div class="flex items-center justify-between mb-6">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shadow-sm">
+                                                <i class="bi bi-layout-text-window-reverse text-xl"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">Template & Structure</h4>
+                                                <p class="text-[10px] text-slate-400 font-medium mb-0">Current question paper framework</p>
+                                            </div>
+                                        </div>
+                                        <button class="px-4 py-2 bg-slate-50 text-slate-600 border border-slate-100 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm" onclick="openTemplateBuilder()">
+                                            <i class="bi bi-pencil-square me-2"></i> Edit Structure
+                                        </button>
+                                    </div>
+
+                                    <div id="template_details_placeholder" class="py-10 text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
+                                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300 shadow-sm">
+                                            <i class="bi bi-info-circle text-xl"></i>
+                                        </div>
+                                        <h5 class="text-[12px] font-bold text-slate-500 mb-1">No Template Selected</h5>
+                                        <p class="text-[10px] text-slate-400">Choose a template from the discovery sidebar to begin</p>
+                                    </div>
+
+                                    <div id="template_details_active" class="hidden animate-fadeIn">
+                                        <div class="grid grid-cols-3 gap-4 mb-6">
+                                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                                <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Template</span>
+                                                <span class="text-[13px] font-black text-slate-800" id="active_template_name">--</span>
+                                            </div>
+                                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                                <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Marks</span>
+                                                <span class="text-[13px] font-black text-slate-800" id="active_template_marks">0 Marks</span>
+                                            </div>
+                                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                                <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Structure</span>
+                                                <span class="text-[13px] font-black text-slate-800" id="active_template_sections">0 Sections</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2" id="active_template_tags">
+                                            <!-- Dynamic Tags -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. QUESTION PAPER MANAGEMENT (Bulk & Manual) -->
+                            <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
+                                <div class="p-6 border-b border-slate-50 flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+                                            <i class="bi bi-file-earmark-plus-fill text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">Question Content</h4>
+                                            <p class="text-[10px] text-slate-400 font-medium mb-0">Manage how questions are added</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex bg-slate-100 p-1 rounded-xl">
+                                        <button class="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all bg-white text-blue-600 shadow-sm" onclick="switchQuestionMode('bulk', this)">Bulk Upload</button>
+                                        <button class="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-slate-400 hover:text-slate-600" onclick="switchQuestionMode('manual', this)">Manual Entry</button>
+                                    </div>
+                                </div>
+
+                                <div class="p-6">
+                                    <!-- Bulk Upload Mode -->
+                                    <div id="question_mode_bulk" class="animate-fadeIn">
+                                        <div class="border-2 border-dashed border-slate-100 rounded-2xl p-8 text-center bg-slate-50/30 hover:bg-slate-50 transition-colors group cursor-pointer" onclick="document.getElementById('pack_blueprint_upload').click()">
+                                            <div class="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                                                <i class="bi bi-cloud-arrow-up-fill text-2xl"></i>
+                                            </div>
+                                            <h5 class="text-base font-extrabold text-slate-800 mb-2">Upload Bulk Blueprint</h5>
+                                            <p class="text-[11px] text-slate-500 font-medium mb-6 max-w-sm mx-auto">Drop your question paper here or click to browse. We support PDF, DOCX, and Excel formats.</p>
+                                            <div class="flex items-center justify-center gap-3">
+                                                <button class="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl text-[10px] uppercase tracking-widest hover:border-blue-200 hover:shadow-lg transition-all shadow-sm">
+                                                    <i class="bi bi-folder2-open me-2 text-blue-500"></i> Browse Local Files
+                                                </button>
+                                            </div>
+                                            <input type="file" id="pack_blueprint_upload" class="hidden" accept=".pdf,.docx,.xlsx" onchange="updateSummary()" />
+                                        </div>
+                                    </div>
+
+                                    <!-- Manual Entry Mode -->
+                                    <div id="question_mode_manual" class="hidden animate-fadeIn">
+                                        <div class="flex items-center justify-between mb-6">
+                                            <div class="flex items-center gap-4">
+                                                <div class="text-center bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                                                    <span class="block text-[8px] font-black text-slate-400 uppercase mb-0.5">Added</span>
+                                                    <span class="text-[13px] font-black text-slate-800" id="manual_q_count">0 Questions</span>
+                                                </div>
+                                            </div>
+                                            <button class="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all" onclick="openManualQuestionModal()">
+                                                <i class="bi bi-plus-lg me-2"></i> Add Question
+                                            </button>
+                                        </div>
+                                        
+                                        <div id="manual_questions_list" class="space-y-3 min-h-[150px] max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                            <!-- Empty State -->
+                                            <div class="py-12 text-center border border-dashed border-slate-100 rounded-2xl bg-slate-50/20" id="manual_q_empty">
+                                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-200 shadow-sm">
+                                                    <i class="bi bi-pencil-square text-xl"></i>
+                                                </div>
+                                                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">No manual questions added yet</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. CANDIDATE ASSIGNMENT -->
+                            <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
+                                <div class="p-6">
+                                    <div class="flex items-center justify-between mb-6">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
+                                                <i class="bi bi-people-fill text-xl"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">Target Audience</h4>
+                                                <p class="text-[10px] text-slate-400 font-medium mb-0">Who will participate in this batch</p>
+                                            </div>
+                                        </div>
+                                        <button class="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl text-[10px] uppercase tracking-widest hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm" onclick="openCandidatePickerForWizard()">
+                                            <i class="bi bi-person-plus-fill me-2"></i> Select Participants
+                                        </button>
+                                    </div>
+
+                                    <div id="wizard_candidate_summary" class="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-4">
+                                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-300 shadow-sm">
+                                                    <i class="bi bi-people text-2xl"></i>
+                                                </div>
+                                                <div>
+                                                    <h5 class="text-[14px] font-black text-slate-800 mb-0" id="wizard_selected_count">0 Selected</h5>
+                                                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest" id="wizard_selected_role">No role assigned</p>
+                                                </div>
+                                            </div>
+                                            <div id="wizard_candidate_avatars" class="flex -space-x-3">
+                                                <!-- Avatars here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- HIDDEN MASTER INPUTS FOR BATCH CONFIG -->
+                            <div class="hidden">
+                                <input type="text" id="pack_wizard_name" value="">
+                                <select id="pack_user_role">
+                                    <option value="General Access">General Access</option>
+                                    <option value="Technical">Technical</option>
+                                    <option value="Management">Management</option>
+                                    <option value="Internal">Internal</option>
+                                </select>
+                                <input type="number" id="pack_duration" value="60">
+                                <input type="date" id="pack_scheduled_date">
+                                <input type="time" id="pack_start_time">
+                                <input type="time" id="pack_end_time">
+                                <textarea id="pack_instructions">Read all questions carefully before answering. Ensure a stable internet connection.</textarea>
+                                <input type="number" id="pack_pass_mark" value="60">
+                                <input type="number" id="pack_attempts" value="2">
+                                <input type="checkbox" id="pack_shuffle" checked>
+                                <input type="checkbox" id="pack_shuffle_options" checked>
+                                <input type="checkbox" id="pack_proctored" checked>
+                                <input type="checkbox" id="pack_lockdown" checked>
+                                <input type="checkbox" id="pack_show_results" checked>
+                                <input type="checkbox" id="pack_allow_backtracking" checked>
+                            </div>
+
+                            <select id="baseTemplateSelect" class="hidden">
+                                <option value="" selected disabled>-- Select Evaluation Template --</option>
+                                <?php foreach($templates as $t): ?>
+                                <option value="<?= $t['id'] ?>"><?= esc($t['name']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
 
-
-
-
-                    </div>
-
-                    <!-- Step 2: Add Questions -->
-                    <!-- Step 2: Add Questions (Premium Layout) -->
-                    <div id="packStep2" class="d-none wizard-step">
-                        <h3 class="wizard-step-title">Step 2 — Add Questions</h3>
-                        <p class="wizard-step-subtitle">Choose how to populate questions for this test.</p>
-
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <div class="card-custom text-start p-3 h-100 hover-border-primary cursor-pointer active-selection"
-                                    id="cardManualOverride" onclick="selectPopulateMethod('Manual')">
-                                    <i class="bi bi-search text-info fs-4 mb-2 d-block"></i>
-                                    <h4 class="small fw-bold mb-1">Manual Override</h4>
-                                    <p class="text-xs text-secondary mb-0">Hand-pick individual questions.</p>
+                        <!-- TEMPLATE BUILDER VIEW (Inline) -->
+                        <div class="w-full space-y-5 hidden" id="templateBuilderInlineView">
+                            <div class="flex items-center justify-between mb-8">
+                                <div class="flex items-center gap-3">
+                                    <button class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:text-red-600 transition-all" onclick="toggleWizardView('batch')">
+                                        <i class="bi bi-arrow-left text-lg"></i>
+                                    </button>
+                                    <div>
+                                        <h3 class="text-lg font-bold text-slate-800 mb-0">Create New Template</h3>
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Designing question paper structure</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button class="px-5 py-2.5 bg-red-600 text-white font-bold rounded-xl text-[11px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all hover:bg-red-700" onclick="saveTemplateFromWizard()">
+                                        <i class="bi bi-check-lg me-2"></i> Save & Use Template
+                                    </button>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="card-custom text-start p-3 h-100 hover-border-primary cursor-pointer"
-                                    id="cardBulkUpload" onclick="selectPopulateMethod('Bulk')">
-                                    <i class="bi bi-file-earmark-text text-secondary fs-4 mb-2 d-block"></i>
-                                    <h4 class="small fw-bold mb-1">Bulk Upload</h4>
-                                    <p class="text-xs text-secondary mb-0">Import questions via CSV.</p>
+
+                            <div class="space-y-8">
+                                <!-- Meta Info -->
+                                <section class="card border-0 shadow-sm rounded-2xl p-6 bg-white">
+                                    <div class="flex items-center gap-2 mb-6">
+                                        <div class="w-1 h-5 bg-red-500 rounded-full"></div>
+                                        <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-wider mb-0">General Configuration</h4>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-5 mb-5">
+                                        <div class="form-group">
+                                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Template Category</label>
+                                            <select id="builder_category_inline" class="select w-full bg-slate-50 border-0 rounded-xl text-[12px] font-bold h-11 px-4">
+                                                <option>Performance</option>
+                                                <option>Compliance</option>
+                                                <option>General</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Template Identity</label>
+                                            <input id="builder_storage_name_inline" class="input w-full bg-slate-50 border-0 rounded-xl text-[12px] font-bold h-11 px-4" placeholder="e.g. Research Ethics Test 2024" />
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-3 gap-5">
+                                        <div class="form-group">
+                                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Default Duration</label>
+                                            <div class="relative">
+                                                <input type="number" id="builder_duration_inline" class="input w-full bg-slate-50 border-0 rounded-xl text-[12px] font-bold h-11 px-4 pr-12" placeholder="60" />
+                                                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-300 uppercase tracking-widest">MINS</span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Pass Mark (%)</label>
+                                            <input type="number" id="builder_pass_mark_inline" value="60" class="input w-full bg-slate-50 border-0 rounded-xl text-[12px] font-bold h-11 px-4" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Max Attempts</label>
+                                            <input type="number" id="builder_attempts_inline" value="2" class="input w-full bg-slate-50 border-0 rounded-xl text-[12px] font-bold h-11 px-4" />
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- Structure Area -->
+                                <section class="card border-0 shadow-sm rounded-2xl p-6 bg-white">
+                                    <div class="flex items-center justify-between mb-6">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-1 h-5 bg-blue-500 rounded-full"></div>
+                                            <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-wider mb-0">Question Paper Structure</h4>
+                                        </div>
+                                        <div class="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                                            <div class="flex flex-col">
+                                                <span class="text-[8px] font-bold text-slate-400 uppercase">Total Marks</span>
+                                                <span class="text-[11px] font-black text-slate-800" id="builder_total_marks_inline">0 Marks</span>
+                                            </div>
+                                            <div class="w-px h-6 bg-slate-200"></div>
+                                            <div class="flex flex-col">
+                                                <span class="text-[8px] font-bold text-slate-400 uppercase">Sections</span>
+                                                <span class="text-[11px] font-black text-slate-800" id="builder_section_count_inline">0 Sections</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-blue-50/30 border border-dashed border-blue-200 rounded-2xl p-6 mb-6">
+                                        <label class="block text-[9px] font-bold text-blue-600 uppercase tracking-widest mb-3">Add New Section Component</label>
+                                        <div class="relative">
+                                            <select id="task_selector_inline" class="select w-full h-12 bg-white border-0 rounded-xl text-[12px] font-bold px-5 appearance-none cursor-pointer shadow-sm focus:ring-4 focus:ring-blue-100 transition-all" onchange="addSelectedSectionInline(this.value)">
+                                                <option value="">Browse section blueprints..</option>
+                                                <option value="MCQ">Multiple Choice Questions (MCQ)</option>
+                                                <option value="2 Marks">Short Answer (2 Marks)</option>
+                                                <option value="Coding">Coding / Practical Section</option>
+                                            </select>
+                                            <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-blue-400">
+                                                <i class="bi bi-plus-circle-fill text-lg"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="builder_sections_container_inline" class="space-y-4">
+                                        <!-- Dynamic Sections -->
+                                        <div class="empty-state py-12 text-center bg-slate-50 border border-dashed border-slate-200 rounded-3xl" id="builder_empty_state_inline">
+                                            <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-200">
+                                                <i class="bi bi-stack text-3xl"></i>
+                                            </div>
+                                            <h5 class="text-[13px] font-bold text-slate-600 mb-1">No Sections Added</h5>
+                                            <p class="text-[10px] text-slate-400">Select a section blueprint above to start building</p>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div> <!-- Added closing tag for wizardMainColumn -->
+
+                    <!-- RIGHT SIDEBAR: Summary -->
+                    <div class="w-[420px] bg-white border-s flex flex-col overflow-hidden">
+                        <div class="p-6 border-b bg-slate-50/30">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-lg shadow-sm border border-red-100">
+                                    <i class="bi bi-calendar-event"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-[14px] font-bold text-slate-800 mb-0">Test Details</h4>
+                                    <p class="text-[10px] text-slate-400 font-medium mb-0">Schedule, instructions and exam settings</p>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="bg-pink-light p-2 px-3 rounded d-flex justify-content-between align-items-center mb-3"
-                            style="background: #fff5f5; border: 1px solid #fee2e2;">
-                            <div class="d-flex align-items-center gap-3">
-                                <span class="text-xs fw-medium text-secondary">Questions selected:</span>
-                                <span class="text-xs fw-bold text-danger" id="selectedQuestionsCount">0 / -- required</span>
-                            </div>
-                            <button class="btn btn-outline-danger btn-xs py-1 px-3 rounded-[8px] font-bold text-[11px]" onclick="App.previewQuestionPaper()">
-                                <i class="bi bi-eye me-1"></i> Preview Paper
-                            </button>
-                        </div>
-
-                        <!-- Manual Override Section -->
-                        <div id="manualOverrideView">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <div class="input-group" style="max-width: 400px;">
-                                    <span class="input-group-text bg-white border-end-0"><i
-                                            class="bi bi-search"></i></span>
-                                    <input type="text" class="form-control border-start-0"
-                                        placeholder="Search by question text...">
+                        
+                        <div class="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/20">
+                            <!-- 0. Basic Information -->
+                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="bi bi-info-circle text-red-600"></i>
+                                    <span class="text-[11px] font-bold text-slate-800 uppercase tracking-wider">0. Basic Information</span>
                                 </div>
-                                <button class="btn btn-primary-custom btn-sm px-4 rounded-[8px] font-bold" onclick="App.openAddManualQuestionModal()">
-                                    <i class="bi bi-plus-lg me-1"></i> Create New Question
+                                <div class="form-group">
+                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">Batch Name</label>
+                                    <input type="text" id="summary_name" placeholder="Enter batch name..." class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_wizard_name', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">Target Category</label>
+                                    <select id="summary_category" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all cursor-pointer" onchange="syncSidebarToMain('pack_user_role', this.value)">
+                                        <option value="General Access">General Access</option>
+                                        <option value="Technical">Technical</option>
+                                        <option value="Management">Management</option>
+                                        <option value="Internal">Internal</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 1. Schedule & Duration -->
+                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="bi bi-calendar2-check text-red-600"></i>
+                                    <span class="text-[11px] font-bold text-slate-800 uppercase tracking-wider">1. Schedule & Duration</span>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">Scheduled Date</label>
+                                    <div class="relative">
+                                        <input type="date" id="summary_date_input" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" onchange="syncSidebarToMain('pack_scheduled_date', this.value)">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">Duration (mins)</label>
+                                    <input type="number" id="summary_duration_input" placeholder="e.g. 90" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_duration', this.value)">
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="form-group">
+                                        <label class="block text-[10px] font-bold text-slate-400 mb-2">Start Time</label>
+                                        <div class="relative">
+                                            <input type="time" id="summary_start_input" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" onchange="syncSidebarToMain('pack_start_time', this.value)">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="block text-[10px] font-bold text-slate-400 mb-2">End Time</label>
+                                        <div class="relative">
+                                            <input type="time" id="summary_end_input" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" onchange="syncSidebarToMain('pack_end_time', this.value)">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Test Instructions -->
+                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="bi bi-list-task text-red-600"></i>
+                                    <span class="text-[11px] font-bold text-slate-800 uppercase tracking-wider">2. Test Instructions</span>
+                                </div>
+                                <div class="relative">
+                                    <textarea id="summary_instructions_input" rows="4" class="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-xs font-medium text-slate-600 focus:ring-2 focus:ring-red-100 transition-all resize-none" placeholder="Enter instructions for candidates..." oninput="syncSidebarToMain('pack_instructions', this.value)"></textarea>
+                                    <div class="absolute bottom-3 right-4 text-[9px] font-bold text-slate-300" id="summary_instructions_count">0 / 2000</div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Passing Criteria & Attempts -->
+                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="bi bi-target text-red-600"></i>
+                                    <span class="text-[11px] font-bold text-slate-800 uppercase tracking-wider">3. Passing Criteria & Attempts</span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">Pass Mark (%)</label>
+                                    <input type="number" id="summary_pass_mark_input" placeholder="e.g. 50" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_pass_mark', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">No. of Attempts</label>
+                                    <input type="number" id="summary_attempts_input" placeholder="e.g. 1" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_attempts', this.value)">
+                                </div>
+                            </div>
+
+                            <!-- 4. Exam Configuration -->
+                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="bi bi-gear-fill text-red-600"></i>
+                                    <span class="text-[11px] font-bold text-slate-800 uppercase tracking-wider">4. Exam Configuration</span>
+                                </div>
+                                
+                                <div class="divide-y divide-slate-50">
+                                    <!-- Shuffle Questions -->
+                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_shuffle')">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
+                                                <i class="bi bi-shuffle"></i>
+                                            </div>
+                                            <div>
+                                                <span class="block text-[11px] font-bold text-slate-700">Shuffle Questions</span>
+                                                <span class="text-[9px] text-slate-400 font-medium">Randomize order</span>
+                                            </div>
+                                        </div>
+                                        <div id="summary_shuffle_wrap" class="relative inline-flex items-center h-5 w-9">
+                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
+                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Shuffle Options -->
+                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_shuffle_options')">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
+                                                <i class="bi bi-shuffle"></i>
+                                            </div>
+                                            <div>
+                                                <span class="block text-[11px] font-bold text-slate-700">Shuffle Options</span>
+                                                <span class="text-[9px] text-slate-400 font-medium">Randomize option choices</span>
+                                            </div>
+                                        </div>
+                                        <div id="summary_shuffle_options_wrap" class="relative inline-flex items-center h-5 w-9">
+                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
+                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Proctored Exam -->
+                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_proctored')">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
+                                                <i class="bi bi-shield-check"></i>
+                                            </div>
+                                            <div>
+                                                <span class="block text-[11px] font-bold text-slate-700">Proctored Exam</span>
+                                                <span class="text-[9px] text-slate-400 font-medium">AI & Camera monitoring</span>
+                                            </div>
+                                        </div>
+                                        <div id="summary_proctored_wrap" class="relative inline-flex items-center h-5 w-9">
+                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
+                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Browser Lockdown -->
+                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_lockdown')">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
+                                                <i class="bi bi-lock"></i>
+                                            </div>
+                                            <div>
+                                                <span class="block text-[11px] font-bold text-slate-700">Browser Lockdown</span>
+                                                <span class="text-[9px] text-slate-400 font-medium">Prevent tab switching</span>
+                                            </div>
+                                        </div>
+                                        <div id="summary_lockdown_wrap" class="relative inline-flex items-center h-5 w-9">
+                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
+                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Show Results -->
+                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_show_results')">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
+                                                <i class="bi bi-eye"></i>
+                                            </div>
+                                            <div>
+                                                <span class="block text-[11px] font-bold text-slate-700">Show Results</span>
+                                                <span class="text-[9px] text-slate-400 font-medium">Instant score display</span>
+                                            </div>
+                                        </div>
+                                        <div id="summary_show_results_wrap" class="relative inline-flex items-center h-5 w-9">
+                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
+                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Allow Backtracking -->
+                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_allow_backtracking')">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
+                                                <i class="bi bi-sign-turn-left"></i>
+                                            </div>
+                                            <div>
+                                                <span class="block text-[11px] font-bold text-slate-700">Allow Backtracking</span>
+                                                <span class="text-[9px] text-slate-400 font-medium">Navigate to previous Qs</span>
+                                            </div>
+                                        </div>
+                                        <div id="summary_allow_backtracking_wrap" class="relative inline-flex items-center h-5 w-9">
+                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
+                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-6 bg-white border-t">
+                            <div class="grid grid-cols-2 gap-4">
+                                <button class="py-3.5 bg-slate-50 text-slate-500 font-bold rounded-2xl hover:bg-slate-100 transition-all text-[11px] uppercase tracking-widest" data-bs-dismiss="modal">Discard</button>
+                                <button class="py-3.5 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-all text-[11px] uppercase tracking-widest shadow-lg shadow-red-100" onclick="savePackFromWizard()">
+                                    Initialize Batch
                                 </button>
                             </div>
-                            <div class="table-responsive border rounded mb-4">
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th style="width: 40px;"><input type="checkbox"
-                                                    class="form-check-input select-all-questions" data-target="question-check"></th>
-                                            <th class="small fw-bold">Question</th>
-                                            <th class="small fw-bold">Section/Tag</th>
-                                            <th class="small fw-bold">Type</th>
-                                            <th class="small fw-bold">Difficulty</th>
-                                            <th class="small fw-bold">Marks</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="manualQuestionTableBody">
-                                        <?php if(empty($questionBank)): ?>
-                                        <tr>
-                                            <td colspan="6" class="text-center py-4 text-gray-400 small">No questions available in bank</td>
-                                        </tr>
-                                        <?php else: foreach($questionBank as $q): ?>
-                                        <tr>
-                                            <td><input type="checkbox" class="form-check-input question-check" value="<?= $q['id'] ?>" data-q='<?= json_encode($q) ?>' onchange="App.updateManualCount()"></td>
-                                            <td class="small fw-medium"><?= esc($q['text']) ?></td>
-                                            <td class="small"><?= esc($q['category'] ?? 'General') ?></td>
-                                            <td class="small"><?= esc($q['type']) ?></td>
-                                            <td class="small"><?= esc($q['difficulty'] ?? 'Medium') ?></td>
-                                            <td class="small fw-bold"><?= esc($q['marks']) ?></td>
-                                        </tr>
-                                        <?php endforeach; endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Bulk Upload Section -->
-                        <div id="bulkUploadView" class="d-none">
-                            <!-- Two Separate Upload Options -->
-                            <div class="row g-3">
-                                <!-- MCQ Upload Box -->
-                                <div class="col-md-6">
-                                    <div class="border-2 border-dashed rounded p-4 text-center h-100 d-flex flex-column justify-content-center"
-                                        style="border: 2px dashed #cbd5e1; background: #f8fafc; transition: all 0.2s ease;">
-                                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm">
-                                            <i class="bi bi-list-check fs-4"></i>
-                                        </div>
-                                        <h6 class="fw-bold mb-1 text-[#1e293b]">MCQ Bulk Upload</h6>
-                                        <p class="text-[10px] text-slate-500 mb-3">Download and use the MCQ-specific template</p>
-                                        <div class="d-flex justify-content-center gap-2 mt-auto">
-                                            <input type="file" id="mcqBulkUploadInput" class="d-none" accept=".csv" onchange="App.handleRealBulkUpload(this, 'MCQ')">
-                                            <button class="btn btn-primary-custom btn-sm px-3 py-1.5 text-xs shadow-sm" onclick="document.getElementById('mcqBulkUploadInput').click()">Browse MCQ</button>
-                                            <button class="btn btn-outline-secondary btn-sm px-3 py-1.5 text-xs bg-white" onclick="App.downloadMCQTemplate()">
-                                                <i class="bi bi-download me-1"></i> Template
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 2-Mark Upload Box -->
-                                <div class="col-md-6">
-                                    <div class="border-2 border-dashed rounded p-4 text-center h-100 d-flex flex-column justify-content-center"
-                                        style="border: 2px dashed #cbd5e1; background: #f8fafc; transition: all 0.2s ease;">
-                                        <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm">
-                                            <i class="bi bi-chat-square-text fs-4"></i>
-                                        </div>
-                                        <h6 class="fw-bold mb-1 text-[#1e293b]">2-Mark Bulk Upload</h6>
-                                        <p class="text-[10px] text-slate-500 mb-3">Download and use the 2-Mark specific template</p>
-                                        <div class="d-flex justify-content-center gap-2 mt-auto">
-                                            <input type="file" id="shortBulkUploadInput" class="d-none" accept=".csv" onchange="App.handleRealBulkUpload(this, '2-Mark')">
-                                            <button class="btn btn-primary-custom btn-sm px-3 py-1.5 text-xs shadow-sm" onclick="document.getElementById('shortBulkUploadInput').click()">Browse 2-Mark</button>
-                                            <button class="btn btn-outline-secondary btn-sm px-3 py-1.5 text-xs bg-white" onclick="App.downloadShortTemplate()">
-                                                <i class="bi bi-download me-1"></i> Template
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Consolidated CSV Guide -->
-                            <div class="card-custom bg-[#f1f5f9] border-0 p-3 mt-3">
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <i class="bi bi-info-circle-fill text-slate-400"></i>
-                                    <p class="text-[10px] fw-bold mb-0 text-slate-600 text-uppercase tracking-wider">Universal CSV Format Guide</p>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-bordered bg-white text-[10px] mb-0 rounded overflow-hidden">
-                                        <thead class="bg-[#f8fafc]">
-                                            <tr>
-                                                <th class="py-2">Column Name</th>
-                                                <th class="py-2">Requirement</th>
-                                                <th class="py-2">Description / Usage</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td class="fw-medium"><code>question_text</code></td>
-                                                <td class="text-danger fw-bold">Required</td>
-                                                <td class="text-slate-600">The actual text of the question to be asked.</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="fw-medium"><code>option_a...d</code></td>
-                                                <td>MCQ Only</td>
-                                                <td class="text-slate-600">Choices for MCQ. Leave blank for 2-Mark questions.</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="fw-medium"><code>correct_answer</code></td>
-                                                <td class="text-danger fw-bold">Required</td>
-                                                <td class="text-slate-600">'A' for MCQ, or Sample Answer for 2-Mark questions.</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
                         </div>
                     </div>
-
-                    <!-- Step 3: Schedule & Publish -->
-                    <div id="packStep3" class="d-none wizard-step">
-                        <h3 class="wizard-step-title">Step 3 — Schedule & Publish</h3>
-                        <p class="wizard-step-subtitle">Finalize timing and publish the Batch.</p>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-8">
-                                <div class="row g-2 mb-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label mb-1">Start Date & Time <span class="text-danger">*</span></label>
-                                        <input type="datetime-local" class="form-control form-control-sm" id="final_start_time" onchange="App.calculateDuration()">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label mb-1">End Date & Time <span class="text-danger">*</span></label>
-                                        <input type="datetime-local" class="form-control form-control-sm" id="final_end_time" onchange="App.calculateDuration()">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label mb-1">Duration (Mins) <span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control form-control-sm" id="final_duration" placeholder="e.g. 60" oninput="document.getElementById('rev_duration').textContent = this.value + ' mins'">
-                                    </div>
-                                    <div class="col-md-12">
-                                        <label class="form-label mb-1">Test Instructions</label>
-                                        <textarea class="form-control form-control-sm" rows="2" placeholder="Candidate instructions..."></textarea>
-                                    </div>
-                                </div>
-
-                                <!-- Compact Exam Settings Section -->
-                                <div class="mt-3">
-                                    <div class="card-custom bg-white border p-3">
-                                        <div class="row g-3">
-                                            <div class="col-md-12">
-                                                <div class="row g-2">
-                                                    <div class="col-md-4">
-                                                        <div class="settings-row py-1 border-0">
-                                                            <div class="text-xs fw-bold">Shuffle Qs</div>
-                                                            <label class="toggle-switch scale-75">
-                                                                <input type="checkbox" checked>
-                                                                <span class="slider"></span>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <div class="settings-row py-1 border-0">
-                                                            <div class="text-xs fw-bold">Shuffle Opts</div>
-                                                            <label class="toggle-switch scale-75">
-                                                                <input type="checkbox" checked>
-                                                                <span class="slider"></span>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <div class="settings-row py-1 border-0">
-                                                            <div class="text-xs fw-bold">Show Timer</div>
-                                                            <label class="toggle-switch scale-75">
-                                                                <input type="checkbox" checked>
-                                                                <span class="slider"></span>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <div class="settings-row py-1 border-0">
-                                                            <div class="text-xs fw-bold">Allow Review</div>
-                                                            <label class="toggle-switch scale-75">
-                                                                <input type="checkbox" checked>
-                                                                <span class="slider"></span>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <div class="settings-row py-1 border-0">
-                                                            <div class="text-xs fw-bold">Auto-Submit</div>
-                                                            <label class="toggle-switch scale-75">
-                                                                <input type="checkbox" checked>
-                                                                <span class="slider"></span>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <div class="settings-row py-1 border-0">
-                                                            <div class="text-xs fw-bold">Immediate Result</div>
-                                                            <label class="toggle-switch scale-75">
-                                                                <input type="checkbox">
-                                                                <span class="slider"></span>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-12 pt-2 border-top">
-                                                <div class="row g-2">
-                                                    <div class="col-md-6">
-                                                        <div class="d-flex align-items-center gap-2">
-                                                            <label class="text-xs fw-bold mb-0 flex-shrink-0">Pass %</label>
-                                                            <input type="number" class="form-control form-control-sm py-1 fw-bold text-center" value="70" style="width: 60px;">
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6 text-end">
-                                                        <div class="d-flex align-items-center justify-content-end gap-2">
-                                                            <label class="text-xs fw-bold mb-0">Max Attempts</label>
-                                                            <select class="form-select form-select-sm py-1 fw-bold" style="width: 120px;">
-                                                                <option value="1">1 attempt</option>
-                                                                <option value="2">2 attempts</option>
-                                                                <option value="unlimited">Unlimited</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card-custom bg-light border-0 p-3 h-100">
-                                    <h4 class="text-xs fw-bold mb-3 text-uppercase opacity-75">Review Summary</h4>
-                                    <div class="mb-2">
-                                        <div class="text-[10px] text-uppercase text-secondary fw-bold">Template</div>
-                                        <div class="small fw-bold" id="rev_template">None</div>
-                                    </div>
-                                    <div class="mb-2">
-                                        <div class="text-[10px] text-uppercase text-secondary fw-bold">Method</div>
-                                        <div class="small fw-bold" id="rev_method">Manual-select</div>
-                                    </div>
-                                    <div class="mb-2">
-                                        <div class="text-[10px] text-uppercase text-secondary fw-bold">Duration</div>
-                                        <div class="small fw-bold" id="rev_duration">90 mins</div>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-0 px-md-5 pb-4">
-                <button type="button" class="btn btn-secondary-custom px-4" id="prevPackStep" style="display: none;">← Previous</button>
-                <div class="ms-auto d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-light px-4 border" onclick="saveDraftTest()">Save as Draft</button>
-                    <button type="button" class="btn btn-primary-custom px-4" id="nextPackStep">Next Step</button>
                 </div>
             </div>
         </div>
@@ -3990,6 +4381,11 @@ if (!empty($Tests)) {
 </div>
 
 <script>
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+        alert("JS Error: " + msg + "\nLine: " + lineNo);
+        return false;
+    };
+
     // --- Global Helpers & Navigation ---
     function switchMainTab(tabId) {
         // Save current tab to localStorage
@@ -4034,11 +4430,15 @@ if (!empty($Tests)) {
         if(el) el.classList.remove('open'); 
     }
 
-    /* Template Builder Functions */
+    /* Template Builder */
     function openTemplateBuilder() {
-        document.getElementById('templateBuilderOverlay').classList.add('open');
-        document.getElementById('templateBuilderSidebar').classList.add('open');
-        loadSidebarTemplates();
+        if (document.getElementById('createPackModal').classList.contains('show')) {
+            toggleWizardView('template');
+        } else {
+            document.getElementById('templateBuilderOverlay').classList.add('open');
+            document.getElementById('templateBuilderSidebar').classList.add('open');
+            loadSidebarTemplates();
+        }
     }
 
     function closeTemplateBuilder() {
@@ -4336,97 +4736,56 @@ if (!empty($Tests)) {
     let currentPackStep = 1;
     const totalPackSteps = 3;
 
-    function openPackWizard() {
-        currentPackStep = 1;
-        currentEditPackId = null;
+    function openPackWizard(testId) {
+        if (testId) currentTestIdForPack = testId;
+        currentEditPackId = null; // Clear edit mode if any
         
+        // 1. Reset Master Hidden Inputs
         document.getElementById('pack_wizard_name').value = '';
-        document.getElementById('packTestName').value = '';
         document.getElementById('baseTemplateSelect').value = '';
-        document.getElementById('final_duration').value = 60;
-        document.getElementById('rev_duration').textContent = '60 mins';
-        document.querySelector('#createPackModal h5').textContent = 'Create New Test';
+        document.getElementById('pack_duration').value = 60;
+        document.getElementById('pack_user_role').value = 'General Access';
+        document.getElementById('pack_start_time').value = '';
+        document.getElementById('pack_end_time').value = '';
+        document.getElementById('pack_instructions').value = 'Read all questions carefully before answering. Ensure a stable internet connection.';
+        document.getElementById('pack_shuffle').checked = true;
+        document.getElementById('pack_proctored').checked = true;
+        document.getElementById('pack_lockdown').checked = true;
+
+        // 2. Reset Sidebar Interactive Inputs
+        document.getElementById('summary_name').value = 'New Batch';
+        document.getElementById('summary_category').value = 'General Access';
+        document.getElementById('summary_duration_input').value = 60;
+        document.getElementById('summary_start_input').value = '';
+        document.getElementById('summary_end_input').value = '';
+        document.getElementById('summary_instructions_input').value = 'Read all questions carefully before answering. Ensure a stable internet connection.';
         
-        // Reset state
-        if (document.getElementById('packTypeInternal')) {
-            document.getElementById('packTypeInternal').checked = true;
-        }
-        handleTestTypeChange('internal');
+        // Reset Toggle Visuals in Sidebar
+        updateSummary(); // This will sync master -> sidebar visuals
+
+        // 3. Reset UI Highlights & Details
+        document.querySelectorAll('.template-card').forEach(card => {
+            card.classList.remove('border-red-600', 'bg-red-50');
+            card.querySelector('.check-badge').classList.add('opacity-0');
+        });
+        updateTemplateDetails(null);
         
-        updatePackWizardUI();
+        App.selectedWizardCandidates = [];
+        updateWizardCandidateLabel();
+
+        // 4. Open Modal
         const modalEl = document.getElementById('createPackModal');
         if (modalEl) {
-            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-            modal.show();
+            try {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            } catch (e) {
+                $(modalEl).modal('show');
+            }
         }
     }
 
-    function updatePackWizardUI() {
-        document.querySelectorAll('.wizard-step').forEach(s => s.classList.add('d-none'));
-        document.getElementById(`packStep${currentPackStep}`).classList.remove('d-none');
 
-        document.querySelectorAll('#packStepper .step').forEach(s => {
-            const stepNum = parseInt(s.dataset.step);
-            s.classList.remove('active', 'completed');
-            if (stepNum === currentPackStep) s.classList.add('active');
-            else if (stepNum < currentPackStep) s.classList.add('completed');
-        });
-
-        const prevBtn = document.getElementById('prevPackStep');
-        const nextBtn = document.getElementById('nextPackStep');
-        
-        prevBtn.style.display = currentPackStep === 1 ? 'none' : 'block';
-        nextBtn.textContent = currentPackStep === totalPackSteps ? 'Publish Test' : 'Next Step';
-        
-        nextBtn.className = currentPackStep === totalPackSteps 
-            ? 'btn btn-success px-4' 
-            : 'btn btn-primary-custom px-4';
-    }
-
-    document.getElementById('nextPackStep').addEventListener('click', () => {
-        if (currentPackStep < totalPackSteps) {
-            // Validate Step 1
-            if (currentPackStep === 1) {
-                const name = document.getElementById('pack_wizard_name').value.trim();
-                const assessId = document.getElementById('packTestName').value;
-                const temp = document.getElementById('baseTemplateSelect').value;
-                
-                if (!name) { Swal.fire('Required', 'Please enter a Batch.', 'warning'); return; }
-                if (!assessId) { Swal.fire('Required', 'Please select an Test Name.', 'warning'); return; }
-                if (!temp) { Swal.fire('Required', 'Please select an Test Template.', 'warning'); return; }
-                
-                const internalVisible = document.getElementById('step1InternalAssign') && !document.getElementById('step1InternalAssign').classList.contains('d-none');
-                const type = internalVisible ? 'internal' : 'recruitment';
-                const assignedCount = document.querySelectorAll(`.${type}-check:checked`).length;
-                
-                if (assignedCount === 0) {
-                    Swal.fire('Required', `Please assign at least one ${type === 'internal' ? 'Employee' : 'Candidate'} to this pack.`, 'warning');
-                    return;
-                }
-            }
-
-            // Validate Step 2
-            if (currentPackStep === 2) {
-                const checkedQuestions = document.querySelectorAll('#manualQuestionTableBody input[type="checkbox"]:checked').length;
-                if (checkedQuestions === 0) {
-                    Swal.fire('Required', 'Please add and select at least one question for this Batch.', 'warning');
-                    return;
-                }
-            }
-
-            currentPackStep++;
-            updatePackWizardUI();
-        } else {
-            publishFinalTest();
-        }
-    });
-
-    document.getElementById('prevPackStep').addEventListener('click', () => {
-        if (currentPackStep > 1) {
-            currentPackStep--;
-            updatePackWizardUI();
-        }
-    });
 
     function handleTestNameChange(value) {
         // Trigger the visibility logic
@@ -4500,28 +4859,30 @@ if (!empty($Tests)) {
     function editTestPack(id, templateId, packName) {
         currentEditingPackId = id;
         
-        // Update Title & Subtitle
-        document.getElementById('assign_modal_title').textContent = `Edit Batch: ${packName}`;
-        document.getElementById('assign_subtitle').textContent = `Manage template and questions for this pack.`;
+        // 1. Populate Master Hidden Inputs with existing data
+        if (document.getElementById('pack_wizard_name')) document.getElementById('pack_wizard_name').value = packName || '';
+        if (document.getElementById('baseTemplateSelect')) document.getElementById('baseTemplateSelect').value = templateId || '';
         
-        // Pre-select current template
-        const templateSelect = document.getElementById('edit_pack_template_id');
-        if (templateSelect) {
-            templateSelect.value = templateId || "";
+        // Update Sidebar/Interactive inputs
+        if (document.getElementById('summary_name')) document.getElementById('summary_name').value = packName || '';
+        
+        // Pre-select template in discovery
+        if (templateId) {
+            selectTemplate(templateId);
         }
-        
-        // Hide/Show status
-        document.getElementById('template_change_status').classList.add('hidden');
 
-        // Set the ID in hidden inputs for question management
-        const inputs = document.querySelectorAll('.assign_tp_id_input');
-        inputs.forEach(i => i.value = id);
+        // Sync visuals
+        updateSummary();
         
-        // Open the modal
-        const modalEl = document.getElementById('assignModal');
+        // Open the correct modal
+        const modalEl = document.getElementById('createPackModal');
         if (modalEl) {
-            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-            modal.show();
+            try {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            } catch (e) {
+                $(modalEl).modal('show');
+            }
         }
     }
 
@@ -5351,9 +5712,9 @@ if (!empty($Tests)) {
     let currentEditTestId = null;
 
     function toggleEnovaFields(category) {
-        const enovaFields = document.getElementById('enova_fields');
+        const enovaFields = document.getElementById('enova_extra_fields');
         if (enovaFields) {
-            if (category === 'Enova Test') {
+            if (category === 'Enova') {
                 enovaFields.classList.remove('hidden');
             } else {
                 enovaFields.classList.add('hidden');
@@ -5570,15 +5931,28 @@ if (!empty($Tests)) {
     }
 
     function openCreateTest() {
-        wizardStep = 1;
-        selectedWizardQuestions.clear();
         document.querySelectorAll('#TestModal input, #TestModal select, #TestModal textarea').forEach(el => {
             if (el.type === 'checkbox') el.checked = false;
             else if (el.tagName === 'SELECT') el.selectedIndex = 0;
             else el.value = '';
         });
-        document.getElementById('ass_pack_name').value = 'Batch-1';
-        updateWizardUI();
+        
+        // Reset custom multiselect
+        document.querySelectorAll('#multiselect_options input[type="checkbox"]').forEach(cb => cb.checked = false);
+        updateMultiselectLabel();
+        
+        // Reset titles for Create mode
+        document.querySelector('#TestModal h3').textContent = 'Create New Test';
+        const submitBtn = document.querySelector('#TestModal button[onclick^="createTest"], #TestModal button[onclick^="updateTest"]');
+        if(submitBtn) {
+            submitBtn.innerHTML = 'Initialize Test <i class="bi bi-rocket-takeoff"></i>';
+            submitBtn.setAttribute('onclick', 'createTest()');
+        }
+
+        // Initial toggle
+        toggleEnovaFields(document.getElementById('ass_category').value);
+
+        clearValidationErrors();
         openModal('TestModal');
     }
 
@@ -5588,7 +5962,7 @@ if (!empty($Tests)) {
         document.getElementById('ass_code').value = data.code || '';
         document.getElementById('ass_category').value = data.category || '';
         
-        toggleEnovaFields(data.category);
+        toggleEnovaFields(data.category || '');
         
         if(document.getElementById('ass_type')) document.getElementById('ass_type').value = data.assessment_type || '';
         if(document.getElementById('ass_assigned') && data.assigned_to) {
@@ -5602,8 +5976,11 @@ if (!empty($Tests)) {
         document.getElementById('ass_desc').value = data.description || '';
         
         document.querySelector('#TestModal h3').textContent = 'Edit Test';
-        document.querySelector('#TestModal .btn-red').textContent = 'Update';
-        document.querySelector('#TestModal .btn-red').setAttribute('onclick', 'updateTest()');
+        const submitBtn = document.querySelector('#TestModal button[onclick^="createTest"], #TestModal button[onclick^="updateTest"]');
+        if(submitBtn) {
+            submitBtn.innerHTML = 'Update Test <i class="bi bi-pencil-square"></i>';
+            submitBtn.setAttribute('onclick', 'updateTest()');
+        }
         
         clearValidationErrors();
         openModal('TestModal');
@@ -5680,16 +6057,14 @@ if (!empty($Tests)) {
         const name = document.getElementById('ass_name').value;
         const code = document.getElementById('ass_code').value;
         const category = document.getElementById('ass_category').value;
-        const type = document.getElementById('ass_type').value;
+        const type = category === 'Enova' ? document.getElementById('ass_type').value : null;
         const assignedSelect = document.getElementById('ass_assigned');
-        const assigned = Array.from(assignedSelect.selectedOptions).map(o => o.value).join(',');
+        const assigned = category === 'Enova' ? Array.from(assignedSelect.selectedOptions).map(o => o.value).join(',') : null;
         const desc = document.getElementById('ass_desc').value;
-        const packName = document.getElementById('ass_pack_name').value;
-        const templateId = document.getElementById('ass_pack_template').value;
         
         Swal.fire({
-            title: 'Creating...',
-            text: 'Setting up new Test and initial pack.',
+            title: 'Initializing...',
+            text: 'Setting up new Test.',
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
         });
@@ -5702,18 +6077,16 @@ if (!empty($Tests)) {
                     name, code, category, 
                     assessment_type: type, 
                     assigned_to: assigned, 
-                    description: desc,
-                    pack_name: packName,
-                    template_id: templateId
+                    description: desc
                 })
             });
             if(response.ok) {
-                Swal.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
+                Swal.fire({ title: 'Success!', text: 'Test initialized successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
             } else {
                 throw new Error();
             }
         } catch (e) {
-            Swal.fire('Error', 'Failed to create Test.', 'error');
+            Swal.fire('Error', 'Failed to initialize Test.', 'error');
         }
     }
 
@@ -5764,28 +6137,33 @@ if (!empty($Tests)) {
     let currentEditPackId = null;
     function editPack(data) {
         currentEditPackId = data.id;
+        currentTestIdForPack = data.assessment_id;
+
         document.getElementById('pack_wizard_name').value = data.pack_name;
-        document.getElementById('packTestName').value = data.assessment_id || '';
         document.getElementById('baseTemplateSelect').value = data.template_id || '';
-        document.getElementById('final_duration').value = data.duration || 60;
-        document.getElementById('rev_duration').textContent = (data.duration || 60) + ' mins';
+        document.getElementById('pack_duration').value = data.duration || 60;
+        document.getElementById('pack_user_role').value = data.user_role || 'General Access';
+        document.getElementById('pack_start_time').value = data.start_time || '';
+        document.getElementById('pack_end_time').value = data.end_time || '';
         
-        // Trigger template selection logic to update required count
+        // Highlight template in sidebar
         if (data.template_id) {
-            App.onTemplateSelect(data.template_id);
+            selectTemplate(data.template_id);
+        } else {
+            updateSummary();
         }
         
-        document.querySelector('#createPackModal h5').textContent = 'Edit Batch';
-        const nextBtn = document.getElementById('nextPackStep');
-        nextBtn.textContent = 'Update & Next';
+        // Load candidates
+        App.selectedCandidates[data.assessment_id] = (data.candidates || '').split(',').filter(id => id.trim());
+        updateWizardCandidateLabel();
         
-        currentPackStep = 1;
-        updatePackWizardUI();
+        document.querySelector('#createPackModal h3').textContent = 'Edit Batch';
         
         const modalEl = document.getElementById('createPackModal');
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
     }
+
 
     function deletePack(id) {
         Swal.fire({ title: 'Delete this pack?', text: "This action cannot be undone.", icon: 'warning', showCancelButton: true }).then(async (result) => {
@@ -5976,12 +6354,13 @@ if (!empty($Tests)) {
         const name = document.getElementById('ass_name');
         const code = document.getElementById('ass_code');
         const category = document.getElementById('ass_category');
+        const desc = document.getElementById('ass_desc');
         
         if(!name || !name.value.trim()) { showError('ass_name', true); isValid = false; } else { showError('ass_name', false); }
         if(!code || !code.value.trim()) { showError('ass_code', true); isValid = false; } else { showError('ass_code', false); }
         if(!category || !category.value) { showError('err_ass_category', true, 'ass_category'); isValid = false; } else { showError('err_ass_category', false, 'ass_category'); }
         
-        if(category && category.value === 'Enova Test') {
+        if(category && category.value === 'Enova') {
             const type = document.getElementById('ass_type');
             if(!type || !type.value) { showError('ass_type', true); isValid = false; } else { showError('ass_type', false); }
             
@@ -5992,7 +6371,14 @@ if (!empty($Tests)) {
             } else {
                 showError('ass_assigned', false, 'multiselect_btn');
             }
+        } else {
+            // Hide errors for non-enova fields if they were visible
+            showError('ass_type', false);
+            showError('ass_assigned', false, 'multiselect_btn');
         }
+
+        if(!desc || !desc.value.trim()) { showError('ass_desc', true); isValid = false; } else { showError('ass_desc', false); }
+        
         return isValid;
     }
 
@@ -6051,5 +6437,44 @@ if (!empty($Tests)) {
         });
     });
 </script>
+<!-- MANUAL QUESTION MODAL -->
+<div class="modal fade" id="manualQuestionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-2xl rounded-3xl overflow-hidden">
+            <div class="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-md">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                    <h5 class="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-0">Add Manual Question</h5>
+                </div>
+                <button type="button" class="btn-close text-[10px]" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div class="form-group">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Question Type</label>
+                    <select id="manual_q_type" class="w-full bg-slate-50 border-0 rounded-xl h-12 px-4 text-[13px] font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 transition-all">
+                        <option value="MCQ">Multiple Choice (MCQ)</option>
+                        <option value="Short Answer">Short Answer</option>
+                        <option value="Practical">Practical / Coding</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Question Content</label>
+                    <textarea id="manual_q_text" rows="4" class="w-full bg-slate-50 border-0 rounded-xl p-4 text-[13px] font-medium text-slate-700 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Enter your question here..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Marks Weightage</label>
+                    <input type="number" id="manual_q_marks" value="1" class="w-full bg-slate-50 border-0 rounded-xl h-12 px-4 text-[13px] font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 transition-all">
+                </div>
+            </div>
+            <div class="p-6 bg-slate-50/50 border-t border-slate-50 flex gap-4">
+                <button type="button" class="flex-1 py-3 bg-white border border-slate-200 text-slate-500 font-bold rounded-xl text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl text-[11px] uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all" onclick="addManualQuestion()">Add Question</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

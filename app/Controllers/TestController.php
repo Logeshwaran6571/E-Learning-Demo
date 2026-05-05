@@ -25,7 +25,7 @@ class TestController extends BaseController
             $t['sections'] = $sectionModel->where('template_id', $t['id'])->findAll();
         }
 
-        $Tests = $TestModel->findAll();
+        $Tests = $TestModel->orderBy('id', 'DESC')->findAll();
         foreach ($Tests as &$a) {
             $a['test_packs'] = $testPackModel->where('assessment_id', $a['id'])->findAll();
             foreach ($a['test_packs'] as &$tp) {
