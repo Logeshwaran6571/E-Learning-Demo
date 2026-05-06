@@ -2132,7 +2132,8 @@ if (!empty($Tests)) {
         Tests: <?= json_encode($Tests) ?>,
         templates: <?= json_encode($templates) ?>,
         employees: <?= json_encode($employees) ?>,
-        selectedCandidates: {} // Stores { TestId: [empId1, empId2] }
+        selectedCandidates: {}, // Stores { TestId: [empId1, empId2] }
+        manualQuestions: []
     };
 
     // --- Test Execution Engine ---
@@ -2194,8 +2195,8 @@ if (!empty($Tests)) {
                     className: 'dt-control',
                     orderable: false,
                     data: null,
-                    defaultContent: '<i class="bi bi-plus-circle text-slate-300 hover:text-red-500 cursor-pointer transition-colors"></i>',
-                    width: '50px'
+                    defaultContent: '',
+                    width: '30px'
                 },
                 { 
                     data: 'name',
@@ -2260,12 +2261,10 @@ if (!empty($Tests)) {
             if (row.child.isShown()) {
                 row.child.hide();
                 tr.removeClass('dt-hasChild');
-                $(this).find('i').removeClass('bi-dash-circle text-red-500').addClass('bi-plus-circle text-slate-300');
             } else {
                 row.child(formatTestPacks(row.data())).show();
                 initBatchDataTable(row.data().id, row.data().test_packs);
                 tr.addClass('dt-hasChild');
-                $(this).find('i').removeClass('bi-plus-circle text-slate-300').addClass('bi-dash-circle text-red-500');
             }
         });
     }
@@ -2434,10 +2433,48 @@ if (!empty($Tests)) {
 
     function updateWizardCandidateLabel() {
         if (!currentTestIdForPack) return;
-        const count = App.selectedCandidates[currentTestIdForPack] ? App.selectedCandidates[currentTestIdForPack].length : 0;
-        const label = document.getElementById('wizardCandidateCountLabel');
-        if (label) {
-            label.textContent = count > 0 ? `${count} Candidates Selected` : 'Select Candidates';
+        const selectedIds = App.selectedCandidates[currentTestIdForPack] || [];
+        const count = selectedIds.length;
+        
+        // 1. Update Legacy Label (if any)
+        const legacyLabel = document.getElementById('wizardCandidateCountLabel');
+        if (legacyLabel) legacyLabel.textContent = count > 0 ? `${count} Candidates Selected` : 'Select Candidates';
+
+        // 2. Update New High-Density Wizard Summary
+        const countDisplay = document.getElementById('wizard_selected_count');
+        const roleDisplay = document.getElementById('wizard_selected_role');
+        const avatarContainer = document.getElementById('wizard_candidate_avatars');
+
+        if (countDisplay) countDisplay.textContent = count > 0 ? `${count} Selected` : '0 Selected';
+        
+        if (roleDisplay) {
+            const roleInput = document.getElementById('pack_user_role');
+            roleDisplay.textContent = roleInput ? roleInput.value.toUpperCase() : 'NO ROLE ASSIGNED';
+        }
+
+        if (avatarContainer) {
+            if (count === 0) {
+                avatarContainer.innerHTML = '';
+            } else {
+                // Get selected employee objects
+                const selectedEmps = App.employees.filter(emp => selectedIds.includes(emp.id.toString()));
+                const displayEmps = selectedEmps.slice(0, 5);
+                
+                let html = displayEmps.map(emp => `
+                    <div class="w-8 h-8 rounded-full border-2 border-white bg-white flex items-center justify-center text-[10px] font-black text-slate-400 shadow-sm" title="${emp.name}">
+                        ${emp.name.charAt(0)}
+                    </div>
+                `).join('');
+
+                if (count > 5) {
+                    html += `
+                        <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-800 text-white flex items-center justify-center text-[10px] font-black shadow-sm">
+                            +${count - 5}
+                        </div>
+                    `;
+                }
+                avatarContainer.innerHTML = html;
+            }
         }
     }
 
@@ -2499,6 +2536,9 @@ if (!empty($Tests)) {
         const name = document.getElementById('pack_wizard_name').value;
         const category = document.getElementById('pack_user_role').value;
         
+        // Ensure candidate summary is updated (especially the role display)
+        updateWizardCandidateLabel();
+        
         const shuffle = document.getElementById('pack_shuffle').checked;
         const shuffle_options = document.getElementById('pack_shuffle_options').checked;
         const proctored = document.getElementById('pack_proctored').checked;
@@ -2552,7 +2592,8 @@ if (!empty($Tests)) {
 
         const testId = currentTestIdForPack;
         const packName = document.getElementById('pack_wizard_name').value;
-        const templateId = document.getElementById('baseTemplateSelect').value;
+        const templateSelect = document.getElementById('baseTemplateSelect');
+        const templateId = templateSelect ? templateSelect.value : '';
         const duration = document.getElementById('pack_duration').value;
         const userRole = document.getElementById('pack_user_role').value;
         const startTime = document.getElementById('pack_scheduled_date').value + ' ' + document.getElementById('pack_start_time').value;
@@ -2588,6 +2629,7 @@ if (!empty($Tests)) {
             formData.append('show_results', document.getElementById('pack_show_results').checked ? 1 : 0);
             formData.append('allow_backtracking', document.getElementById('pack_allow_backtracking').checked ? 1 : 0);
             formData.append('candidates', candidates.join(','));
+            formData.append('manual_questions', JSON.stringify(App.manualQuestions));
 
             const response = await fetch('/Test/createTestPack', {
                 method: 'POST',
@@ -2625,46 +2667,41 @@ if (!empty($Tests)) {
         if (!type) return;
         const container = document.getElementById('builder_sections_container_inline');
         const emptyState = document.getElementById('builder_empty_state_inline');
+        const header = document.getElementById('inline_builder_header');
+        
         if (emptyState) emptyState.style.display = 'none';
+        if (header) header.style.display = 'grid';
 
-        const sectionCard = document.createElement('div');
-        sectionCard.className = 'p-5 bg-slate-50 border border-slate-100 rounded-2xl animate-fadeIn relative group';
-        sectionCard.dataset.type = type;
+        const row = document.createElement('div');
+        row.className = 'grid grid-cols-12 gap-0 bg-white hover:bg-slate-50/50 transition-colors animate-fadeIn items-center';
+        row.dataset.type = type;
         const displayName = name || `${type} Section`;
         const displayMarks = marks !== null ? marks : (type === '2 Marks' ? 2 : 1);
 
-        sectionCard.innerHTML = `
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-300">
-                        <i class="bi bi-grip-vertical text-lg"></i>
-                    </div>
-                    <div>
-                        <input type="text" class="bg-transparent border-0 font-bold text-slate-800 p-0 focus:ring-0 text-[13px]" value="${displayName}">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">${type} Component</p>
-                    </div>
+        row.innerHTML = `
+            <div class="col-span-6 py-3 px-4 flex items-center gap-3">
+                <div class="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
+                    <i class="bi bi-grip-vertical"></i>
                 </div>
-                <button class="w-8 h-8 rounded-lg bg-white text-slate-300 hover:text-red-500 transition-all shadow-sm" onclick="this.closest('.p-5').remove(); updateBuilderStatsInline();">
-                    <i class="bi bi-trash"></i>
+                <div>
+                    <input type="text" class="bg-transparent border-0 font-bold text-slate-800 p-0 focus:ring-0 text-[12px] w-full" value="${displayName}">
+                    <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">${type} Component</p>
+                </div>
+            </div>
+            <div class="col-span-2 py-3 px-3 text-center">
+                <input type="number" class="w-16 mx-auto bg-slate-50 border border-slate-100 rounded-lg py-1 px-2 font-bold text-slate-800 text-[12px] text-center focus:ring-2 focus:ring-red-100 sec-count-inline" value="${count}" oninput="updateBuilderStatsInline()">
+            </div>
+            <div class="col-span-2 py-3 px-3 text-center">
+                <input type="number" class="w-16 mx-auto bg-slate-50 border border-slate-100 rounded-lg py-1 px-2 font-bold text-slate-800 text-[12px] text-center focus:ring-2 focus:ring-red-100 sec-marks-inline" value="${displayMarks}" oninput="updateBuilderStatsInline()">
+            </div>
+            <div class="col-span-2 py-3 px-4 text-right">
+                <button class="w-7 h-7 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center mx-auto" 
+                        onclick="this.closest('.grid').remove(); updateBuilderStatsInline(); if(document.querySelectorAll('.sec-count-inline').length === 0) { document.getElementById('builder_empty_state_inline').style.display='block'; document.getElementById('inline_builder_header').style.display='none'; }">
+                    <i class="bi bi-trash-fill text-[10px]"></i>
                 </button>
             </div>
-            <div class="grid grid-cols-3 gap-4">
-                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
-                    <label class="block text-[8px] font-black text-slate-400 uppercase mb-1">Questions</label>
-                    <input type="number" class="w-full bg-transparent border-0 p-0 font-bold text-slate-800 text-[12px] focus:ring-0 sec-count-inline" value="${count}" oninput="updateBuilderStatsInline()">
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
-                    <label class="block text-[8px] font-black text-slate-400 uppercase mb-1">Marks Each</label>
-                    <input type="number" class="w-full bg-transparent border-0 p-0 font-bold text-slate-800 text-[12px] focus:ring-0 sec-marks-inline" value="${displayMarks}" oninput="updateBuilderStatsInline()">
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
-                    <label class="block text-[8px] font-black text-slate-400 uppercase mb-1">Pass %</label>
-                    <input type="number" class="w-full bg-transparent border-0 p-0 font-bold text-slate-800 text-[12px] focus:ring-0" value="40">
-                </div>
-            </div>
         `;
-        container.appendChild(sectionCard);
-        document.getElementById('task_selector_inline').value = '';
+        container.appendChild(row);
         updateBuilderStatsInline();
     }
 
@@ -2720,12 +2757,23 @@ if (!empty($Tests)) {
                 // Add to sidebar templates and select it
                 const newTemplate = result.template;
                 
+                // Add to global state
+                if (!App.templates) App.templates = [];
+                // Ensure sections are attached for immediate UI update
+                newTemplate.sections = data.sections;
+                App.templates.push(newTemplate);
+                
                 // Add to local list
                 const discoveryList = document.getElementById('templateDiscoveryList');
                 const newCard = document.createElement('div');
                 newCard.className = 'p-2.5 rounded-xl border border-slate-50 bg-white hover:border-red-200 cursor-pointer transition-all group relative template-card';
                 newCard.id = `temp_card_${newTemplate.id}`;
                 newCard.onclick = () => selectTemplate(newTemplate.id);
+                
+                // Calculate marks for sidebar label
+                let tm = 0;
+                data.sections.forEach(s => tm += (parseInt(s.count || 0) * parseInt(s.marks || 0)));
+                
                 newCard.innerHTML = `
                     <div class="flex items-start gap-2.5">
                         <div class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-red-600 transition-colors flex-shrink-0">
@@ -2733,7 +2781,7 @@ if (!empty($Tests)) {
                         </div>
                         <div class="overflow-hidden">
                             <h5 class="text-[12px] font-bold text-slate-800 mb-0 leading-tight truncate">${newTemplate.name}</h5>
-                            <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">${newTemplate.category} • ${data.sections.length} Sections</span>
+                            <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">${newTemplate.category || 'General'} • ${tm} Marks • ${data.sections.length} Sec</span>
                         </div>
                         <div class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity check-badge">
                              <div class="w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[8px]">
@@ -2786,35 +2834,89 @@ if (!empty($Tests)) {
         const template = App.templates.find(t => t.id == templateId);
         const placeholder = document.getElementById('template_details_placeholder');
         const activeView = document.getElementById('template_details_active');
+        const deleteBtn = document.getElementById('active_template_delete_btn');
 
         if (!template) {
             placeholder.classList.remove('hidden');
             activeView.classList.add('hidden');
+            if(deleteBtn) deleteBtn.classList.add('hidden');
             return;
         }
 
         placeholder.classList.add('hidden');
         activeView.classList.remove('hidden');
+        if(deleteBtn) deleteBtn.classList.remove('hidden');
 
-        document.getElementById('active_template_name').textContent = template.name;
+        document.getElementById('active_template_name').value = template.name;
         
-        let structure = [];
-        try { structure = JSON.parse(template.structure || '[]'); } catch(e) {}
+        let sections = template.sections || [];
+        if (typeof sections === 'string') {
+            try { sections = JSON.parse(sections); } catch(e) { sections = []; }
+        }
         
         let totalMarks = 0;
-        structure.forEach(s => totalMarks += (parseInt(s.count) * parseInt(s.marks)));
+        sections.forEach(s => {
+            const count = parseInt(s.num_questions || s.count || 0);
+            const marks = parseInt(s.marks_per_question || s.marks || 0);
+            totalMarks += (count * marks);
+        });
 
-        document.getElementById('active_template_marks').textContent = totalMarks + ' Marks';
-        document.getElementById('active_template_sections').textContent = structure.length + ' Sections';
+        const marksInput = document.getElementById('active_template_marks_input');
+        const sectionsInput = document.getElementById('active_template_sections_input');
+        
+        if (marksInput) marksInput.value = totalMarks + ' Marks';
+        if (sectionsInput) sectionsInput.value = sections.length + ' Sections';
+
+        // Update Question Entry Area
+        if (App.renderManualSections) {
+            App.renderManualSections(sections);
+        }
 
         const tagContainer = document.getElementById('active_template_tags');
-        tagContainer.innerHTML = '';
-        structure.forEach(s => {
-            const badge = document.createElement('span');
-            badge.className = 'px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[9px] font-bold text-slate-500 uppercase tracking-tight';
-            badge.textContent = `${s.name} (${s.count} Qs)`;
-            tagContainer.appendChild(badge);
-        });
+        if (tagContainer) {
+            tagContainer.innerHTML = '';
+            sections.forEach((s, idx) => {
+                const sectionRow = document.createElement('div');
+                sectionRow.className = 'flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl mb-2 hover:border-red-100 transition-all group';
+                sectionRow.innerHTML = `
+                    <div class="flex-1 flex items-center gap-4">
+                        <div class="w-8 h-8 bg-slate-50 text-slate-800 rounded-lg flex items-center justify-center font-black text-[11px] border border-slate-100 shadow-sm">
+                            ${idx + 1}
+                        </div>
+                        <div class="grid grid-cols-12 gap-4 flex-1 items-center">
+                            <div class="col-span-5">
+                                <span class="block text-[12px] font-black text-slate-800 leading-none mb-1">${s.marks_type || s.name || 'Section'}</span>
+                                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none">${s.marks_type || s.type || 'MCQ'} Component</span>
+                            </div>
+                            <div class="col-span-3 flex items-center gap-2">
+                                <input type="number" value="${s.num_questions || s.count || 0}" 
+                                       class="w-12 h-7 bg-slate-50 border-0 rounded-lg text-center text-[11px] font-black focus:ring-2 focus:ring-red-100 transition-all pointer-events-none opacity-80" 
+                                       readonly>
+                                <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Qs</span>
+                            </div>
+                            <div class="col-span-3 flex items-center gap-2">
+                                <input type="number" value="${s.marks_per_question || s.marks || 0}" 
+                                       class="w-12 h-7 bg-slate-50 border-0 rounded-lg text-center text-[11px] font-black focus:ring-2 focus:ring-red-100 transition-all pointer-events-none opacity-80" 
+                                       readonly>
+                                <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Marks</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <button class="w-8 h-8 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all shadow-sm" onclick="editTemplate(${template.id})">
+                            <i class="bi bi-pencil-fill text-[10px]"></i>
+                        </button>
+                        <button class="w-8 h-8 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center hover:bg-red-600 hover:text-white transition-all shadow-sm" onclick="deleteTemplate(event, ${template.id})">
+                            <i class="bi bi-trash-fill text-[10px]"></i>
+                        </button>
+                    </div>
+                `;
+                tagContainer.appendChild(sectionRow);
+            });
+        }
+
+        // Update Manual Entry View
+        App.renderManualSections(sections);
     }
 
     function openManualQuestionModal() {
@@ -3674,17 +3776,11 @@ if (!empty($Tests)) {
                         <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-0">Select a template and configure your test</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button class="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-50 transition-all shadow-sm">Save Draft</button>
-                    <button class="px-6 py-2.5 bg-red-600 text-white font-bold rounded-xl text-xs hover:bg-red-700 transition-all flex items-center gap-2 shadow-lg shadow-red-200" onclick="savePackFromWizard()">
-                        Next: Add Questions <i class="bi bi-arrow-right"></i>
-                    </button>
-                </div>
             </div>
             
             <div class="modal-body p-0 bg-[#f8fafc] overflow-hidden">
                 <div class="flex h-full">
-                    <!-- LEFT SIDEBAR: Discovery -->
+                    <!-- 1. LEFT SIDEBAR: Discovery -->
                     <div class="w-[360px] bg-white border-e flex flex-col p-6 overflow-y-auto">
                         <div class="flex items-center gap-2.5 mb-5">
                             <i class="bi bi-stack text-red-600 text-lg"></i>
@@ -3717,7 +3813,12 @@ if (!empty($Tests)) {
                                     </div>
                                     <div class="overflow-hidden">
                                         <h5 class="text-[12px] font-bold text-slate-800 mb-0 leading-tight truncate"><?= esc($t['name']) ?></h5>
-                                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">GENERAL • 20 Marks</span>
+                                        <?php 
+                                            $secs = is_array($t['sections']) ? $t['sections'] : (json_decode($t['sections'], true) ?: []);
+                                            $tm = 0;
+                                            foreach($secs as $s) { $tm += (($s['num_questions'] ?? $s['count'] ?? 0) * ($s['marks_per_question'] ?? $s['marks'] ?? 0)); }
+                                        ?>
+                                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider"><?= esc($t['category'] ?? 'General') ?> • <?= $tm ?> Marks • <?= count($secs) ?> Sec</span>
                                     </div>
                                     <div class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity check-badge">
                                          <div class="w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[8px]">
@@ -3729,66 +3830,113 @@ if (!empty($Tests)) {
                             <?php endforeach; ?>
                         </div>
 
-                        
                         <button class="w-full py-3.5 border-2 border-dashed border-red-100 rounded-2xl text-red-600 font-bold text-[11px] uppercase tracking-widest hover:bg-red-50 hover:border-red-200 transition-all" onclick="openTemplateBuilder()">
                             <i class="bi bi-plus-lg me-2"></i> Create New Template
                         </button>
                     </div>
 
-                    <!-- MAIN CONTENT -->
+                    <!-- 2. MAIN CONTENT -->
                     <div class="flex-1 overflow-y-auto px-8 py-10" id="wizardMainColumn">
                         <!-- BATCH CONFIG VIEW -->
-                        <div class="w-full space-y-6" id="batchWizardConfigView">
-                            
-                            <!-- 1. TEMPLATE DETAILS SECTION -->
-                            <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white" id="wizard_template_section">
-                                <div class="p-6">
-                                    <div class="flex items-center justify-between mb-6">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shadow-sm">
-                                                <i class="bi bi-layout-text-window-reverse text-xl"></i>
+                        <div class="w-full space-y-4" id="batchWizardConfigView">
+                            <!-- TOP ROW: Template (70%) & Target Audience (30%) -->
+                            <div class="grid grid-cols-10 gap-4 items-start">
+                                <!-- 1. TEMPLATE DETAILS SECTION (70%) -->
+                                <div class="col-span-7 card border-0 shadow-sm rounded-2xl overflow-hidden bg-white" id="wizard_template_section">
+                                    <div class="p-4">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shadow-sm">
+                                                    <i class="bi bi-layout-text-window-reverse text-xl"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">Template & Structure</h4>
+                                                    <p class="text-[10px] text-slate-400 font-medium mb-0">Current question paper framework</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h4 class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">Template & Structure</h4>
-                                                <p class="text-[10px] text-slate-400 font-medium mb-0">Current question paper framework</p>
+                                            <div class="flex items-center gap-2">
+                                                <button id="active_template_delete_btn" class="hidden px-3 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm" onclick="deleteActiveTemplate()" title="Delete Template">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                                <button class="px-4 py-2 bg-slate-50 text-slate-600 border border-slate-100 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm" onclick="openTemplateBuilder()">
+                                                    <i class="bi bi-pencil-square me-2"></i> Edit Structure
+                                                </button>
                                             </div>
                                         </div>
-                                        <button class="px-4 py-2 bg-slate-50 text-slate-600 border border-slate-100 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm" onclick="openTemplateBuilder()">
-                                            <i class="bi bi-pencil-square me-2"></i> Edit Structure
-                                        </button>
-                                    </div>
 
-                                    <div id="template_details_placeholder" class="py-10 text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
-                                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300 shadow-sm">
-                                            <i class="bi bi-info-circle text-xl"></i>
+                                        <div id="template_details_placeholder" class="py-10 text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
+                                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300 shadow-sm">
+                                                <i class="bi bi-info-circle text-xl"></i>
+                                            </div>
+                                            <h5 class="text-[12px] font-bold text-slate-500 mb-1">No Template Selected</h5>
+                                            <p class="text-[10px] text-slate-400">Choose a template from the discovery sidebar to begin</p>
                                         </div>
-                                        <h5 class="text-[12px] font-bold text-slate-500 mb-1">No Template Selected</h5>
-                                        <p class="text-[10px] text-slate-400">Choose a template from the discovery sidebar to begin</p>
-                                    </div>
 
-                                    <div id="template_details_active" class="hidden animate-fadeIn">
-                                        <div class="grid grid-cols-3 gap-4 mb-6">
-                                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                                <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Template</span>
-                                                <span class="text-[13px] font-black text-slate-800" id="active_template_name">--</span>
-                                            </div>
-                                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                                <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Marks</span>
-                                                <span class="text-[13px] font-black text-slate-800" id="active_template_marks">0 Marks</span>
-                                            </div>
-                                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                                <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Structure</span>
-                                                <span class="text-[13px] font-black text-slate-800" id="active_template_sections">0 Sections</span>
+                                        <div id="template_details_active" class="hidden animate-fadeIn">
+                                            <div class="flex flex-col lg:flex-row items-center justify-between gap-6">
+                                                <div class="flex-1 w-full">
+                                                    <div class="flex items-center gap-2 mb-2">
+                                                        <div class="w-1 h-4 bg-red-500 rounded-full"></div>
+                                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Template</label>
+                                                    </div>
+                                                    <input id="active_template_name" class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-black h-11 px-4 text-slate-700 focus:ring-0 transition-all opacity-80" readonly value="--" />
+                                                </div>
+
+                                                <div class="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100 h-11 self-end mb-0.5">
+                                                    <div class="px-3">
+                                                        <span class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Total Marks</span>
+                                                        <input id="active_template_marks_input" class="bg-transparent border-0 p-0 text-[12px] font-black text-slate-800 leading-none w-16 focus:ring-0" readonly value="0 Marks">
+                                                    </div>
+                                                    <div class="w-px h-6 bg-slate-200"></div>
+                                                    <div class="px-3">
+                                                        <span class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Structure</span>
+                                                        <input id="active_template_sections_input" class="bg-transparent border-0 p-0 text-[12px] font-black text-slate-800 leading-none w-20 focus:ring-0" readonly value="0 Sections">
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="flex flex-wrap gap-2" id="active_template_tags">
-                                            <!-- Dynamic Tags -->
+                                    </div>
+                                </div>
+
+                                <!-- 2. CANDIDATE ASSIGNMENT (30%) -->
+                                <div class="col-span-3 card border-0 shadow-sm rounded-2xl overflow-hidden bg-white h-full">
+                                    <div class="p-3 h-full flex flex-col justify-between">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
+                                                    <i class="bi bi-people-fill text-base"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-0">Audience</h4>
+                                                    <p class="text-[9px] text-slate-400 font-medium mb-0">Participating candidates</p>
+                                                </div>
+                                            </div>
+                                            <button class="w-8 h-8 bg-white border border-slate-200 text-slate-600 rounded-lg flex items-center justify-center hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm" onclick="openCandidatePickerForWizard()" title="Select Participants">
+                                                <i class="bi bi-person-plus-fill"></i>
+                                            </button>
+                                        </div>
+
+                                        <div id="wizard_candidate_summary" class="bg-slate-50 rounded-xl p-3 border border-slate-100 flex-1">
+                                            <div class="flex flex-col items-center justify-center h-full text-center py-2">
+                                                <div class="flex items-center justify-center gap-3 mb-2">
+                                                    <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-slate-300 shadow-sm">
+                                                        <i class="bi bi-people text-xl"></i>
+                                                    </div>
+                                                    <div class="text-left">
+                                                        <h5 class="text-[12px] font-black text-slate-800 mb-0" id="wizard_selected_count">0 Selected</h5>
+                                                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1" id="wizard_selected_role">NO ROLE</p>
+                                                    </div>
+                                                </div>
+                                                <div id="wizard_candidate_avatars" class="flex -space-x-2 justify-center">
+                                                    <!-- Avatars here -->
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 2. QUESTION PAPER MANAGEMENT (Bulk & Manual) -->
+                            <!-- 3. QUESTION PAPER MANAGEMENT (100%) -->
                             <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
                                 <div class="p-6 border-b border-slate-50 flex items-center justify-between">
                                     <div class="flex items-center gap-3">
@@ -3800,95 +3948,32 @@ if (!empty($Tests)) {
                                             <p class="text-[10px] text-slate-400 font-medium mb-0">Manage how questions are added</p>
                                         </div>
                                     </div>
-                                    <div class="flex bg-slate-100 p-1 rounded-xl">
-                                        <button class="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all bg-white text-blue-600 shadow-sm" onclick="switchQuestionMode('bulk', this)">Bulk Upload</button>
-                                        <button class="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-slate-400 hover:text-slate-600" onclick="switchQuestionMode('manual', this)">Manual Entry</button>
-                                    </div>
-                                </div>
-
-                                <div class="p-6">
-                                    <!-- Bulk Upload Mode -->
-                                    <div id="question_mode_bulk" class="animate-fadeIn">
-                                        <div class="border-2 border-dashed border-slate-100 rounded-2xl p-8 text-center bg-slate-50/30 hover:bg-slate-50 transition-colors group cursor-pointer" onclick="document.getElementById('pack_blueprint_upload').click()">
-                                            <div class="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
-                                                <i class="bi bi-cloud-arrow-up-fill text-2xl"></i>
-                                            </div>
-                                            <h5 class="text-base font-extrabold text-slate-800 mb-2">Upload Bulk Blueprint</h5>
-                                            <p class="text-[11px] text-slate-500 font-medium mb-6 max-w-sm mx-auto">Drop your question paper here or click to browse. We support PDF, DOCX, and Excel formats.</p>
-                                            <div class="flex items-center justify-center gap-3">
-                                                <button class="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl text-[10px] uppercase tracking-widest hover:border-blue-200 hover:shadow-lg transition-all shadow-sm">
-                                                    <i class="bi bi-folder2-open me-2 text-blue-500"></i> Browse Local Files
-                                                </button>
-                                            </div>
-                                            <input type="file" id="pack_blueprint_upload" class="hidden" accept=".pdf,.docx,.xlsx" onchange="updateSummary()" />
-                                        </div>
-                                    </div>
-
-                                    <!-- Manual Entry Mode -->
-                                    <div id="question_mode_manual" class="hidden animate-fadeIn">
-                                        <div class="flex items-center justify-between mb-6">
-                                            <div class="flex items-center gap-4">
-                                                <div class="text-center bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-                                                    <span class="block text-[8px] font-black text-slate-400 uppercase mb-0.5">Added</span>
-                                                    <span class="text-[13px] font-black text-slate-800" id="manual_q_count">0 Questions</span>
-                                                </div>
-                                            </div>
-                                            <button class="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all" onclick="openManualQuestionModal()">
-                                                <i class="bi bi-plus-lg me-2"></i> Add Question
-                                            </button>
-                                        </div>
-                                        
-                                        <div id="manual_questions_list" class="space-y-3 min-h-[150px] max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                            <!-- Empty State -->
-                                            <div class="py-12 text-center border border-dashed border-slate-100 rounded-2xl bg-slate-50/20" id="manual_q_empty">
-                                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-200 shadow-sm">
-                                                    <i class="bi bi-pencil-square text-xl"></i>
-                                                </div>
-                                                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">No manual questions added yet</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 3. CANDIDATE ASSIGNMENT -->
-                            <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
-                                <div class="p-6">
-                                    <div class="flex items-center justify-between mb-6">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
-                                                <i class="bi bi-people-fill text-xl"></i>
-                                            </div>
-                                            <div>
-                                                <h4 class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">Target Audience</h4>
-                                                <p class="text-[10px] text-slate-400 font-medium mb-0">Who will participate in this batch</p>
-                                            </div>
-                                        </div>
-                                        <button class="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl text-[10px] uppercase tracking-widest hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm" onclick="openCandidatePickerForWizard()">
-                                            <i class="bi bi-person-plus-fill me-2"></i> Select Participants
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="document.getElementById('pack_blueprint_upload').click()" class="px-4 h-10 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl flex items-center justify-center gap-2 hover:text-blue-600 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all text-[10px] font-bold uppercase tracking-widest" title="Browse Local Files">
+                                            <i class="bi bi-folder2-open text-base"></i> Bulk Upload
                                         </button>
+                                        <button onclick="App.downloadCurrentTemplate()" class="w-10 h-10 bg-white border border-slate-200 text-slate-400 rounded-xl flex items-center justify-center hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all" title="Download CSV Template">
+                                            <i class="bi bi-download text-lg"></i>
+                                        </button>
+                                        <input type="file" id="pack_blueprint_upload" class="hidden" accept=".csv" onchange="App.handleRealBulkUpload(this)" />
                                     </div>
+                                </div>
 
-                                    <div id="wizard_candidate_summary" class="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-4">
-                                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-slate-300 shadow-sm">
-                                                    <i class="bi bi-people text-2xl"></i>
+                                <div class="p-6">
+                                    <div id="question_mode_manual" class="animate-fadeIn">
+                                        <div id="manual_sections_entry_container" class="space-y-4">
+                                            <div class="py-20 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
+                                                <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm text-slate-200">
+                                                    <i class="bi bi-layout-text-sidebar text-3xl"></i>
                                                 </div>
-                                                <div>
-                                                    <h5 class="text-[14px] font-black text-slate-800 mb-0" id="wizard_selected_count">0 Selected</h5>
-                                                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest" id="wizard_selected_role">No role assigned</p>
-                                                </div>
-                                            </div>
-                                            <div id="wizard_candidate_avatars" class="flex -space-x-3">
-                                                <!-- Avatars here -->
+                                                <p class="text-slate-400 font-bold text-[11px] uppercase tracking-widest">Select a template to begin manual entry</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- HIDDEN MASTER INPUTS FOR BATCH CONFIG -->
+                            <!-- HIDDEN MASTER INPUTS -->
                             <div class="hidden">
                                 <input type="text" id="pack_wizard_name" value="">
                                 <select id="pack_user_role">
@@ -3940,314 +4025,215 @@ if (!empty($Tests)) {
                             </div>
 
                             <div class="space-y-8">
-                                <!-- Meta Info -->
-                                <section class="card border-0 shadow-sm rounded-2xl p-6 bg-white">
-                                    <div class="flex items-center gap-2 mb-6">
-                                        <div class="w-1 h-5 bg-red-500 rounded-full"></div>
-                                        <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-wider mb-0">General Configuration</h4>
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-2 gap-5 mb-5">
-                                        <div class="form-group">
-                                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Template Category</label>
-                                            <select id="builder_category_inline" class="select w-full bg-slate-50 border-0 rounded-xl text-[12px] font-bold h-11 px-4">
-                                                <option>Performance</option>
-                                                <option>Compliance</option>
-                                                <option>General</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Template Identity</label>
-                                            <input id="builder_storage_name_inline" class="input w-full bg-slate-50 border-0 rounded-xl text-[12px] font-bold h-11 px-4" placeholder="e.g. Research Ethics Test 2024" />
-                                        </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-3 gap-5">
-                                        <div class="form-group">
-                                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Default Duration</label>
-                                            <div class="relative">
-                                                <input type="number" id="builder_duration_inline" class="input w-full bg-slate-50 border-0 rounded-xl text-[12px] font-bold h-11 px-4 pr-12" placeholder="60" />
-                                                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-300 uppercase tracking-widest">MINS</span>
+                                <section class="card border-0 shadow-sm rounded-2xl p-6 bg-white max-w-4xl mx-auto">
+                                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                        <div class="flex-1 w-full">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <div class="w-1 h-4 bg-red-500 rounded-full"></div>
+                                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Template Name</label>
                                             </div>
+                                            <input id="builder_storage_name_inline" class="input w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-black h-11 px-4 focus:ring-4 focus:ring-red-50 transition-all" placeholder="e.g. CI4 Internal Assessment" />
                                         </div>
-                                        <div class="form-group">
-                                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Pass Mark (%)</label>
-                                            <input type="number" id="builder_pass_mark_inline" value="60" class="input w-full bg-slate-50 border-0 rounded-xl text-[12px] font-bold h-11 px-4" />
-                                        </div>
-                                        <div class="form-group">
-                                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2">Max Attempts</label>
-                                            <input type="number" id="builder_attempts_inline" value="2" class="input w-full bg-slate-50 border-0 rounded-xl text-[12px] font-bold h-11 px-4" />
-                                        </div>
-                                    </div>
-                                </section>
 
-                                <!-- Structure Area -->
-                                <section class="card border-0 shadow-sm rounded-2xl p-6 bg-white">
-                                    <div class="flex items-center justify-between mb-6">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-1 h-5 bg-blue-500 rounded-full"></div>
-                                            <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-wider mb-0">Question Paper Structure</h4>
-                                        </div>
-                                        <div class="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-                                            <div class="flex flex-col">
-                                                <span class="text-[8px] font-bold text-slate-400 uppercase">Total Marks</span>
-                                                <span class="text-[11px] font-black text-slate-800" id="builder_total_marks_inline">0 Marks</span>
+                                        <div class="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100 h-11">
+                                            <div class="px-3">
+                                                <span class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Total Marks</span>
+                                                <span class="text-[12px] font-black text-slate-800 leading-none" id="builder_total_marks_inline">0 Marks</span>
                                             </div>
                                             <div class="w-px h-6 bg-slate-200"></div>
-                                            <div class="flex flex-col">
-                                                <span class="text-[8px] font-bold text-slate-400 uppercase">Sections</span>
-                                                <span class="text-[11px] font-black text-slate-800" id="builder_section_count_inline">0 Sections</span>
+                                            <div class="px-3">
+                                                <span class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Structure</span>
+                                                <span class="text-[12px] font-black text-slate-800 leading-none" id="builder_section_count_inline">0 Sections</span>
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <div class="bg-blue-50/30 border border-dashed border-blue-200 rounded-2xl p-6 mb-6">
-                                        <label class="block text-[9px] font-bold text-blue-600 uppercase tracking-widest mb-3">Add New Section Component</label>
-                                        <div class="relative">
-                                            <select id="task_selector_inline" class="select w-full h-12 bg-white border-0 rounded-xl text-[12px] font-bold px-5 appearance-none cursor-pointer shadow-sm focus:ring-4 focus:ring-blue-100 transition-all" onchange="addSelectedSectionInline(this.value)">
-                                                <option value="">Browse section blueprints..</option>
-                                                <option value="MCQ">Multiple Choice Questions (MCQ)</option>
-                                                <option value="2 Marks">Short Answer (2 Marks)</option>
-                                                <option value="Coding">Coding / Practical Section</option>
-                                            </select>
-                                            <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-blue-400">
-                                                <i class="bi bi-plus-circle-fill text-lg"></i>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <input type="hidden" id="builder_category_inline" value="General">
+                                    <input type="hidden" id="builder_duration_inline" value="60">
+                                    <input type="hidden" id="builder_pass_mark_inline" value="60">
+                                    <input type="hidden" id="builder_attempts_inline" value="2">
+                                </section>
 
-                                    <div id="builder_sections_container_inline" class="space-y-4">
-                                        <!-- Dynamic Sections -->
-                                        <div class="empty-state py-12 text-center bg-slate-50 border border-dashed border-slate-200 rounded-3xl" id="builder_empty_state_inline">
-                                            <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-200">
-                                                <i class="bi bi-stack text-3xl"></i>
+                                <section class="card border-0 shadow-sm rounded-2xl p-4 bg-white max-w-4xl mx-auto overflow-hidden">
+                                    <div class="flex items-center gap-3">
+                                        <div class="px-3 border-e border-slate-100">
+                                            <span class="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Add Section</span>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2">
+                                            <button onclick="addSelectedSectionInline('MCQ')" class="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all text-[11px] font-bold border border-blue-100 shadow-sm">
+                                                <i class="bi bi-patch-question"></i> MCQ Section
+                                            </button>
+                                            <button onclick="addSelectedSectionInline('2 Marks')" class="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-xl hover:bg-purple-600 hover:text-white transition-all text-[11px] font-bold border border-purple-100 shadow-sm">
+                                                <i class="bi bi-pencil-square"></i> 2 Marks Section
+                                            </button>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section class="max-w-4xl mx-auto">
+                                    <div class="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                                        <div class="grid grid-cols-12 gap-0 bg-slate-100/80 border-b border-slate-200" id="inline_builder_header" style="display: none;">
+                                            <div class="col-span-6 py-2 px-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Section Name / Type</div>
+                                            <div class="col-span-2 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Questions</div>
+                                            <div class="col-span-2 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Marks Each</div>
+                                            <div class="col-span-2 py-2 px-4"></div>
+                                        </div>
+                                        <div id="builder_sections_container_inline" class="divide-y divide-slate-100">
+                                            <div class="empty-state py-12 text-center bg-slate-50/50" id="builder_empty_state_inline">
+                                                <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-200">
+                                                    <i class="bi bi-stack text-3xl"></i>
+                                                </div>
+                                                <h5 class="text-[13px] font-bold text-slate-600 mb-1">No Sections Added</h5>
+                                                <p class="text-[10px] text-slate-400">Add a section blueprint above to start building</p>
                                             </div>
-                                            <h5 class="text-[13px] font-bold text-slate-600 mb-1">No Sections Added</h5>
-                                            <p class="text-[10px] text-slate-400">Select a section blueprint above to start building</p>
                                         </div>
                                     </div>
                                 </section>
                             </div>
                         </div>
-                    </div> <!-- Added closing tag for wizardMainColumn -->
+                    </div>
 
-                    <!-- RIGHT SIDEBAR: Summary -->
-                    <div class="w-[420px] bg-white border-s flex flex-col overflow-hidden">
-                        <div class="p-6 border-b bg-slate-50/30">
+                    <!-- 3. RIGHT SIDEBAR: Batch Config -->
+                    <div class="w-[500px] bg-white border-s flex flex-col overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 bg-white shrink-0">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-lg shadow-sm border border-red-100">
-                                    <i class="bi bi-calendar-event"></i>
+                                <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-red-100">
+                                    <i class="bi bi-speedometer2 text-lg"></i>
                                 </div>
                                 <div>
-                                    <h4 class="text-[14px] font-bold text-slate-800 mb-0">Test Details</h4>
-                                    <p class="text-[10px] text-slate-400 font-medium mb-0">Schedule, instructions and exam settings</p>
+                                    <h4 class="text-[16px] font-black text-slate-800 leading-none">Test Summary</h4>
+                                    <p class="text-[12px] text-slate-400 font-medium mt-1">Schedule & Exam configuration</p>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/20">
-                            <!-- 0. Basic Information -->
-                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <i class="bi bi-info-circle text-red-600"></i>
-                                    <span class="text-[11px] font-bold text-slate-800 uppercase tracking-wider">0. Basic Information</span>
+                        <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-3 bg-slate-50/20">
+                            <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2 shrink-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <i class="bi bi-info-circle text-red-600 text-[12px]"></i>
+                                    <span class="text-[13px] font-black text-slate-800 uppercase tracking-wider">0. Basic Information</span>
                                 </div>
                                 <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">Batch Name</label>
-                                    <input type="text" id="summary_name" placeholder="Enter batch name..." class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_wizard_name', this.value)">
-                                </div>
-                                <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">Target Category</label>
-                                    <select id="summary_category" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all cursor-pointer" onchange="syncSidebarToMain('pack_user_role', this.value)">
-                                        <option value="General Access">General Access</option>
-                                        <option value="Technical">Technical</option>
-                                        <option value="Management">Management</option>
-                                        <option value="Internal">Internal</option>
-                                    </select>
+                                    <label class="block text-[12px] font-bold text-slate-500 mb-1">Batch Name</label>
+                                    <input type="text" id="summary_name" placeholder="Enter batch name..." class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_wizard_name', this.value)">
                                 </div>
                             </div>
 
-                            <!-- 1. Schedule & Duration -->
-                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <i class="bi bi-calendar2-check text-red-600"></i>
-                                    <span class="text-[11px] font-bold text-slate-800 uppercase tracking-wider">1. Schedule & Duration</span>
+                            <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2 shrink-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <i class="bi bi-calendar2-check text-red-600 text-[12px]"></i>
+                                    <span class="text-[13px] font-black text-slate-800 uppercase tracking-wider">1. Schedule & Duration</span>
                                 </div>
-                                
                                 <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">Scheduled Date</label>
-                                    <div class="relative">
-                                        <input type="date" id="summary_date_input" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" onchange="syncSidebarToMain('pack_scheduled_date', this.value)">
-                                    </div>
+                                    <label class="block text-[12px] font-bold text-slate-500 mb-1">Scheduled Date</label>
+                                    <input type="date" id="summary_date_input" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" onchange="syncSidebarToMain('pack_scheduled_date', this.value)">
                                 </div>
-
                                 <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">Duration (mins)</label>
-                                    <input type="number" id="summary_duration_input" placeholder="e.g. 90" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_duration', this.value)">
+                                    <label class="block text-[12px] font-bold text-slate-500 mb-1">Duration (mins)</label>
+                                    <input type="number" id="summary_duration_input" placeholder="e.g. 90" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_duration', this.value)">
                                 </div>
-
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-2 gap-3">
                                     <div class="form-group">
-                                        <label class="block text-[10px] font-bold text-slate-400 mb-2">Start Time</label>
-                                        <div class="relative">
-                                            <input type="time" id="summary_start_input" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" onchange="syncSidebarToMain('pack_start_time', this.value)">
-                                        </div>
+                                        <label class="block text-[12px] font-bold text-slate-500 mb-1">Start Time</label>
+                                        <input type="time" id="summary_start_input" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" onchange="syncSidebarToMain('pack_start_time', this.value)">
                                     </div>
                                     <div class="form-group">
-                                        <label class="block text-[10px] font-bold text-slate-400 mb-2">End Time</label>
-                                        <div class="relative">
-                                            <input type="time" id="summary_end_input" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" onchange="syncSidebarToMain('pack_end_time', this.value)">
-                                        </div>
+                                        <label class="block text-[12px] font-bold text-slate-500 mb-1">End Time</label>
+                                        <input type="time" id="summary_end_input" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" onchange="syncSidebarToMain('pack_end_time', this.value)">
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 2. Test Instructions -->
-                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <i class="bi bi-list-task text-red-600"></i>
-                                    <span class="text-[11px] font-bold text-slate-800 uppercase tracking-wider">2. Test Instructions</span>
+                            <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex flex-col min-h-[140px] shrink-0">
+                                <div class="flex items-center gap-2 mb-2 shrink-0">
+                                    <i class="bi bi-list-task text-red-600 text-[12px]"></i>
+                                    <span class="text-[13px] font-black text-slate-800 uppercase tracking-wider">2. Test Instructions</span>
                                 </div>
-                                <div class="relative">
-                                    <textarea id="summary_instructions_input" rows="4" class="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-xs font-medium text-slate-600 focus:ring-2 focus:ring-red-100 transition-all resize-none" placeholder="Enter instructions for candidates..." oninput="syncSidebarToMain('pack_instructions', this.value)"></textarea>
-                                    <div class="absolute bottom-3 right-4 text-[9px] font-bold text-slate-300" id="summary_instructions_count">0 / 2000</div>
-                                </div>
-                            </div>
-
-                            <!-- 3. Passing Criteria & Attempts -->
-                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <i class="bi bi-target text-red-600"></i>
-                                    <span class="text-[11px] font-bold text-slate-800 uppercase tracking-wider">3. Passing Criteria & Attempts</span>
-                                </div>
-                                <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">Pass Mark (%)</label>
-                                    <input type="number" id="summary_pass_mark_input" placeholder="e.g. 50" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_pass_mark', this.value)">
-                                </div>
-                                <div class="form-group">
-                                    <label class="block text-[10px] font-bold text-slate-400 mb-2">No. of Attempts</label>
-                                    <input type="number" id="summary_attempts_input" placeholder="e.g. 1" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_attempts', this.value)">
+                                <div class="relative flex-1">
+                                    <textarea id="summary_instructions_input" class="w-full h-full bg-slate-50 border border-slate-100 rounded-xl p-3 pb-8 text-[13px] font-medium text-slate-600 focus:ring-2 focus:ring-red-100 transition-all resize-none min-h-[100px]" placeholder="Enter instructions..." oninput="syncSidebarToMain('pack_instructions', this.value)"></textarea>
+                                    <div class="absolute bottom-2 right-4 text-[10px] font-bold text-slate-300" id="summary_instructions_count">0 / 2000</div>
                                 </div>
                             </div>
 
-                            <!-- 4. Exam Configuration -->
-                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <i class="bi bi-gear-fill text-red-600"></i>
-                                    <span class="text-[11px] font-bold text-slate-800 uppercase tracking-wider">4. Exam Configuration</span>
+                            <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2 shrink-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <i class="bi bi-target text-red-600 text-[12px]"></i>
+                                    <span class="text-[13px] font-black text-slate-800 uppercase tracking-wider">3. Passing Criteria & Attempts</span>
                                 </div>
-                                
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="form-group">
+                                        <label class="block text-[12px] font-bold text-slate-500 mb-1">Pass Mark (%)</label>
+                                        <input type="number" id="summary_pass_mark_input" placeholder="e.g. 50" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_pass_mark', this.value)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="block text-[12px] font-bold text-slate-500 mb-1">No. of Attempts</label>
+                                        <input type="number" id="summary_attempts_input" placeholder="e.g. 1" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_attempts', this.value)">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-2 rounded-xl border border-slate-100 shadow-sm space-y-1.5 shrink-0">
+                                <div class="flex items-center gap-1.5 mb-0.5">
+                                    <i class="bi bi-gear-fill text-red-600 text-[10px]"></i>
+                                    <span class="text-[12px] font-bold text-slate-800 uppercase tracking-wider">4. Exam Configuration</span>
+                                </div>
                                 <div class="divide-y divide-slate-50">
-                                    <!-- Shuffle Questions -->
-                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_shuffle')">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
+                                    <div class="flex items-center justify-between py-1.5 cursor-pointer group" onclick="toggleSidebarOption('pack_shuffle')">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-5 h-5 bg-slate-50 text-slate-400 rounded-md flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all text-[10px]">
                                                 <i class="bi bi-shuffle"></i>
                                             </div>
-                                            <div>
-                                                <span class="block text-[11px] font-bold text-slate-700">Shuffle Questions</span>
-                                                <span class="text-[9px] text-slate-400 font-medium">Randomize order</span>
-                                            </div>
+                                            <span class="block text-[12px] font-bold text-slate-700">Shuffle Questions</span>
                                         </div>
-                                        <div id="summary_shuffle_wrap" class="relative inline-flex items-center h-5 w-9">
-                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
-                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
+                                        <div id="summary_shuffle_wrap" class="relative inline-flex items-center h-3 w-5">
+                                            <div class="toggle-track w-5 h-3 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
+                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-2 h-2 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
                                         </div>
                                     </div>
-
-                                    <!-- Shuffle Options -->
-                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_shuffle_options')">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
+                                    <div class="flex items-center justify-between py-1.5 cursor-pointer group" onclick="toggleSidebarOption('pack_shuffle_options')">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-5 h-5 bg-slate-50 text-slate-400 rounded-md flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all text-[10px]">
                                                 <i class="bi bi-shuffle"></i>
                                             </div>
-                                            <div>
-                                                <span class="block text-[11px] font-bold text-slate-700">Shuffle Options</span>
-                                                <span class="text-[9px] text-slate-400 font-medium">Randomize option choices</span>
-                                            </div>
+                                            <span class="block text-[12px] font-bold text-slate-700">Shuffle Options</span>
                                         </div>
-                                        <div id="summary_shuffle_options_wrap" class="relative inline-flex items-center h-5 w-9">
-                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
-                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
+                                        <div id="summary_shuffle_options_wrap" class="relative inline-flex items-center h-3 w-5">
+                                            <div class="toggle-track w-5 h-3 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
+                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-2 h-2 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
                                         </div>
                                     </div>
-
-                                    <!-- Proctored Exam -->
-                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_proctored')">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
-                                                <i class="bi bi-shield-check"></i>
-                                            </div>
-                                            <div>
-                                                <span class="block text-[11px] font-bold text-slate-700">Proctored Exam</span>
-                                                <span class="text-[9px] text-slate-400 font-medium">AI & Camera monitoring</span>
-                                            </div>
-                                        </div>
-                                        <div id="summary_proctored_wrap" class="relative inline-flex items-center h-5 w-9">
-                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
-                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Browser Lockdown -->
-                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_lockdown')">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
-                                                <i class="bi bi-lock"></i>
-                                            </div>
-                                            <div>
-                                                <span class="block text-[11px] font-bold text-slate-700">Browser Lockdown</span>
-                                                <span class="text-[9px] text-slate-400 font-medium">Prevent tab switching</span>
-                                            </div>
-                                        </div>
-                                        <div id="summary_lockdown_wrap" class="relative inline-flex items-center h-5 w-9">
-                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
-                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Show Results -->
-                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_show_results')">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
+                                    <div class="flex items-center justify-between py-1.5 cursor-pointer group" onclick="toggleSidebarOption('pack_show_results')">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-5 h-5 bg-slate-50 text-slate-400 rounded-md flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all text-[10px]">
                                                 <i class="bi bi-eye"></i>
                                             </div>
-                                            <div>
-                                                <span class="block text-[11px] font-bold text-slate-700">Show Results</span>
-                                                <span class="text-[9px] text-slate-400 font-medium">Instant score display</span>
-                                            </div>
+                                            <span class="block text-[12px] font-bold text-slate-700">Show Results</span>
                                         </div>
-                                        <div id="summary_show_results_wrap" class="relative inline-flex items-center h-5 w-9">
-                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
-                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
+                                        <div id="summary_show_results_wrap" class="relative inline-flex items-center h-3 w-5">
+                                            <div class="toggle-track w-5 h-3 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
+                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-2 h-2 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
                                         </div>
                                     </div>
-
-                                    <!-- Allow Backtracking -->
-                                    <div class="flex items-center justify-between py-3 cursor-pointer group" onclick="toggleSidebarOption('pack_allow_backtracking')">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all">
+                                    <div class="flex items-center justify-between py-1.5 cursor-pointer group" onclick="toggleSidebarOption('pack_allow_backtracking')">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-5 h-5 bg-slate-50 text-slate-400 rounded-md flex items-center justify-center group-hover:bg-red-50 group-hover:text-red-600 transition-all text-[10px]">
                                                 <i class="bi bi-sign-turn-left"></i>
                                             </div>
-                                            <div>
-                                                <span class="block text-[11px] font-bold text-slate-700">Allow Backtracking</span>
-                                                <span class="text-[9px] text-slate-400 font-medium">Navigate to previous Qs</span>
-                                            </div>
+                                            <span class="block text-[12px] font-bold text-slate-700">Allow Backtracking</span>
                                         </div>
-                                        <div id="summary_allow_backtracking_wrap" class="relative inline-flex items-center h-5 w-9">
-                                            <div class="toggle-track w-9 h-5 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
-                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
+                                        <div id="summary_allow_backtracking_wrap" class="relative inline-flex items-center h-3 w-5">
+                                            <div class="toggle-track w-5 h-3 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out"></div>
+                                            <div class="toggle-thumb absolute left-0.5 top-0.5 w-2 h-2 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out"></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="p-6 bg-white border-t">
-                            <div class="grid grid-cols-2 gap-4">
-                                <button class="py-3.5 bg-slate-50 text-slate-500 font-bold rounded-2xl hover:bg-slate-100 transition-all text-[11px] uppercase tracking-widest" data-bs-dismiss="modal">Discard</button>
-                                <button class="py-3.5 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-all text-[11px] uppercase tracking-widest shadow-lg shadow-red-100" onclick="savePackFromWizard()">
-                                    Initialize Batch
+                        <div class="px-4 py-3 bg-white border-t">
+                            <div class="grid grid-cols-2 gap-3">
+                                <button class="py-2 bg-slate-50 text-slate-500 font-bold rounded-xl hover:bg-slate-100 transition-all text-[10px] uppercase tracking-widest" data-bs-dismiss="modal">Discard</button>
+                                <button class="py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-red-100" onclick="savePackFromWizard()">
+                                    Create Batch
                                 </button>
                             </div>
                         </div>
@@ -4744,9 +4730,10 @@ if (!empty($Tests)) {
         document.getElementById('pack_wizard_name').value = '';
         document.getElementById('baseTemplateSelect').value = '';
         document.getElementById('pack_duration').value = 60;
-        document.getElementById('pack_user_role').value = 'General Access';
         document.getElementById('pack_start_time').value = '';
         document.getElementById('pack_end_time').value = '';
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('pack_scheduled_date').value = today;
         document.getElementById('pack_instructions').value = 'Read all questions carefully before answering. Ensure a stable internet connection.';
         document.getElementById('pack_shuffle').checked = true;
         document.getElementById('pack_proctored').checked = true;
@@ -4754,7 +4741,6 @@ if (!empty($Tests)) {
 
         // 2. Reset Sidebar Interactive Inputs
         document.getElementById('summary_name').value = 'New Batch';
-        document.getElementById('summary_category').value = 'General Access';
         document.getElementById('summary_duration_input').value = 60;
         document.getElementById('summary_start_input').value = '';
         document.getElementById('summary_end_input').value = '';
@@ -4969,19 +4955,43 @@ if (!empty($Tests)) {
         document.getElementById('rev_method').textContent = method + '-select';
     }
 
-    App.openAddManualQuestionModal = () => {
-        const modalEl = document.getElementById('addManualQuestionModal');
-        const parentModalContent = document.querySelector('#createPackModal .modal-content');
-        
-        if (parentModalContent) parentModalContent.classList.add('modal-blur');
-        
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
+    App.addNewManualQuestion = (sectionIdx, type, marks, maxCount) => {
+        const currentCount = App.manualQuestions.filter(q => q.sectionIdx == sectionIdx).length;
+        if (currentCount >= maxCount) {
+             Swal.fire({
+                title: 'Section Limit Reached',
+                text: `This section is configured for a maximum of ${maxCount} questions. You cannot add more.`,
+                icon: 'warning',
+                confirmButtonColor: '#ef4444'
+            });
+            return;
+        }
 
-        modalEl.addEventListener('hidden.bs.modal', () => {
-            if (parentModalContent) parentModalContent.classList.remove('modal-blur');
-        }, { once: true });
+        const qId = 'm' + Date.now();
+        App.manualQuestions.push({
+            id: qId,
+            sectionIdx: sectionIdx,
+            type: type,
+            marks: marks,
+            question: '',
+            option_a: '',
+            option_b: '',
+            option_c: '',
+            option_d: '',
+            correct_answer: '',
+            category: 'Manual'
+        });
+        App.refreshSectionQuestions(sectionIdx);
     };
+
+    App.updateManualQuestion = (id, field, value) => {
+        const q = App.manualQuestions.find(q => q.id === id);
+        if (q) {
+            q[field] = value;
+        }
+    };
+
+    App.currentTargetSectionIdx = null;
 
     App.onManualQuestionTypeChange = (type) => {
         const optionsSec = document.getElementById('manualOptionsSection');
@@ -4989,26 +4999,93 @@ if (!empty($Tests)) {
         const shortSec = document.getElementById('manualShortAnswerSection');
         const label = document.getElementById('manualOptionLabel');
 
-        optionsSec.classList.add('d-none');
-        tfSec.classList.add('d-none');
-        shortSec.classList.add('d-none');
+        if(optionsSec) optionsSec.classList.add('d-none');
+        if(tfSec) tfSec.classList.add('d-none');
+        if(shortSec) shortSec.classList.add('d-none');
 
-        if (type === 'MCQ' || type === 'Multi-select') {
-            optionsSec.classList.remove('d-none');
-            label.textContent = type === 'MCQ' ? 'Answer Options (check one correct)' : 'Answer Options (check all correct)';
+        const cleanType = (type || '').toLowerCase();
+
+        if (cleanType.includes('mcq') || cleanType.includes('multiple choice')) {
+            if(optionsSec) optionsSec.classList.remove('d-none');
+            if(label) label.textContent = 'Answer Options (check one correct)';
             const checks = document.querySelectorAll('.manual-correct-check');
             checks.forEach(c => {
-                c.type = type === 'MCQ' ? 'radio' : 'checkbox';
+                c.type = 'radio';
                 c.name = 'manualCorrect';
             });
-        } else if (type === 'True/False') {
-            tfSec.classList.remove('d-none');
-        } else if (type === '2-Mark') {
-            shortSec.classList.remove('d-none');
+        } else if (cleanType.includes('true/false')) {
+            if(tfSec) tfSec.classList.remove('d-none');
+        } else if (cleanType.includes('short answer') || cleanType.includes('2-mark') || cleanType.includes('marks')) {
+            if(shortSec) shortSec.classList.remove('d-none');
         }
     };
 
-    App.manualQuestions = [];
+    App.renderManualSections = (sections) => {
+        const container = document.getElementById('manual_sections_entry_container');
+        if (!container) return;
+        
+        if (!sections || sections.length === 0) {
+            container.innerHTML = `
+                <div class="py-20 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
+                    <i class="bi bi-layout-text-sidebar text-4xl text-slate-200 mb-4 block"></i>
+                    <p class="text-slate-400 font-bold text-[11px] uppercase tracking-widest">This template has no sections defined</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = sections.map((s, idx) => {
+            const name = s.marks_type || s.name || 'Section';
+            const count = s.num_questions || s.count || 0;
+            const marks = s.marks_per_question || s.marks || 0;
+            
+            return `
+                <div class="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm mb-3">
+                    <div class="p-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-blue-600 text-white rounded-xl flex items-center justify-center text-[9px] font-black shadow-lg shadow-blue-100">
+                                ${name.substring(0, 3).toUpperCase()}
+                            </div>
+                            <div>
+                                <h5 class="text-[12px] font-black text-slate-800 mb-0 uppercase tracking-wide leading-none">${name}</h5>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-[8px] text-slate-400 font-bold uppercase tracking-widest">${count} Questions</span>
+                                    <div class="w-1 h-1 bg-slate-200 rounded-full"></div>
+                                    <span class="text-[8px] text-slate-400 font-bold uppercase tracking-widest">${marks} Marks Each</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="px-3 py-1.5 bg-white border border-slate-100 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm" 
+                                onclick="App.addNewManualQuestion(${idx}, '${name}', ${marks}, ${count})">
+                            <i class="bi bi-plus-lg me-1"></i> Add Question
+                        </button>
+                    </div>
+                    <div class="p-3">
+                        <div id="section_questions_${idx}">
+                            <!-- Table list injected here -->
+                            <div class="py-10 text-center border border-dashed border-slate-100 rounded-2xl bg-slate-50/20">
+                                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center mx-auto mb-2 text-slate-200 shadow-sm">
+                                    <i class="bi bi-pencil-square text-lg"></i>
+                                </div>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">No questions added yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    };
+
+    App.downloadCurrentTemplate = () => {
+        const templateId = document.getElementById('baseTemplateSelect').value;
+        if (!templateId) {
+            Swal.fire('Error', 'Please select a template first', 'error');
+            return;
+        }
+        window.location.href = `/Test/downloadTemplateByTemplateId/${templateId}`;
+    };
+
+
 
     App.addQuestionManually = () => {
         const type = document.getElementById('manualQuestionType').value;
@@ -5017,50 +5094,143 @@ if (!empty($Tests)) {
         if (!text) { Swal.fire('Required', 'Please enter question text', 'error'); return; }
 
         let options = [];
-        if (type === 'MCQ' || type === 'Multi-select') {
+        let correct_answer = '';
+
+        if (type === 'MCQ') {
             const optInputs = document.querySelectorAll('#manualOptionsSection input[type="text"]');
+            const radios = document.querySelectorAll('.manual-correct-check');
             optInputs.forEach((input, i) => {
-                if (input.value) options.push({ text: input.value });
+                if (input.value) {
+                    options.push({ text: input.value, label: String.fromCharCode(65 + i) });
+                    if (radios[i] && radios[i].checked) correct_answer = String.fromCharCode(65 + i);
+                }
             });
         } else if (type === 'True/False') {
             options = [{ text: 'True' }, { text: 'False' }];
+            const tfRadios = document.getElementsByName('manualTF');
+            tfRadios.forEach(r => { if(r.checked) correct_answer = r.value; });
         }
 
-        // Store for preview and dynamic use
-        const qData = { text, type, marks, options, category: 'Manual', id: 'm' + Date.now() };
+        const qData = { 
+            question: text, 
+            type: type, 
+            marks: marks, 
+            option_a: options[0] ? options[0].text : '',
+            option_b: options[1] ? options[1].text : '',
+            option_c: options[2] ? options[2].text : '',
+            option_d: options[3] ? options[3].text : '',
+            correct_answer: correct_answer,
+            category: 'Manual', 
+            id: 'm' + Date.now(),
+            sectionIdx: App.currentTargetSectionIdx 
+        };
+        
         App.manualQuestions.push(qData);
 
-        const tbody = document.getElementById('manualQuestionTableBody');
-        if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="checkbox" class="form-check-input question-check" checked data-q='${JSON.stringify(qData)}' onchange="App.updateManualCount()"></td>
-            <td class="small fw-medium">${text.substring(0, 60)}${text.length > 60 ? '...' : ''}</td>
-            <td class="small">Manual</td>
-            <td class="small">${type}</td>
-            <td class="small">Medium</td>
-            <td class="small fw-bold">${marks}</td>
-        `;
-        tbody.appendChild(tr);
+        if (App.currentTargetSectionIdx !== null) {
+            App.refreshSectionQuestions(App.currentTargetSectionIdx);
+        }
         
-        App.updateManualCount();
         bootstrap.Modal.getInstance(document.getElementById('addManualQuestionModal')).hide();
         
         // Reset form
         document.getElementById('manualQuestionText').value = '';
         document.querySelectorAll('#manualOptionsSection input[type="text"]').forEach(i => i.value = '');
         
-        Swal.fire({ title: 'Success', text: 'Question created and added to list', icon: 'success', timer: 1500, showConfirmButton: false });
+        Swal.fire({ title: 'Added!', text: 'Question added to section', icon: 'success', timer: 1000, showConfirmButton: false });
     };
 
-    App.handleRealBulkUpload = (input, forcedType = null) => {
+    App.refreshSectionQuestions = (idx) => {
+        const list = document.getElementById(`section_questions_${idx}`);
+        if (!list) return;
+        
+        const questions = App.manualQuestions.filter(q => q.sectionIdx == idx);
+        if (questions.length === 0) {
+            list.innerHTML = `
+                <div class="py-12 text-center border border-dashed border-slate-100 rounded-2xl bg-slate-50/20">
+                    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-200 shadow-sm">
+                        <i class="bi bi-pencil-square text-xl"></i>
+                    </div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">No questions added yet</p>
+                </div>
+            `;
+            return;
+        }
+
+        list.innerHTML = `
+            <div class="bg-slate-50/50 rounded-xl overflow-hidden border border-slate-100">
+                <div class="grid grid-cols-12 gap-0 bg-slate-100/80 border-b border-slate-200">
+                    <div class="col-span-1 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">#</div>
+                    <div class="col-span-6 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Question Content</div>
+                    <div class="col-span-4 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Options / Answer</div>
+                    <div class="col-span-1 py-2 px-3 text-right"></div>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    ${questions.map((q, qIdx) => {
+                        const isMCQ = (q.type || '').toLowerCase().includes('mcq') || (q.type || '').toLowerCase().includes('multiple choice');
+                        
+                        return `
+                            <div class="grid grid-cols-12 gap-0 bg-white hover:bg-slate-50/50 transition-colors animate-fadeIn border-b border-slate-50 last:border-0">
+                                <div class="col-span-1 py-2 px-3 flex flex-col items-center justify-start gap-1">
+                                    <span class="w-5 h-5 bg-slate-800 text-white rounded-lg flex items-center justify-center text-[8px] font-black">${qIdx + 1}</span>
+                                    <span class="px-1 py-0.5 bg-blue-50 text-blue-600 rounded text-[7px] font-black uppercase">${q.marks}M</span>
+                                </div>
+                                <div class="col-span-6 py-2 px-2">
+                                    <textarea oninput="App.updateManualQuestion('${q.id}', 'question', this.value)" 
+                                              class="w-full bg-slate-50 border-0 rounded-lg p-2 text-[11px] font-medium text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" 
+                                              rows="2" placeholder="Type your question here...">${q.question || ''}</textarea>
+                                 </div>
+                                 <div class="col-span-4 py-2 px-2">
+                                     ${isMCQ ? `
+                                     <div class="grid grid-cols-2 gap-1.5">
+                                         ${['a', 'b', 'c', 'd'].map(opt => `
+                                         <div class="flex items-center gap-1.5 p-1 border border-slate-100 rounded-lg bg-white focus-within:ring-2 focus-within:ring-red-50 transition-all">
+                                             <span class="text-[8px] font-black text-slate-400 uppercase">${opt}</span>
+                                             <input type="text" value="${q['option_' + opt] || ''}" 
+                                                    oninput="App.updateManualQuestion('${q.id}', 'option_${opt}', this.value)" 
+                                                    class="flex-1 bg-transparent border-0 focus:ring-0 text-[10px] font-medium p-0" 
+                                                    placeholder="...">
+                                             <input type="radio" name="correct_${q.id}" ${q.correct_answer === opt.toUpperCase() ? 'checked' : ''} 
+                                                    onchange="App.updateManualQuestion('${q.id}', 'correct_answer', '${opt.toUpperCase()}')" 
+                                                    class="form-check-input w-2.5 h-2.5 border-slate-200">
+                                         </div>
+                                         `).join('')}
+                                     </div>
+                                     ` : `
+                                     <div class="flex flex-col gap-1">
+                                         <label class="text-[7px] font-black text-slate-400 uppercase">Correct Answer</label>
+                                         <input type="text" value="${q.correct_answer || ''}" 
+                                                oninput="App.updateManualQuestion('${q.id}', 'correct_answer', this.value)" 
+                                                class="w-full bg-slate-50 border-0 rounded-lg h-8 px-2 text-[11px] font-medium text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" 
+                                                placeholder="Expected keyword(s)...">
+                                     </div>
+                                     `}
+                                 </div>
+                                 <div class="col-span-1 py-2 px-3 flex items-start justify-end">
+                                     <button class="w-7 h-7 rounded-lg bg-slate-50 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center" 
+                                             onclick="App.removeManualQuestion('${q.id}', ${idx})">
+                                         <i class="bi bi-trash-fill text-[10px]"></i>
+                                     </button>
+                                 </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    };
+
+    App.removeManualQuestion = (id, sectionIdx) => {
+        App.manualQuestions = App.manualQuestions.filter(q => q.id !== id);
+        App.refreshSectionQuestions(sectionIdx);
+    };
+
+    App.handleRealBulkUpload = (input) => {
         if (!input.files || !input.files[0]) return;
         
-        const typeLabel = forcedType || 'Mixed';
         Swal.fire({
-            title: `Uploading ${typeLabel}...`,
-            text: 'Processing your CSV data',
+            title: 'Processing Upload...',
+            text: 'Mapping questions to template structure.',
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
         });
@@ -5069,58 +5239,60 @@ if (!empty($Tests)) {
         reader.onload = function(e) {
             const text = e.target.result;
             const lines = text.split('\n');
-            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-            const rows = lines.slice(1);
+            if (lines.length < 2) { Swal.fire('Error', 'Invalid or empty CSV file', 'error'); return; }
+
+            const headers = lines.find(l => l && !l.startsWith('#')).split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            const rows = lines.slice(lines.indexOf(lines.find(l => l && !l.startsWith('#'))) + 1);
             
-            const tbody = document.getElementById('manualQuestionTableBody');
-            if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+            // Get current sections for mapping
+            const currentTemplateId = document.getElementById('baseTemplateSelect').value;
+            const template = App.templates.find(t => t.id == currentTemplateId);
+            let sections = [];
+            if (template) {
+                sections = template.sections || [];
+                if (typeof sections === 'string') {
+                    try { sections = JSON.parse(sections); } catch(e) { sections = []; }
+                }
+            }
 
             let addedCount = 0;
             rows.forEach(row => {
-                if(!row.trim()) return;
+                if(!row.trim() || row.startsWith('#')) return;
                 const cols = row.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-                
-                // Map columns based on headers
                 const data = {};
                 headers.forEach((h, i) => data[h] = cols[i]);
 
-                if (data.question_text) {
-                    const qType = forcedType || data.type || 'MCQ';
-                    const qMarks = (qType === '2-Mark' ? 2 : 1);
-                    const qCategory = forcedType === '2-Mark' ? 'Short Answer' : 'MCQ Section';
-
-                    const qData = {
-                        text: data.question_text,
-                        type: qType,
-                        category: qCategory,
-                        marks: qMarks,
-                        options: [],
-                        id: 'b' + Date.now() + Math.random()
-                    };
-
-                    // Handle options for MCQ
-                    if (qType === 'MCQ' || qType === 'Multi-select') {
-                        ['option_a', 'option_b', 'option_c', 'option_d'].forEach(optKey => {
-                            if (data[optKey]) qData.options.push({ text: data[optKey] });
-                        });
+                if (data.question) {
+                    // Try to find section index by name
+                    let sectionIdx = 0;
+                    if (data.section_name) {
+                        const foundIdx = sections.findIndex(s => (s.marks_type || s.name) === data.section_name);
+                        if (foundIdx !== -1) sectionIdx = foundIdx;
                     }
 
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><input type="checkbox" class="form-check-input question-check" checked data-q='${JSON.stringify(qData)}' onchange="App.updateManualCount()"></td>
-                        <td class="small fw-medium">${qData.text.substring(0, 60)}${qData.text.length > 60 ? '...' : ''}</td>
-                        <td class="small">${qData.category}</td>
-                        <td class="small">${qData.type}</td>
-                        <td class="small">Medium</td>
-                        <td class="small fw-bold">${qData.marks}</td>
-                    `;
-                    tbody.appendChild(tr);
+                    const qData = {
+                        id: 'b' + Date.now() + Math.random(),
+                        sectionIdx: sectionIdx,
+                        question: data.question,
+                        type: data.type || 'MCQ',
+                        marks: data.marks || 1,
+                        option_a: data.option_a || '',
+                        option_b: data.option_b || '',
+                        option_c: data.option_c || '',
+                        option_d: data.option_d || '',
+                        correct_answer: data.correct_answer || '',
+                        category: 'Bulk'
+                    };
+                    App.manualQuestions.push(qData);
                     addedCount++;
                 }
             });
-            App.updateManualCount();
-            input.value = ''; // Reset input
-            Swal.fire('Success', `${addedCount} ${typeLabel} questions imported.`, 'success');
+
+            // Refresh all sections
+            sections.forEach((_, idx) => App.refreshSectionQuestions(idx));
+
+            input.value = '';
+            Swal.fire('Success', `${addedCount} questions imported and mapped successfully.`, 'success');
         };
         reader.readAsText(input.files[0]);
     };
@@ -5431,46 +5603,61 @@ if (!empty($Tests)) {
     }
 
     function editTemplate(id) {
-        // Find the template data from the PHP-injected array
-        const templates = <?= json_encode($templates ?? []) ?>;
+        const templates = App.templates || [];
         const t = templates.find(item => item.id == id);
         if(!t) {
             Swal.fire('Error', 'Template data not found', 'error');
             return;
         }
 
-        // Open builder
-        openTemplateBuilder();
-        
-        // Reset and populate
-        resetBuilder();
-        document.getElementById('builder_storage_name').value = t.name;
-        document.getElementById('builder_category').value = t.category || 'General';
-        document.getElementById('builder_duration').value = t.duration || 60;
-        
-        const container = document.getElementById('builder_sections_container');
-        container.innerHTML = ''; // Clear empty state
-        
-        if (t.sections && t.sections.length > 0) {
-            t.sections.forEach(s => {
-                // Use the new section card UI
-                const type = s.marks_type || 'MCQ';
-                addSelectedSection(type);
-                
-                // Update the last added card with specific values
-                const cards = container.querySelectorAll('.section-builder-card');
-                const lastCard = cards[cards.length - 1];
-                lastCard.querySelector('input[type="text"]').value = s.section_name || type;
-                lastCard.querySelector('.sec-count').value = s.num_questions || 0;
-                lastCard.querySelector('.sec-marks').value = s.marks_per_question || 0;
+        // Check if we are in the wizard
+        const wizardModal = document.getElementById('createPackModal');
+        const isWizardOpen = wizardModal && (wizardModal.classList.contains('show') || wizardModal.classList.contains('open'));
+
+        if (isWizardOpen) {
+            toggleWizardView('template');
+            // Populate inline builder
+            document.getElementById('inline_builder_name').value = t.name;
+            document.getElementById('inline_builder_duration').value = t.duration || 60;
+            const container = document.getElementById('inline_sections_container');
+            container.innerHTML = '';
+            
+            let structure = t.sections || [];
+            if (typeof structure === 'string') { try { structure = JSON.parse(structure); } catch(e) {} }
+            
+            structure.forEach(s => {
+                addSelectedSectionInline(s.marks_type || s.type, s.section_name || s.name, s.num_questions || s.count, s.marks_per_question || s.marks);
             });
+            updateInlineBuilderStats();
+        } else {
+            // Open sidebar builder
+            openTemplateBuilder();
+            resetBuilder();
+            document.getElementById('builder_storage_name').value = t.name;
+            document.getElementById('builder_category').value = t.category || 'General';
+            document.getElementById('builder_duration').value = t.duration || 60;
+            
+            const container = document.getElementById('builder_sections_container');
+            container.innerHTML = '';
+            
+            let structure = t.sections || [];
+            if (typeof structure === 'string') { try { structure = JSON.parse(structure); } catch(e) {} }
+            
+            structure.forEach(s => {
+                addSelectedSection(s.marks_type || s.type, s.section_name || s.name, s.num_questions || s.count, s.marks_per_question || s.marks);
+            });
+            updateBuilderStats();
         }
-        
-        updateBuilderStats();
-        document.getElementById('builder_last_sync').textContent = 'Editing: ' + t.name;
     }
 
-    async function deleteTemplate(id) {
+    async function deleteActiveTemplate() {
+        const id = document.getElementById('baseTemplateSelect').value;
+        if (!id) return;
+        await deleteTemplate(null, id);
+    }
+
+    async function deleteTemplate(event, id) {
+        if (event) event.stopPropagation();
         if(!(await Swal.fire({ 
             title: 'Delete Template?', 
             text: 'This will permanently remove this template structure.', 

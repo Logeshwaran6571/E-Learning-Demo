@@ -17,3 +17,4 @@ $routes->post('Test/uploadQuestions', 'TestController::uploadQuestions');
 $routes->post('Test/saveQuestion', 'TestController::saveQuestion');
 $routes->get('/Test/downloadTemplate/(:any)', 'TestController::downloadTemplate/$1');
 $routes->get('Test/getPackQuestions/(:num)', 'TestController::getPackQuestions/$1');
+$routes->get('Test/downloadTemplateByTemplateId/(:num)', 'TestController::downloadTemplateByTemplateId/$1');

@@ -243,15 +243,61 @@ class TestController extends BaseController
     public function createTestPack()
     {
         $model = new TestPackModel();
+        $questionModel = new QuestionModel();
         $data = $this->request->getPost();
-        $id = $model->insert([
+        
+        $packData = [
             'assessment_id' => $data['assessment_id'],
             'pack_name' => $data['pack_name'],
-            'user_role' => $data['user_role'],
+            'user_role' => $data['user_role'] ?? 'General',
             'template_id' => $data['template_id'],
-            'duration' => $data['duration'] ?? 60
-        ]);
-        return $this->response->setJSON(['status' => 'success', 'id' => $id]);
+            'duration' => $data['duration'] ?? 60,
+            'start_time' => $data['start_time'] ?? null,
+            'end_time' => $data['end_time'] ?? null,
+            'instructions' => $data['instructions'] ?? null,
+            'pass_mark' => $data['pass_mark'] ?? 50,
+            'max_attempts' => $data['max_attempts'] ?? 1,
+            'shuffle_questions' => $data['shuffle_questions'] ?? 0,
+            'shuffle_options' => $data['shuffle_options'] ?? 0,
+            'proctored_exam' => $data['proctored_exam'] ?? 0,
+            'browser_lockdown' => $data['browser_lockdown'] ?? 0,
+            'show_results' => $data['show_results'] ?? 0,
+            'allow_backtracking' => $data['allow_backtracking'] ?? 0,
+            'candidates' => $data['candidates'] ?? ''
+        ];
+
+        if (isset($data['id']) && !empty($data['id'])) {
+            $model->update($data['id'], $packData);
+            $packId = $data['id'];
+        } else {
+            $packId = $model->insert($packData);
+        }
+
+        // Save manual questions if provided
+        if (isset($data['manual_questions'])) {
+            $questions = json_decode($data['manual_questions'], true);
+            if (is_array($questions)) {
+                // If updating, we might want to keep existing ones or clear them
+                // For this workflow, we'll clear and re-insert the manual ones
+                $questionModel->where('test_pack_id', $packId)->delete();
+
+                foreach ($questions as $q) {
+                    $questionModel->insert([
+                        'test_pack_id' => $packId,
+                        'question' => $q['question'],
+                        'type' => $q['type'],
+                        'option_a' => $q['option_a'] ?? '',
+                        'option_b' => $q['option_b'] ?? '',
+                        'option_c' => $q['option_c'] ?? '',
+                        'option_d' => $q['option_d'] ?? '',
+                        'correct_answer' => $q['correct_answer'] ?? '',
+                        'marks' => $q['marks'] ?? 1
+                    ]);
+                }
+            }
+        }
+
+        return $this->response->setJSON(['status' => 'success', 'id' => $packId]);
     }
 
     public function deletePack($id)
@@ -399,5 +445,37 @@ class TestController extends BaseController
             'sections' => $sections,
             'questions' => $questions
         ]);
+    }
+
+    public function downloadTemplateByTemplateId($id)
+    {
+        $templateModel = new \App\Models\TemplateModel();
+        $sectionModel = new \App\Models\TemplateSectionModel();
+        
+        $template = $templateModel->find($id);
+        if (!$template) die("Template not found");
+
+        $sections = $sectionModel->where('template_id', $id)->findAll();
+        
+        $filename = preg_replace('/[^a-z0-9_]/i', '_', $template['name']) . "_template.csv";
+        
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        
+        echo "# TEMPLATE: " . $template['name'] . "\n";
+        echo "# INSTRUCTIONS: Fill in the questions below. For MCQs, provide 4 options and correct answer (A-D). For Short Answer, provide expected answer in correct_answer column.\n";
+        echo "section_name,question,type,option_a,option_b,option_c,option_d,correct_answer,marks\n";
+
+        foreach ($sections as $s) {
+            $count = (int)($s['num_questions'] ?? 0);
+            $marks = (int)($s['marks_per_question'] ?? 0);
+            $type = (stripos(($s['marks_type'] ?? ''), 'mcq') !== false || stripos(($s['marks_type'] ?? ''), 'multiple') !== false) ? 'MCQ' : 'Short Answer';
+            $sectionName = $s['marks_type'] ?? $s['name'] ?? 'Section';
+            
+            for ($i = 0; $i < $count; $i++) {
+                echo '"' . $sectionName . '","","' . $type . '","","","","","","' . $marks . "\"\n";
+            }
+        }
+        exit;
     }
 }
