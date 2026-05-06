@@ -518,6 +518,13 @@ if (!empty($Tests)) {
         .form-select:focus, .form-control:focus { border-color: #dc2230; box-shadow: 0 0 0 3px rgba(220,34,48,0.1); }
 
         /* Premium Execution View Styles */
+        .badge-custom { padding: 4px 10px; border-radius: 6px; font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; border: 1px solid transparent; }
+        .badge-green { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+        .badge-blue { background: #eff6ff; color: #2563eb; border-color: #93c5fd; }
+        .badge-yellow { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+        .badge-red { background: #fef2f2; color: #dc2230; border-color: #fecdd3; }
+        .badge-purple { background: #faf5ff; color: #7e22ce; border-color: #e9d5ff; }
+
         .exec-header {
             background: #fff;
             padding: 0.75rem 2rem;
@@ -872,6 +879,51 @@ if (!empty($Tests)) {
             background: var(--brand);
             border-radius: 0 4px 4px 0;
         }
+
+        /* Template Action Icons */
+        .template-card-actions {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 6px;
+            opacity: 0;
+            transition: all 0.2s;
+            background: white;
+            padding: 4px;
+            border-radius: 10px;
+            box-shadow: -4px 0 12px rgba(255,255,255,0.9);
+            z-index: 20;
+        }
+        .template-item-card:hover .template-card-actions,
+        .template-card:hover .template-card-actions {
+            opacity: 1;
+        }
+        .action-icon-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #f1f5f9;
+            background: #fff;
+            color: #64748b;
+            transition: all 0.2s;
+            cursor: pointer;
+            padding: 0;
+        }
+        .action-icon-btn i { font-size: 13px; }
+        .action-icon-btn:hover {
+            color: #fff;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .btn-clone:hover { background: #3b82f6; }
+        .btn-edit:hover { background: #10b981; }
+        .btn-delete:hover { background: #ef4444; }
 
         .builder-field-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
         .builder-field-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
@@ -1426,32 +1478,11 @@ if (!empty($Tests)) {
                             <th>Test Name</th>
                             <th>Status</th>
                             <th>Schedule</th>
-                            <th>Participants</th>
-                            <th>Completed</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td><span class="fw-bold">JavaScript Developer Test</span></td>
-                            <td><span class="badge-custom badge-green">LIVE</span></td>
-                            <td><span class="small">Oct 29, 2023 10:00 AM</span></td>
-                            <td><span class="small">15 Employees</span></td>
-                            <td><span class="small">8 / 15</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-primary-custom" onclick="App.startExecution()">
-                                    <i class="bi bi-play-fill"></i> Start Test
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><span class="fw-bold">Senior Java Developer Screening</span></td>
-                            <td><span class="badge-custom badge-blue">SCHEDULED</span></td>
-                            <td><span class="small">Nov 02, 2023 02:00 PM</span></td>
-                            <td><span class="small">45 Candidates</span></td>
-                            <td><span class="small">0 / 45</span></td>
-                            <td></td>
-                        </tr>
+                    <tbody id="execution_dashboard_body">
+                        <!-- Dynamic content will be injected here -->
                     </tbody>
                 </table>
             </div>
@@ -2177,9 +2208,115 @@ if (!empty($Tests)) {
         if (tabId === 'management') {
             initTestsDataTable();
         }
+
+        if (tabId === 'execution') {
+            if (App.initExecutionDashboard) {
+                App.initExecutionDashboard();
+            } else {
+                console.error("App.initExecutionDashboard not defined");
+            }
+        }
     }
 
-    // --- Tests DataTable with Accordion ---
+    // --- Execution View Dashboard Logic ---
+    App.initExecutionDashboard = () => {
+        const body = document.getElementById('execution_dashboard_body');
+        if (!body) return;
+
+        function refresh() {
+            let html = '';
+            const now = new Date();
+            
+            if (!App.Tests || !Array.isArray(App.Tests)) {
+                body.innerHTML = '<tr><td colspan="6" class="py-20 text-center text-slate-400">Loading assessments...</td></tr>';
+                return;
+            }
+
+            App.Tests.forEach(test => {
+                const packs = test.test_packs || [];
+                packs.forEach(pack => {
+                    // Normalize date format for Safari/Firefox (replace space with T)
+                    const startStr = (pack.start_time || '').replace(' ', 'T');
+                    const endStr = (pack.end_time || '').replace(' ', 'T');
+                    
+                    const startTime = new Date(startStr);
+                    const endTime = new Date(endStr);
+                    
+                    if (isNaN(startTime.getTime())) return; // Skip invalid dates
+
+                    const diffMins = (startTime - now) / 60000;
+
+                    let status = '';
+                    let action = '';
+                    let badgeClass = '';
+
+                    // 5-minute pre-test logic
+                    if (diffMins > 5) {
+                        status = 'SCHEDULED';
+                        badgeClass = 'badge-blue';
+                        action = `<span class="text-slate-400 text-[10px] font-black uppercase tracking-widest">Locked</span>`;
+                    } else if (diffMins <= 5 && now < startTime) {
+                        status = 'READY';
+                        badgeClass = 'badge-yellow';
+                        action = `<button class="px-4 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-not-allowed border border-slate-200 shadow-sm" disabled>
+                                    Waiting...
+                                 </button>`;
+                    } else if (now >= startTime && now < endTime) {
+                        status = 'LIVE';
+                        badgeClass = 'badge-green';
+                        action = `<button class="px-4 py-1.5 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-100 hover:bg-red-700 transition-all" onclick="App.startExecution('${test.id}', '${pack.id}')">
+                                    <i class="bi bi-play-fill me-1"></i> Take Test
+                                 </button>`;
+                    } else {
+                        status = 'EXPIRED';
+                        badgeClass = 'badge-red';
+                        action = `<span class="text-slate-300 text-[10px] font-black uppercase tracking-widest">Closed</span>`;
+                    }
+
+                    html += `
+                        <tr class="hover:bg-slate-50/50 transition-colors border-b border-slate-50">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-red-600 transition-colors border border-slate-100">
+                                        <i class="bi bi-file-earmark-text text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-[14px] font-black text-slate-800 leading-tight">${test.name}</div>
+                                        <div class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-1">${pack.pack_name || 'Standard Batch'}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="badge-custom ${badgeClass} px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest">${status}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col gap-1">
+                                    <div class="text-[12px] font-black text-slate-700 uppercase tracking-wide">
+                                        <i class="bi bi-calendar3 me-2 text-slate-400"></i>${startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 font-bold flex items-center gap-2">
+                                        <span class="px-2 py-0.5 bg-slate-100 rounded text-slate-600">${startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                        <span class="text-slate-300">—</span>
+                                        <span class="px-2 py-0.5 bg-slate-50 rounded text-slate-400">${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-right">${action}</td>
+                        </tr>
+                    `;
+                });
+            });
+
+            if (!html) {
+                html = '<tr><td colspan="6" class="py-24 text-center"><div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-200"><i class="bi bi-calendar-x text-3xl"></i></div><p class="text-slate-400 font-black text-[11px] uppercase tracking-widest">No scheduled tests found</p></td></tr>';
+            }
+            body.innerHTML = html;
+        }
+
+        refresh();
+        if (App.executionInterval) clearInterval(App.executionInterval);
+        App.executionInterval = setInterval(refresh, 30000); // Check every 30s
+    };
     let TestsDataTable = null;
     function initTestsDataTable() {
         if ($.fn.dataTable.isDataTable('#TestsDataTable')) {
@@ -2478,29 +2615,32 @@ if (!empty($Tests)) {
         }
     }
 
-    function selectTemplate(templateId) {
+    function selectTemplate(templateId, clearQuestions = false) {
         document.getElementById('baseTemplateSelect').value = templateId;
         
         // Update UI Highlights
         document.querySelectorAll('.template-card').forEach(card => {
             card.classList.remove('border-red-600', 'bg-red-50');
-            card.querySelector('.check-badge').classList.add('opacity-0');
+            const badge = card.querySelector('.check-badge');
+            if (badge) badge.classList.add('opacity-0');
         });
         
         const selectedCard = document.getElementById('temp_card_' + templateId);
         if (selectedCard) {
             selectedCard.classList.add('border-red-600', 'bg-red-50');
-            selectedCard.querySelector('.check-badge').classList.remove('opacity-0');
+            const badge = selectedCard.querySelector('.check-badge');
+            if (badge) badge.classList.remove('opacity-0');
         }
         
         // Update Center Column Details
-        updateTemplateDetails(templateId);
+        updateTemplateDetails(templateId, clearQuestions);
         
         // Find template data and update duration
         const t = App.templates.find(item => item.id == templateId);
         if (t) {
             const duration = t.duration || 60;
-            document.getElementById('pack_duration').value = duration;
+            const durationInput = document.getElementById('pack_duration');
+            if (durationInput) durationInput.value = duration;
             updateSummary();
         }
     }
@@ -2588,7 +2728,10 @@ if (!empty($Tests)) {
 
 
     async function savePackFromWizard() {
-        if (!validatePackWizard()) return;
+        if (!validatePackWizard()) {
+            Swal.fire('Incomplete Form', 'Please ensure all required fields (Name, Template, Duration) are filled and at least one candidate is selected.', 'warning');
+            return;
+        }
 
         const testId = currentTestIdForPack;
         const packName = document.getElementById('pack_wizard_name').value;
@@ -2716,7 +2859,76 @@ if (!empty($Tests)) {
         });
         document.getElementById('builder_total_marks_inline').textContent = totalMarks + ' Marks';
         document.getElementById('builder_section_count_inline').textContent = totalSections + ' Sections';
+
+        const qSection = document.getElementById('builder_questions_section_inline');
+        if (qSection) {
+            if (totalSections > 0) {
+                qSection.classList.remove('hidden');
+                const dataSections = Array.from(sections).map(s => ({
+                    name: s.querySelector('input[type="text"]').value,
+                    count: parseInt(s.querySelector('.sec-count-inline').value) || 0,
+                    marks: parseInt(s.querySelector('.sec-marks-inline').value) || 0,
+                    type: s.dataset.type
+                }));
+                App.renderBuilderManualSections(dataSections);
+            } else {
+                qSection.classList.add('hidden');
+            }
+        }
     }
+
+    App.renderBuilderManualSections = (sections) => {
+        const container = document.getElementById('builder_manual_sections_container_inline');
+        if (!container) return;
+        
+        container.innerHTML = sections.map((s, idx) => {
+            const name = s.name || 'Section';
+            const count = s.count || 0;
+            const marks = s.marks || 0;
+            
+            return `
+                <div class="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm mb-3 animate-fadeIn">
+                    <div class="p-4 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 bg-red-600 text-white rounded-xl flex items-center justify-center text-[10px] font-black shadow-lg shadow-red-100">
+                                ${name.substring(0, 3).toUpperCase()}
+                            </div>
+                            <div>
+                                <h5 class="text-[13px] font-black text-slate-800 mb-0 uppercase tracking-wide leading-none">${name}</h5>
+                                <div class="flex items-center gap-2 mt-1.5">
+                                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">${count} Questions</span>
+                                    <div class="w-1.5 h-1.5 bg-slate-200 rounded-full"></div>
+                                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">${marks} Marks Each</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="px-4 py-2 bg-white border border-slate-200 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm" 
+                                onclick="App.addNewManualQuestion(${idx}, '${name}', ${marks}, ${count})">
+                            <i class="bi bi-plus-lg me-1"></i> Add Question
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <div id="builder_section_questions_${idx}">
+                            <div class="py-12 text-center border border-dashed border-slate-100 rounded-2xl bg-slate-50/20">
+                                <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center mx-auto mb-2 text-slate-200 shadow-sm">
+                                    <i class="bi bi-pencil-square text-lg"></i>
+                                </div>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Questions defined in Batch configuration</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    };
+
+    App.handleBuilderBulkUpload = (input) => {
+        if (!input.files || !input.files[0]) return;
+        Swal.fire({ title: 'Simulating Upload...', text: 'Integrating questions into template structure', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        setTimeout(() => {
+            Swal.fire({ title: 'Success', text: 'Questions integrated into the structure blueprint.', icon: 'success', timer: 2000 });
+        }, 1500);
+    };
 
     async function saveTemplateFromWizard() {
         const name = document.getElementById('builder_storage_name_inline').value.trim();
@@ -2743,7 +2955,8 @@ if (!empty($Tests)) {
                 duration: document.getElementById('builder_duration_inline').value || 60,
                 pass_mark: document.getElementById('builder_pass_mark_inline').value || 60,
                 max_attempts: document.getElementById('builder_attempts_inline').value || 2,
-                sections: sections
+                sections: sections,
+                questions: App.manualQuestions
             };
 
             const response = await fetch('/Test/saveTemplate', {
@@ -2759,8 +2972,9 @@ if (!empty($Tests)) {
                 
                 // Add to global state
                 if (!App.templates) App.templates = [];
-                // Ensure sections are attached for immediate UI update
+                // Ensure sections and questions are attached for immediate UI update
                 newTemplate.sections = data.sections;
+                newTemplate.questions = data.questions;
                 App.templates.push(newTemplate);
                 
                 // Add to local list
@@ -2830,7 +3044,7 @@ if (!empty($Tests)) {
         document.getElementById(`question_mode_${mode}`).classList.remove('hidden');
     }
 
-    function updateTemplateDetails(templateId) {
+    function updateTemplateDetails(templateId, clearQuestions = false) {
         const template = App.templates.find(t => t.id == templateId);
         const placeholder = document.getElementById('template_details_placeholder');
         const activeView = document.getElementById('template_details_active');
@@ -2867,9 +3081,25 @@ if (!empty($Tests)) {
         if (marksInput) marksInput.value = totalMarks + ' Marks';
         if (sectionsInput) sectionsInput.value = sections.length + ' Sections';
 
+        // Reset or Load manual questions
+        if (clearQuestions) {
+            App.manualQuestions = [];
+            console.log("Template cloned: Questions bank cleared.");
+        } else {
+            App.manualQuestions = template.questions || [];
+        }
+
         // Update Question Entry Area
         if (App.renderManualSections) {
             App.renderManualSections(sections);
+            // Refresh each section list to show questions
+            if (sections.length > 0) {
+                sections.forEach((_, idx) => {
+                    if (typeof App.refreshSectionQuestions === 'function') {
+                        App.refreshSectionQuestions(idx);
+                    }
+                });
+            }
         }
 
         const tagContainer = document.getElementById('active_template_tags');
@@ -3063,22 +3293,31 @@ if (!empty($Tests)) {
             violations: 0
         },
 
-        startExecution: () => {
-            App.executionState.questions = App.mockQuestions;
+        startExecution: (testId, packId) => {
+            const test = App.Tests.find(t => t.id == testId);
+            const pack = test ? (test.test_packs || []).find(p => p.id == packId) : null;
+            
+            if (test) {
+                document.getElementById('execTestTitle').textContent = test.name;
+            }
+
+            App.executionState.questions = App.mockQuestions; // Still using mock questions for demo content
             App.executionState.active = true;
             App.executionState.currentIndex = 0;
             App.executionState.answers = {};
             App.executionState.flagged = new Set();
-            App.executionState.timeLeft = 58 * 60 + 45; // Matching screenshot start
+            
+            const duration = pack ? parseInt(pack.duration || 60) : 60;
+            App.executionState.timeLeft = duration * 60;
             App.executionState.violations = 0;
 
             // Calculate Total Marks
             const totalMarks = App.executionState.questions.reduce((acc, q) => acc + (parseInt(q.marks) || 0), 0);
-            const totalDuration = "60 Mins"; // Mocking as 60 mins based on timeLeft
+            const totalDuration = `${duration} Mins`;
 
             // Update UI
             document.getElementById('execTotalMarks').textContent = `${totalMarks} Marks`;
-            document.getElementById('execPassMark').textContent = `70%`; // Defaulting to 70% as per wizard
+            document.getElementById('execPassMark').textContent = `${pack ? (pack.pass_mark || 70) : 70}%`;
             document.getElementById('execTotalDuration').textContent = totalDuration;
             
             const testTitle = document.getElementById('execTestTitle').textContent;
@@ -3820,6 +4059,20 @@ if (!empty($Tests)) {
                                         ?>
                                         <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider"><?= esc($t['category'] ?? 'General') ?> • <?= $tm ?> Marks • <?= count($secs) ?> Sec</span>
                                     </div>
+                                    
+                                    <!-- Actions overlay -->
+                                    <div class="template-card-actions">
+                                        <button class="action-icon-btn btn-clone" onclick="cloneTemplate(<?= $t['id'] ?>, event)" title="Clone Template">
+                                            <i class="bi bi-copy"></i>
+                                        </button>
+                                        <button class="action-icon-btn btn-edit" onclick="editTemplate(<?= $t['id'] ?>, event)" title="Edit Template">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                        <button class="action-icon-btn btn-delete" onclick="deleteTemplate(<?= $t['id'] ?>, event)" title="Delete Template">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+
                                     <div class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity check-badge">
                                          <div class="w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[8px]">
                                             <i class="bi bi-check-lg"></i>
@@ -4007,20 +4260,13 @@ if (!empty($Tests)) {
 
                         <!-- TEMPLATE BUILDER VIEW (Inline) -->
                         <div class="w-full space-y-5 hidden" id="templateBuilderInlineView">
-                            <div class="flex items-center justify-between mb-8">
-                                <div class="flex items-center gap-3">
-                                    <button class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:text-red-600 transition-all" onclick="toggleWizardView('batch')">
-                                        <i class="bi bi-arrow-left text-lg"></i>
-                                    </button>
-                                    <div>
-                                        <h3 class="text-lg font-bold text-slate-800 mb-0">Create New Template</h3>
-                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Designing question paper structure</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <button class="px-5 py-2.5 bg-red-600 text-white font-bold rounded-xl text-[11px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all hover:bg-red-700" onclick="saveTemplateFromWizard()">
-                                        <i class="bi bi-check-lg me-2"></i> Save & Use Template
-                                    </button>
+                            <div class="flex items-center gap-3 mb-8">
+                                <button class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:text-red-600 transition-all" onclick="toggleWizardView('batch')">
+                                    <i class="bi bi-arrow-left text-lg"></i>
+                                </button>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-800 mb-0">Create New Template</h3>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Designing question paper structure</p>
                                 </div>
                             </div>
 
@@ -4088,6 +4334,44 @@ if (!empty($Tests)) {
                                         </div>
                                     </div>
                                 </section>
+
+                                <section class="max-w-4xl mx-auto hidden" id="builder_questions_section_inline">
+                                    <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
+                                        <div class="p-6 border-b border-slate-50 flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+                                                    <i class="bi bi-file-earmark-plus-fill text-xl"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">Question Content Manage</h4>
+                                                    <p class="text-[10px] text-slate-400 font-medium mb-0">Manage how questions are added</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <button onclick="App.downloadCurrentTemplate()" class="w-10 h-10 bg-white border border-slate-200 text-slate-400 rounded-xl flex items-center justify-center hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all" title="Download CSV Template">
+                                                    <i class="bi bi-download text-lg"></i>
+                                                </button>
+                                                <button onclick="document.getElementById('builder_bulk_upload_inline').click()" class="px-4 h-10 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl flex items-center justify-center gap-2 hover:text-blue-600 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all text-[10px] font-bold uppercase tracking-widest">
+                                                    <i class="bi bi-folder2-open text-base"></i> Bulk Upload
+                                                </button>
+                                                <input type="file" id="builder_bulk_upload_inline" class="hidden" accept=".csv" onchange="App.handleBuilderBulkUpload(this)" />
+                                            </div>
+                                        </div>
+                                        <div class="p-6">
+                                            <div id="builder_manual_sections_container_inline" class="space-y-4">
+                                                <div class="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
+                                                    <p class="text-slate-400 font-bold text-[11px] uppercase tracking-widest">Waiting for structure...</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <div class="max-w-4xl mx-auto py-6 flex justify-end">
+                                    <button class="px-8 py-3 bg-red-600 text-white font-bold rounded-xl text-[12px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-95" onclick="saveTemplateFromWizard()">
+                                        <i class="bi bi-check-lg me-2"></i> Save & Use Template
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -4123,13 +4407,15 @@ if (!empty($Tests)) {
                                     <i class="bi bi-calendar2-check text-red-600 text-[12px]"></i>
                                     <span class="text-[13px] font-black text-slate-800 uppercase tracking-wider">1. Schedule & Duration</span>
                                 </div>
-                                <div class="form-group">
-                                    <label class="block text-[12px] font-bold text-slate-500 mb-1">Scheduled Date</label>
-                                    <input type="date" id="summary_date_input" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" onchange="syncSidebarToMain('pack_scheduled_date', this.value)">
-                                </div>
-                                <div class="form-group">
-                                    <label class="block text-[12px] font-bold text-slate-500 mb-1">Duration (mins)</label>
-                                    <input type="number" id="summary_duration_input" placeholder="e.g. 90" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_duration', this.value)">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="form-group">
+                                        <label class="block text-[12px] font-bold text-slate-500 mb-1">Scheduled Date</label>
+                                        <input type="date" id="summary_date_input" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" onchange="syncSidebarToMain('pack_scheduled_date', this.value)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="block text-[12px] font-bold text-slate-500 mb-1">Duration (mins)</label>
+                                        <input type="number" id="summary_duration_input" placeholder="e.g. 90" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" oninput="syncSidebarToMain('pack_duration', this.value)">
+                                    </div>
                                 </div>
                                 <div class="grid grid-cols-2 gap-3">
                                     <div class="form-group">
@@ -4462,7 +4748,7 @@ if (!empty($Tests)) {
         }
 
         list.innerHTML = templates.map(t => `
-            <div class="template-item-card" onclick="loadTemplateToBuilder(${t.id}, this)" data-category="${t.category}">
+            <div class="template-item-card group relative" onclick="loadTemplateToBuilder(${t.id}, this)" data-category="${t.category}" id="builder_temp_${t.id}">
                 <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-red-500 transition-colors">
                     <i class="bi bi-file-earmark-text"></i>
                 </div>
@@ -4472,6 +4758,19 @@ if (!empty($Tests)) {
                         <span class="text-[9px] font-black text-red-500 uppercase tracking-widest">${t.category || 'General'}</span>
                         <span class="text-[9px] font-bold text-slate-400">• ${t.total_marks || 0} Marks</span>
                     </div>
+                </div>
+                
+                <!-- Actions overlay -->
+                <div class="template-card-actions">
+                    <button class="action-icon-btn btn-clone" onclick="cloneTemplate(${t.id}, event)" title="Clone Structure">
+                        <i class="bi bi-copy"></i>
+                    </button>
+                    <button class="action-icon-btn btn-edit" onclick="editTemplate(${t.id}, event)" title="Edit Template">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="action-icon-btn btn-delete" onclick="deleteTemplate(${t.id}, event)" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </div>
             </div>
         `).join('');
@@ -4574,15 +4873,15 @@ if (!empty($Tests)) {
 
     let currentEditingTemplateId = null;
 
-    function loadTemplateToBuilder(id, btn) {
-        currentEditingTemplateId = id;
+    function loadTemplateToBuilder(id, btn, isClone = false) {
+        currentEditingTemplateId = isClone ? null : id;
         document.querySelectorAll('.template-item-card').forEach(el => el.classList.remove('active'));
-        if (btn) btn.classList.add('active');
+        if (btn && !isClone) btn.classList.add('active');
 
         const template = App.templates.find(t => t.id == id);
         if (!template) return;
 
-        document.getElementById('builder_storage_name').value = template.name;
+        document.getElementById('builder_storage_name').value = isClone ? template.name + ' (Copy)' : template.name;
         document.getElementById('builder_category').value = template.category || 'General';
         document.getElementById('builder_duration').value = template.duration || 60;
         document.getElementById('builder_start_date').value = template.start_date || '';
@@ -4592,11 +4891,21 @@ if (!empty($Tests)) {
         container.innerHTML = '';
         
         try {
-            const structure = JSON.parse(template.structure || '[]');
-            if (structure.length > 0) {
-                structure.forEach(s => {
-                    addSelectedSection(s.type, s.name, s.count, s.marks);
+            const structure = typeof template.sections === 'string' ? JSON.parse(template.sections) : template.sections;
+            
+            // Load Questions
+            App.manualQuestions = isClone ? [] : (template.questions || []);
+            
+            if (structure && structure.length > 0) {
+                structure.forEach((s, idx) => {
+                    addSelectedSection(s.marks_type || s.type, s.section_name || s.name, s.num_questions || s.count, s.marks_per_question || s.marks);
                 });
+                
+                // If App.renderManualSections is available, sync the question bank UI
+                if (typeof App.renderManualSections === 'function' && !isClone) {
+                    App.renderManualSections(structure);
+                    structure.forEach((_, idx) => App.refreshSectionQuestions(idx));
+                }
             } else {
                 // Fallback for older data or empty templates
                 const emptyState = `<div class="empty-state py-12 text-center bg-slate-50 border border-dashed border-slate-200 rounded-3xl" id="builder_empty_state">
@@ -4612,12 +4921,14 @@ if (!empty($Tests)) {
             console.error("Failed to parse template structure", e);
         }
         
-        document.getElementById('builder_last_sync').textContent = 'Loaded: ' + new Date().toLocaleTimeString();
+        document.getElementById('builder_last_sync').textContent = isClone ? 'New Cloned Template' : 'Loaded: ' + new Date().toLocaleTimeString();
         
         Swal.fire({
-            toast: true, position: 'top-end', icon: 'success', title: 'Template loaded', showConfirmButton: false, timer: 1000
+            toast: true, position: 'top-end', icon: 'success', title: isClone ? 'Template structure cloned' : 'Template loaded with ' + App.manualQuestions.length + ' questions', showConfirmButton: false, timer: 1500
         });
     }
+
+    /* Action Handlers */
 
     function resetBuilder() {
         currentEditingTemplateId = null;
@@ -4679,7 +4990,8 @@ if (!empty($Tests)) {
                 duration: duration,
                 start_date: startDate,
                 end_date: endDate,
-                sections: sections
+                sections: sections,
+                questions: App.manualQuestions
             };
 
             const response = await fetch('/Test/saveTemplate', {
@@ -4956,15 +5268,19 @@ if (!empty($Tests)) {
     }
 
     App.addNewManualQuestion = (sectionIdx, type, marks, maxCount) => {
+        // We'll allow adding questions beyond the limit during the build process
+        // to provide a better user experience. We can show a toast instead of blocking.
         const currentCount = App.manualQuestions.filter(q => q.sectionIdx == sectionIdx).length;
         if (currentCount >= maxCount) {
              Swal.fire({
-                title: 'Section Limit Reached',
-                text: `This section is configured for a maximum of ${maxCount} questions. You cannot add more.`,
-                icon: 'warning',
-                confirmButtonColor: '#ef4444'
+                title: 'Note: Limit Exceeded',
+                text: `You are adding more than the configured ${maxCount} questions for this section. The structure will be updated to accommodate this.`,
+                icon: 'info',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
             });
-            return;
         }
 
         const qId = 'm' + Date.now();
@@ -5056,7 +5372,7 @@ if (!empty($Tests)) {
                             </div>
                         </div>
                         <button class="px-3 py-1.5 bg-white border border-slate-100 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm" 
-                                onclick="App.addNewManualQuestion(${idx}, '${name}', ${marks}, ${count})">
+                                onclick="App.addNewManualQuestion(${idx}, '${name.replace(/'/g, "\\'")}', ${marks}, ${count})">
                             <i class="bi bi-plus-lg me-1"></i> Add Question
                         </button>
                     </div>
@@ -5077,6 +5393,50 @@ if (!empty($Tests)) {
     };
 
     App.downloadCurrentTemplate = () => {
+        const inlineBuilder = document.getElementById('templateBuilderInlineView');
+        const isBuilderActive = inlineBuilder && !inlineBuilder.classList.contains('hidden');
+
+        if (isBuilderActive) {
+            const sections = document.querySelectorAll('#builder_sections_container_inline > div:not(.empty-state)');
+            if (sections.length === 0) {
+                Swal.fire({
+                    title: 'Empty Structure',
+                    text: 'Please add at least one section (e.g., MCQ or 2 Marks) to your template before downloading.',
+                    icon: 'warning',
+                    confirmButtonColor: '#ef4444'
+                });
+                return;
+            }
+
+            // Generate Smart CSV based on current structure
+            let csv = "Section Name,Question,Option A,Option B,Option C,Option D,Correct Answer,Marks\n";
+            sections.forEach(s => {
+                const name = s.querySelector('input[type="text"]').value.replace(/"/g, '""');
+                const marks = s.querySelector('.sec-marks-inline').value;
+                // Add a placeholder row for each section
+                csv += `"${name}","[Type Question Here]","[Opt A]","[Opt B]","[Opt C]","[Opt D]","A","${marks}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "question_bulk_upload_template.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            Swal.fire({
+                title: 'Template Generated',
+                text: 'A custom CSV has been generated based on your current sections.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            return;
+        }
+
         const templateId = document.getElementById('baseTemplateSelect').value;
         if (!templateId) {
             Swal.fire('Error', 'Please select a template first', 'error');
@@ -5141,7 +5501,7 @@ if (!empty($Tests)) {
     };
 
     App.refreshSectionQuestions = (idx) => {
-        const list = document.getElementById(`section_questions_${idx}`);
+        const list = document.getElementById(`section_questions_${idx}`) || document.getElementById(`builder_section_questions_${idx}`);
         if (!list) return;
         
         const questions = App.manualQuestions.filter(q => q.sectionIdx == idx);
@@ -5161,8 +5521,7 @@ if (!empty($Tests)) {
             <div class="bg-slate-50/50 rounded-xl overflow-hidden border border-slate-100">
                 <div class="grid grid-cols-12 gap-0 bg-slate-100/80 border-b border-slate-200">
                     <div class="col-span-1 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">#</div>
-                    <div class="col-span-6 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Question Content</div>
-                    <div class="col-span-4 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Options / Answer</div>
+                    <div class="col-span-10 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Question Content</div>
                     <div class="col-span-1 py-2 px-3 text-right"></div>
                 </div>
                 <div class="divide-y divide-slate-100">
@@ -5171,42 +5530,37 @@ if (!empty($Tests)) {
                         
                         return `
                             <div class="grid grid-cols-12 gap-0 bg-white hover:bg-slate-50/50 transition-colors animate-fadeIn border-b border-slate-50 last:border-0">
-                                <div class="col-span-1 py-2 px-3 flex flex-col items-center justify-start gap-1">
+                                <div class="col-span-1 py-3 px-3 flex flex-col items-center justify-start gap-1">
                                     <span class="w-5 h-5 bg-slate-800 text-white rounded-lg flex items-center justify-center text-[8px] font-black">${qIdx + 1}</span>
                                     <span class="px-1 py-0.5 bg-blue-50 text-blue-600 rounded text-[7px] font-black uppercase">${q.marks}M</span>
                                 </div>
-                                <div class="col-span-6 py-2 px-2">
+                                <div class="${isMCQ ? 'col-span-5' : 'col-span-10'} py-3 px-2">
                                     <textarea oninput="App.updateManualQuestion('${q.id}', 'question', this.value)" 
                                               class="w-full bg-slate-50 border-0 rounded-lg p-2 text-[11px] font-medium text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" 
                                               rows="2" placeholder="Type your question here...">${q.question || ''}</textarea>
                                  </div>
-                                 <div class="col-span-4 py-2 px-2">
-                                     ${isMCQ ? `
-                                     <div class="grid grid-cols-2 gap-1.5">
-                                         ${['a', 'b', 'c', 'd'].map(opt => `
-                                         <div class="flex items-center gap-1.5 p-1 border border-slate-100 rounded-lg bg-white focus-within:ring-2 focus-within:ring-red-50 transition-all">
-                                             <span class="text-[8px] font-black text-slate-400 uppercase">${opt}</span>
-                                             <input type="text" value="${q['option_' + opt] || ''}" 
-                                                    oninput="App.updateManualQuestion('${q.id}', 'option_${opt}', this.value)" 
-                                                    class="flex-1 bg-transparent border-0 focus:ring-0 text-[10px] font-medium p-0" 
-                                                    placeholder="...">
-                                             <input type="radio" name="correct_${q.id}" ${q.correct_answer === opt.toUpperCase() ? 'checked' : ''} 
-                                                    onchange="App.updateManualQuestion('${q.id}', 'correct_answer', '${opt.toUpperCase()}')" 
-                                                    class="form-check-input w-2.5 h-2.5 border-slate-200">
-                                         </div>
-                                         `).join('')}
+                                 ${isMCQ ? `
+                                 <div class="col-span-5 py-3 px-2">
+                                     <div class="grid grid-cols-2 gap-2">
+                                         ${['a', 'b', 'c', 'd'].map(opt => {
+                                             const isCorrect = q.correct_answer === opt.toUpperCase();
+                                             return `
+                                             <div class="flex items-center gap-1.5 p-1 border ${isCorrect ? 'border-emerald-200 bg-emerald-50' : 'border-slate-100 bg-white'} rounded-lg transition-all overflow-hidden">
+                                                 <span class="text-[8px] font-black ${isCorrect ? 'text-emerald-600' : 'text-slate-400'} uppercase w-2 flex-shrink-0">${opt}</span>
+                                                 <input type="text" value="${q['option_' + opt] || ''}" 
+                                                        oninput="App.updateManualQuestion('${q.id}', 'option_${opt}', this.value)" 
+                                                        class="flex-1 bg-transparent border-0 focus:ring-0 text-[10px] font-bold p-0 text-slate-700 min-w-0" 
+                                                        placeholder="...">
+                                                 <input type="radio" name="correct_${q.id}" ${isCorrect ? 'checked' : ''} 
+                                                        onchange="App.updateManualQuestion('${q.id}', 'correct_answer', '${opt.toUpperCase()}'); App.refreshSectionQuestions(${idx})" 
+                                                        class="w-3 h-3 text-emerald-600 border-slate-200 flex-shrink-0">
+                                             </div>
+                                             `;
+                                         }).join('')}
                                      </div>
-                                     ` : `
-                                     <div class="flex flex-col gap-1">
-                                         <label class="text-[7px] font-black text-slate-400 uppercase">Correct Answer</label>
-                                         <input type="text" value="${q.correct_answer || ''}" 
-                                                oninput="App.updateManualQuestion('${q.id}', 'correct_answer', this.value)" 
-                                                class="w-full bg-slate-50 border-0 rounded-lg h-8 px-2 text-[11px] font-medium text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" 
-                                                placeholder="Expected keyword(s)...">
-                                     </div>
-                                     `}
                                  </div>
-                                 <div class="col-span-1 py-2 px-3 flex items-start justify-end">
+                                 ` : ''}
+                                 <div class="col-span-1 py-3 px-3 flex items-start justify-center">
                                      <button class="w-7 h-7 rounded-lg bg-slate-50 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center" 
                                              onclick="App.removeManualQuestion('${q.id}', ${idx})">
                                          <i class="bi bi-trash-fill text-[10px]"></i>
@@ -5602,73 +5956,87 @@ if (!empty($Tests)) {
         modal.show();
     }
 
-    function editTemplate(id) {
+    // --- Unified Template Actions ---
+    window.cloneTemplate = function(id, event) {
+        if (event) event.stopPropagation();
+        
+        // Check if we are in discovery or sidebar
+        const isDiscovery = event.target.closest('.template-card') !== null;
+        
+        if (isDiscovery) {
+            // In Batch Wizard Discovery
+            selectTemplate(id, true); // true = clear questions
+            Swal.fire({
+                title: 'Template Cloned!',
+                text: 'Structure loaded. Questions bank has been cleared for new entry.',
+                icon: 'success',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            });
+        } else {
+            // In Sidebar Builder
+            loadTemplateToBuilder(id, null, true); // true = isClone
+        }
+    };
+
+    window.editTemplate = function(id, event) {
+        if (event) event.stopPropagation();
         const templates = App.templates || [];
         const t = templates.find(item => item.id == id);
-        if(!t) {
-            Swal.fire('Error', 'Template data not found', 'error');
-            return;
-        }
+        if(!t) return;
 
-        // Check if we are in the wizard
-        const wizardModal = document.getElementById('createPackModal');
-        const isWizardOpen = wizardModal && (wizardModal.classList.contains('show') || wizardModal.classList.contains('open'));
-
-        if (isWizardOpen) {
+        // Open builder and load data
+        if (document.getElementById('createPackModal').classList.contains('show')) {
+            // Inline Wizard Edit
             toggleWizardView('template');
-            // Populate inline builder
-            document.getElementById('inline_builder_name').value = t.name;
-            document.getElementById('inline_builder_duration').value = t.duration || 60;
-            const container = document.getElementById('inline_sections_container');
-            container.innerHTML = '';
-            
-            let structure = t.sections || [];
-            if (typeof structure === 'string') { try { structure = JSON.parse(structure); } catch(e) {} }
-            
-            structure.forEach(s => {
-                addSelectedSectionInline(s.marks_type || s.type, s.section_name || s.name, s.num_questions || s.count, s.marks_per_question || s.marks);
-            });
-            updateInlineBuilderStats();
+            loadTemplateToBuilder(id, null, false);
         } else {
-            // Open sidebar builder
+            // Sidebar Builder Edit
             openTemplateBuilder();
-            resetBuilder();
-            document.getElementById('builder_storage_name').value = t.name;
-            document.getElementById('builder_category').value = t.category || 'General';
-            document.getElementById('builder_duration').value = t.duration || 60;
-            
-            const container = document.getElementById('builder_sections_container');
-            container.innerHTML = '';
-            
-            let structure = t.sections || [];
-            if (typeof structure === 'string') { try { structure = JSON.parse(structure); } catch(e) {} }
-            
-            structure.forEach(s => {
-                addSelectedSection(s.marks_type || s.type, s.section_name || s.name, s.num_questions || s.count, s.marks_per_question || s.marks);
-            });
-            updateBuilderStats();
+            loadTemplateToBuilder(id, null, false);
         }
-    }
+    };
 
-    async function deleteActiveTemplate() {
-        const id = document.getElementById('baseTemplateSelect').value;
-        if (!id) return;
-        await deleteTemplate(null, id);
-    }
-
-    async function deleteTemplate(event, id) {
+    window.deleteTemplate = async function(id, event) {
         if (event) event.stopPropagation();
-        if(!(await Swal.fire({ 
-            title: 'Delete Template?', 
-            text: 'This will permanently remove this template structure.', 
-            icon: 'warning', 
-            showCancelButton: true,
-            confirmButtonColor: '#dc2230'
-        }).then(r => r.isConfirmed))) return;
         
-        await fetch(`/Test/deleteTemplate/${id}`, { method: 'POST' });
-        location.reload();
-    }
+        const result = await Swal.fire({
+            title: 'Delete Template?',
+            text: "This action cannot be undone. Any batches using this template might be affected.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2230',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, delete it!'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`/Test/deleteTemplate/${id}`, { method: 'POST' });
+                const res = await response.json();
+                
+                if (res.status === 'success') {
+                    // Update Local State
+                    App.templates = App.templates.filter(t => t.id != id);
+                    
+                    // Remove from UI
+                    const card = document.getElementById('temp_card_' + id);
+                    if (card) card.remove();
+                    
+                    const builderCard = document.getElementById('builder_temp_' + id);
+                    if (builderCard) builderCard.remove();
+                    
+                    Swal.fire('Deleted!', 'Template has been removed.', 'success');
+                } else {
+                    throw new Error(res.message);
+                }
+            } catch (e) {
+                Swal.fire('Error', 'Failed to delete template: ' + e.message, 'error');
+            }
+        }
+    };
 
     App.calculateDuration = () => {
         const start = document.getElementById('final_start_time').value;

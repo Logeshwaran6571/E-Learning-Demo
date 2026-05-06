@@ -23,6 +23,7 @@ class TestController extends BaseController
         $templates = $templateModel->findAll();
         foreach ($templates as &$t) {
             $t['sections'] = $sectionModel->where('template_id', $t['id'])->findAll();
+            $t['questions'] = (new QuestionModel())->where('template_id', $t['id'])->findAll();
         }
 
         $Tests = $TestModel->orderBy('id', 'DESC')->findAll();
@@ -118,9 +119,31 @@ class TestController extends BaseController
             }
         }
 
+        // Handle questions
+        $questionModel = new QuestionModel();
+        $questionModel->where('template_id', $templateId)->delete();
+        if (isset($data['questions']) && is_array($data['questions'])) {
+            foreach ($data['questions'] as $q) {
+                $questionModel->insert([
+                    'template_id' => $templateId,
+                    'section_idx' => $q['sectionIdx'] ?? 0,
+                    'type' => $q['type'] ?? 'MCQ',
+                    'question' => $q['question'] ?? '',
+                    'option_a' => $q['option_a'] ?? '',
+                    'option_b' => $q['option_b'] ?? '',
+                    'option_c' => $q['option_c'] ?? '',
+                    'option_d' => $q['option_d'] ?? '',
+                    'correct_answer' => $q['correct_answer'] ?? '',
+                    'marks' => $q['marks'] ?? 1
+                ]);
+            }
+        }
+
         // Fetch the fresh data to return
         $savedTemplate = $templateModel->find($templateId);
         $savedTemplate['structure'] = json_encode($data['sections'] ?? []);
+        $savedTemplate['sections'] = $sectionModel->where('template_id', $templateId)->findAll();
+        $savedTemplate['questions'] = $questionModel->where('template_id', $templateId)->findAll();
 
         return $this->response->setJSON([
             'status' => 'success', 
@@ -143,6 +166,9 @@ class TestController extends BaseController
         
         // Delete associated sections first
         $sectionModel->where('template_id', $id)->delete();
+        
+        // Delete associated questions
+        (new QuestionModel())->where('template_id', $id)->delete();
         
         // Delete the template
         $templateModel->delete($id);
