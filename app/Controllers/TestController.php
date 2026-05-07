@@ -667,4 +667,20 @@ class TestController extends BaseController
         }
         return $this->response->setJSON(['status' => 'error', 'message' => 'Failed to delete bank']);
     }
+    public function getTests()
+    {
+        $TestModel = new TestModel();
+        $testPackModel = new TestPackModel();
+        $templateModel = new TemplateModel();
+
+        $Tests = $TestModel->orderBy('id', 'DESC')->findAll();
+        foreach ($Tests as &$a) {
+            $a['test_packs'] = $testPackModel->where('assessment_id', $a['id'])->findAll();
+            foreach ($a['test_packs'] as &$tp) {
+                $tp['template'] = $templateModel->find($tp['template_id']);
+            }
+        }
+
+        return $this->response->setJSON(['status' => 'success', 'tests' => $Tests]);
+    }
 }

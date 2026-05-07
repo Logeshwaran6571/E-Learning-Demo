@@ -196,6 +196,8 @@ if (!empty($Tests)) {
             box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
             color: #1e293b;
         }
+
+        .hidden { display: none !important; }
         
         /* Ensure cells have consistent height and alignment */
         #TestsDataTable td, .child-table-container td {
@@ -3486,6 +3488,30 @@ if (!empty($Tests)) {
             30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
+        .dropdown-menu {
+            animation: dropdownFade 0.3s ease-out;
+            transform-origin: top right;
+            border-radius: 24px !important;
+            border: 1px solid rgba(226, 232, 240, 0.5) !important;
+            padding: 10px !important;
+            min-width: 240px !important;
+        }
+        @keyframes dropdownFade {
+            from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .dropdown-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 12px 16px !important;
+            transition: all 0.2s ease !important;
+        }
+        .dropdown-item i { font-size: 1.1rem; }
+        .dropdown-item:hover {
+            background-color: #f8fafc !important;
+            color: #dc2230 !important;
+        }
     </style>
 
 
@@ -3550,12 +3576,39 @@ if (!empty($Tests)) {
         </div>
 
         <div class="nav-right">
-            <div class="user-profile">
-                <img src="https://i.pravatar.cc/150?u=logesh" class="user-avatar" alt="Avatar">
-                <span>Logeshwaran S</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                    <polyline points="6 9 12 15 18 9" />
-                </svg>
+            <div class="dropdown">
+                <div class="user-profile dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="https://i.pravatar.cc/150?u=logesh" class="user-avatar" alt="Avatar">
+                    <span>Logeshwaran S</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                </div>
+                <ul class="dropdown-menu dropdown-menu-end shadow-2xl border-0 rounded-3xl p-2 mt-2" aria-labelledby="profileDropdown">
+                    <li class="px-3 py-2 border-b border-slate-50 mb-1">
+                        <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Signed in as</div>
+                        <div class="text-[12px] font-bold text-slate-800">Admin User</div>
+                    </li>
+                    <li>
+                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 transition-all flex items-center gap-3" href="javascript:void(0)" onclick="switchMainTab('management')">
+                            <i class="bi bi-speedometer2 text-lg"></i>
+                            Admin Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all flex items-center gap-3" href="javascript:void(0)" onclick="switchMainTab('execution')">
+                            <i class="bi bi-mortarboard text-lg"></i>
+                            Student Dashboard
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider border-slate-50 mx-2"></li>
+                    <li>
+                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all flex items-center gap-3" href="javascript:void(0)">
+                            <i class="bi bi-box-arrow-right text-lg"></i>
+                            Logout
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
@@ -3884,6 +3937,7 @@ if (!empty($Tests)) {
                 </div>
             </div>
         </main>
+
     </div>
 
     <div id="templateBuilderOverlay" class="sidebar-overlay" onclick="closeTemplateBuilder()"></div>
@@ -5292,7 +5346,7 @@ if (!empty($Tests)) {
             }
             
             try {
-                const response = await fetch('/Test/saveQBQuestion', {
+                const response = await fetch('Test/saveQBQuestion', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(qData)
@@ -5501,7 +5555,7 @@ if (!empty($Tests)) {
             Swal.fire({ title: 'Saving Bank...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
             try {
-                const response = await fetch('/Test/saveQuestionBank', {
+                const response = await fetch('Test/saveQuestionBank', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: name })
@@ -5591,7 +5645,7 @@ if (!empty($Tests)) {
                 Swal.fire({ title: 'Importing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
                 try {
-                    const response = await fetch('/Test/bulkSaveQBQuestions', {
+                    const response = await fetch('Test/bulkSaveQBQuestions', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -5642,34 +5696,47 @@ if (!empty($Tests)) {
 
         // --- Tab Management ---
         function switchMainTab(tabId) {
-            document.querySelectorAll('main[id^="tab-content-"]').forEach(tab => {
+            // Save current tab to localStorage
+            localStorage.setItem('activeTestTab', tabId);
+
+            // Hide all main containers in the content area
+            document.querySelectorAll('#main-content-area > main').forEach(tab => {
                 tab.classList.add('hidden');
             });
 
+            // Update module tabs if they exist
             document.querySelectorAll('.module-tab').forEach(tab => {
                 tab.classList.remove('active');
-            });
-
-            const targetTab = document.getElementById('tab-content-' + tabId);
-            if (targetTab) {
-                targetTab.classList.remove('hidden');
-            }
-
-            document.querySelectorAll('.module-tab').forEach(tab => {
-                if (tab.getAttribute('onclick').includes("'" + tabId + "'")) {
+                const onclick = tab.getAttribute('onclick');
+                if (onclick && onclick.includes("'" + tabId + "'")) {
                     tab.classList.add('active');
                 }
             });
 
-            if (tabId === 'management') {
-                initTestsDataTable();
-            }
+            // Show target tab
+            const targetTab = document.getElementById('tab-content-' + tabId);
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+                
+                // Specific initialization for each tab
+                if (tabId === 'management') {
+                    if (typeof initTestsDataTable === 'function') initTestsDataTable();
+                }
+                
+                if (tabId === 'results') {
+                    if (typeof switchResultView === 'function') {
+                        switchResultView('student');
+                    } else if (App.loadCandidateResult) {
+                        App.loadCandidateResult(1);
+                    }
+                }
 
-            if (tabId === 'execution') {
-                if (App.initExecutionDashboard) {
-                    App.initExecutionDashboard();
-                } else {
-                    console.error("App.initExecutionDashboard not defined");
+                if (tabId === 'execution') {
+                    if (App.initExecutionDashboard) {
+                        App.initExecutionDashboard();
+                    } else {
+                        console.error("App.initExecutionDashboard not defined");
+                    }
                 }
             }
         }
@@ -5679,7 +5746,17 @@ if (!empty($Tests)) {
             const body = document.getElementById('execution_dashboard_body');
             if (!body) return;
 
-            function refresh() {
+            async function refresh() {
+                try {
+                    const response = await fetch('Test/getTests');
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        App.Tests = result.tests;
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch latest tests:", e);
+                }
+
                 let html = '';
                 const now = new Date();
 
@@ -5691,12 +5768,13 @@ if (!empty($Tests)) {
                 App.Tests.forEach(test => {
                     const packs = test.test_packs || [];
                     packs.forEach(pack => {
-                        // Normalize date format for Safari/Firefox (replace space with T)
-                        const startStr = (pack.start_time || '').replace(' ', 'T');
-                        const endStr = (pack.end_time || '').replace(' ', 'T');
+                        // Only show published tests on student dashboard
+                        if (pack.status !== 'published') return;
 
-                        const startTime = new Date(startStr);
-                        const endTime = new Date(endStr);
+                        // Correctly combine date and time for parsing
+                        const datePart = pack.scheduled_date || new Date().toISOString().split('T')[0];
+                        const startTime = new Date(`${datePart}T${pack.start_time}`);
+                        const endTime = new Date(`${datePart}T${pack.end_time}`);
 
                         if (isNaN(startTime.getTime())) return; // Skip invalid dates
 
@@ -6132,7 +6210,7 @@ if (!empty($Tests)) {
                 btn.disabled = true;
 
                 try {
-                    const response = await fetch('/Test/publishTestPack', {
+                    const response = await fetch('Test/publishTestPack', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: `id=${batchId}`
@@ -6154,6 +6232,9 @@ if (!empty($Tests)) {
                         const rowData = row.data();
                         rowData.status = 'published';
                         row.data(rowData).draw(false);
+
+                        // Real-time sync: Refresh execution dashboard if batch is published
+                        if (App.initExecutionDashboard) App.initExecutionDashboard();
                     } else {
                         Swal.fire('Error', data.message || 'Failed to publish', 'error');
                         btn.innerHTML = '<i class="bi bi-send-check"></i>';
@@ -6190,6 +6271,8 @@ if (!empty($Tests)) {
                 trNode.find('input').first().focus();
             }, 100);
         }
+
+
 
         function handleCandidateTypeChange(select) {
             const wrapper = $(select).closest('.candidate-selector-wrapper');
@@ -6316,7 +6399,7 @@ if (!empty($Tests)) {
                     formData.append(key, data[key]);
                 }
 
-                const response = await fetch('/Test/createTestPack', {
+                const response = await fetch('Test/createTestPack', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: formData.toString()
@@ -6723,7 +6806,7 @@ if (!empty($Tests)) {
                 }
                 console.groupEnd();
 
-                const response = await fetch('/Test/createTestPack', {
+                const response = await fetch('Test/createTestPack', {
                     method: 'POST',
                     body: formData
                 });
@@ -6752,19 +6835,89 @@ if (!empty($Tests)) {
         function toggleWizardView(view) {
             const configView = document.getElementById('batchWizardConfigView');
             const builderView = document.getElementById('templateBuilderInlineView');
-            const discoverySidebar = document.querySelector('.w-\\[360px\\].bg-white.border-e'); // Left sidebar
+            const paperView = document.getElementById('quick-generated-paper-section');
+            const footer = document.getElementById('quick-mode-footer');
+            const header = document.getElementById('quick-mode-header');
+            const sidebar = document.getElementById('wizardDiscoverySidebar');
+            const mainColumn = document.getElementById('wizardMainColumn');
+
+            const forceDisplay = (element, value = null) => {
+                if (!element) return;
+                if (value === null) {
+                    element.style.removeProperty('display');
+                } else {
+                    element.style.setProperty('display', value, 'important');
+                }
+            };
+
+            // Hide everything by default
+            if (configView) configView.classList.add('hidden');
+            if (builderView) builderView.classList.add('hidden');
+            if (paperView) paperView.classList.add('hidden');
+            if (footer) footer.classList.add('hidden');
+            forceDisplay(footer, 'none');
+            forceDisplay(header, 'none');
 
             if (view === 'template') {
-                configView.classList.add('hidden');
-                builderView.classList.remove('hidden');
-                if (document.getElementById('quick-mode-footer')) document.getElementById('quick-mode-footer').classList.add('hidden');
-                if (discoverySidebar) discoverySidebar.classList.add('opacity-50', 'pointer-events-none');
-            } else {
-                configView.classList.remove('hidden');
-                builderView.classList.add('hidden');
-                if (document.getElementById('quick-mode-footer')) document.getElementById('quick-mode-footer').classList.remove('hidden');
-                if (discoverySidebar) discoverySidebar.classList.remove('opacity-50', 'pointer-events-none');
+                if (builderView) builderView.classList.remove('hidden');
+                if (mainColumn) {
+                    mainColumn.classList.remove('hidden');
+                    mainColumn.scrollTop = 0;
+                }
+                
+                if (sidebar) sidebar.classList.add('opacity-50', 'pointer-events-none');
+            } else if (view === 'batch') {
+                if (configView) configView.classList.remove('hidden');
+                if (footer) footer.classList.remove('hidden');
+                forceDisplay(header, 'flex');
+                forceDisplay(footer, 'flex');
+                if (sidebar) sidebar.classList.remove('opacity-50', 'pointer-events-none');
+            } else if (view === 'paper') {
+                if (paperView) paperView.classList.remove('hidden');
+                forceDisplay(header, 'flex');
+                if (sidebar) sidebar.classList.remove('opacity-50', 'pointer-events-none');
             }
+        }
+
+        function openTemplateBuilderInline() {
+            console.log("Opening Template Builder Inline...");
+            // 1. Reset the UI components
+            const container = document.getElementById('builder_sections_container_inline');
+            if (container) {
+                // Restore the empty state HTML which might have been cleared previously
+                container.innerHTML = `
+                    <div class="empty-state py-12 text-center bg-slate-50/50" id="builder_empty_state_inline">
+                        <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-200">
+                            <i class="bi bi-stack text-3xl"></i>
+                        </div>
+                        <h5 class="text-[13px] font-bold text-slate-600 mb-1">No Sections Added</h5>
+                        <p class="text-[10px] text-slate-400">Add a section blueprint above to start building</p>
+                    </div>
+                `;
+            }
+            
+            const header = document.getElementById('inline_builder_header');
+            if (header) {
+                header.style.display = 'none';
+            }
+            
+            // 2. Reset totals
+            const totalMarksEl = document.getElementById('builder_total_marks_inline');
+            if (totalMarksEl) totalMarksEl.innerText = '0 Marks';
+            const sectionCountEl = document.getElementById('builder_section_count_inline');
+            if (sectionCountEl) sectionCountEl.innerText = '0 Sections';
+            
+            // 3. Reset inputs
+            const nameInput = document.getElementById('builder_storage_name_inline');
+            if (nameInput) nameInput.value = '';
+            
+            // 4. Clear state
+            if (typeof App !== 'undefined') {
+                App.manualQuestions = [];
+            }
+            
+            // 5. Toggle view - Force immediate update
+            toggleWizardView('template');
         }
 
         function addSelectedSectionInline(type, name = null, count = 10, marks = null) {
@@ -6970,7 +7123,7 @@ if (!empty($Tests)) {
                     questions: App.manualQuestions
                 };
 
-                const response = await fetch('/Test/saveTemplate', {
+                const response = await fetch('Test/saveTemplate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -7369,45 +7522,80 @@ if (!empty($Tests)) {
                 violations: 0
             },
 
-            startExecution: (testId, packId) => {
+            startExecution: async (testId, packId) => {
                 const test = App.Tests.find(t => t.id == testId);
-                const pack = test ? (test.test_packs || []).find(p => p.id == packId) : null;
+                
+                Swal.fire({
+                    title: 'Preparing Test...',
+                    text: 'Fetching questions and establishing secure connection.',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
 
-                if (test) {
-                    document.getElementById('execTestTitle').textContent = test.name;
+                try {
+                    const response = await fetch(`Test/getPackQuestions/${packId}`);
+                    const data = await response.json();
+
+                    if (data.status !== 'success') throw new Error(data.message || 'Failed to fetch questions');
+
+                    // Use real questions: fallback from packQuestions to templateQuestions
+                    let questions = data.packQuestions && data.packQuestions.length > 0 
+                                    ? data.packQuestions 
+                                    : data.templateQuestions;
+
+                    if (!questions || questions.length === 0) {
+                        throw new Error('No questions found for this test. Please contact admin.');
+                    }
+
+                    // Map to expected format
+                    App.executionState.questions = questions.map(q => ({
+                        id: q.id,
+                        text: q.question,
+                        type: q.type,
+                        options: [q.option_a, q.option_b, q.option_c, q.option_d].filter(o => o && o.trim() !== ''),
+                        category: q.category || 'General',
+                        marks: q.marks || 1
+                    }));
+
+                    const pack = data.pack;
+                    const duration = pack ? parseInt(pack.duration || 60) : 60;
+
+                    if (test) {
+                        document.getElementById('execTestTitle').textContent = test.name;
+                    }
+
+                    App.executionState.active = true;
+                    App.executionState.currentIndex = 0;
+                    App.executionState.answers = {};
+                    App.executionState.flagged = new Set();
+                    App.executionState.timeLeft = duration * 60;
+                    App.executionState.violations = 0;
+
+                    // Calculate Total Marks
+                    const totalMarks = App.executionState.questions.reduce((acc, q) => acc + (parseInt(q.marks) || 0), 0);
+                    const totalDuration = `${duration} Mins`;
+
+                    // Update UI
+                    document.getElementById('execTotalMarks').textContent = `${totalMarks} Marks`;
+                    document.getElementById('execPassMark').textContent = `${pack ? (pack.pass_mark || 70) : 70}%`;
+                    document.getElementById('execTotalDuration').textContent = totalDuration;
+
+                    const headerLogo = document.getElementById('execHeaderLogo');
+                    if (headerLogo) {
+                        headerLogo.innerHTML = `<img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop" class="w-full h-full object-cover">`;
+                    }
+
+                    Swal.close();
+                    document.getElementById('executionView').classList.remove('d-none');
+                    document.body.style.overflow = 'hidden';
+                    App.startTimer();
+                    App.renderExecutionQuestion();
+                    App.renderNavigator();
+                    App.updateProgress();
+
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
                 }
-
-                App.executionState.questions = App.mockQuestions; // Still using mock questions for demo content
-                App.executionState.active = true;
-                App.executionState.currentIndex = 0;
-                App.executionState.answers = {};
-                App.executionState.flagged = new Set();
-
-                const duration = pack ? parseInt(pack.duration || 60) : 60;
-                App.executionState.timeLeft = duration * 60;
-                App.executionState.violations = 0;
-
-                // Calculate Total Marks
-                const totalMarks = App.executionState.questions.reduce((acc, q) => acc + (parseInt(q.marks) || 0), 0);
-                const totalDuration = `${duration} Mins`;
-
-                // Update UI
-                document.getElementById('execTotalMarks').textContent = `${totalMarks} Marks`;
-                document.getElementById('execPassMark').textContent = `${pack ? (pack.pass_mark || 70) : 70}%`;
-                document.getElementById('execTotalDuration').textContent = totalDuration;
-
-                const testTitle = document.getElementById('execTestTitle').textContent;
-                const headerLogo = document.getElementById('execHeaderLogo');
-                if (headerLogo) {
-                    headerLogo.innerHTML = `<img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop" class="w-full h-full object-cover">`;
-                }
-
-                document.getElementById('executionView').classList.remove('d-none');
-                document.body.style.overflow = 'hidden';
-                App.startTimer();
-                App.renderExecutionQuestion();
-                App.renderNavigator();
-                App.updateProgress();
             },
 
             startTimer: () => {
@@ -8188,15 +8376,17 @@ if (!empty($Tests)) {
 
                     <div class="flex flex-1 overflow-hidden" style="min-height: 0;">
                         <!-- 1. LEFT SIDEBAR: Discovery -->
-                        <div class="w-[360px] bg-white border-e flex flex-col p-6 overflow-y-auto">
-                            <div class="flex items-center gap-2.5 mb-5">
-                                <i class="bi bi-stack text-red-600 text-lg"></i>
-                                <div>
-                                    <h4 class="text-[13px] font-black text-slate-800 mb-0">Template Builder</h4>
-                                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Manage test
-                                        structures</p>
-                                </div>
-                            </div>
+                        <div class="w-[360px] bg-white border-e flex flex-col overflow-hidden" id="wizardDiscoverySidebar">
+                            <div class="flex-1 overflow-y-auto">
+                                <div class="p-6 pb-0">
+                                    <div class="flex items-center gap-2.5 mb-5">
+                                        <i class="bi bi-stack text-red-600 text-lg"></i>
+                                        <div>
+                                            <h4 class="text-[13px] font-black text-slate-800 mb-0">Template Builder</h4>
+                                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Manage test
+                                                structures</p>
+                                        </div>
+                                    </div>
 
                             <div class="mb-6">
                                 <h5 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">
@@ -8272,11 +8462,18 @@ if (!empty($Tests)) {
                                 <?php endforeach; ?>
                             </div>
 
-                            <button
-                                class="w-full py-3.5 border-2 border-dashed border-red-100 rounded-2xl text-red-600 font-bold text-[11px] uppercase tracking-widest hover:bg-red-50 hover:border-red-200 transition-all"
-                                onclick="openTemplateBuilder()">
-                                <i class="bi bi-plus-lg me-2"></i> Create New Template
-                            </button>
+                                </div>
+                            </div>
+
+                            <!-- Sticky Sidebar Footer -->
+                            <div class="p-6 border-t border-slate-50 bg-white shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
+                                <button
+                                    type="button"
+                                    class="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.15em] hover:bg-red-700 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-red-100 flex items-center justify-center gap-2"
+                                    onclick="openTemplateBuilderInline()">
+                                    <i class="bi bi-plus-lg text-lg"></i> Create New Template
+                                </button>
+                            </div>
                         </div>
 
                         <!-- 2. MAIN CONTENT -->
@@ -8446,6 +8643,9 @@ if (!empty($Tests)) {
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 </div> <!-- End batchWizardConfigView -->
 
                                 <!-- Quick Mode: Generated Question Paper (Grouped) -->
@@ -8514,51 +8714,43 @@ if (!empty($Tests)) {
                             </div>
 
                             <!-- TEMPLATE BUILDER VIEW (Inline) -->
-                            <div class="w-full space-y-5 hidden" id="templateBuilderInlineView">
-                                <div class="flex items-center gap-3 mb-8">
+                            <div class="w-full space-y-8 hidden animate-fadeIn" id="templateBuilderInlineView">
+                                <div class="flex items-center gap-6 mb-8">
                                     <button
-                                        class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:text-red-600 transition-all"
+                                        class="w-10 h-10 bg-white border border-slate-100 text-slate-400 hover:text-red-600 hover:border-red-100 rounded-xl flex items-center justify-center transition-all shadow-sm"
                                         onclick="toggleWizardView('batch')">
-                                        <i class="bi bi-arrow-left text-lg"></i>
+                                        <i class="bi bi-arrow-left text-xl"></i>
                                     </button>
                                     <div>
-                                        <h3 class="text-lg font-bold text-slate-800 mb-0">Create New Template</h3>
-                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        <h3 class="text-2xl font-black text-slate-800 mb-0">Create New Template</h3>
+                                        <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
                                             Designing question paper structure</p>
                                     </div>
                                 </div>
 
-                                <div class="space-y-8">
-                                    <section class="card border-0 shadow-sm rounded-2xl p-6 bg-white max-w-4xl mx-auto">
-                                        <div
-                                            class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                <div class="space-y-6">
+                                    <!-- Template Header Card -->
+                                    <section class="card border-0 shadow-sm rounded-[24px] p-6 bg-white max-w-5xl mx-auto">
+                                        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                                             <div class="flex-1 w-full">
-                                                <div class="flex items-center gap-2 mb-2">
-                                                    <div class="w-1 h-4 bg-red-500 rounded-full"></div>
-                                                    <label
-                                                        class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Template
-                                                        Name</label>
+                                                <div class="flex items-center gap-2 mb-3">
+                                                    <div class="w-1 h-4 bg-red-600 rounded-full"></div>
+                                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Template Name</label>
                                                 </div>
                                                 <input id="builder_storage_name_inline"
-                                                    class="input w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-black h-11 px-4 focus:ring-4 focus:ring-red-50 transition-all"
+                                                    class="w-full bg-slate-50/50 border border-slate-100 rounded-2xl text-[14px] font-bold h-14 px-6 focus:ring-4 focus:ring-red-50 focus:border-red-200 transition-all text-slate-700"
                                                     placeholder="e.g. CI4 Internal Assessment" />
                                             </div>
 
-                                            <div
-                                                class="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100 h-11">
-                                                <div class="px-3">
-                                                    <span
-                                                        class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Total
-                                                        Marks</span>
-                                                    <span class="text-[12px] font-black text-slate-800 leading-none"
-                                                        id="builder_total_marks_inline">0 Marks</span>
+                                            <div class="flex items-center gap-6 bg-white p-3 px-6 rounded-[20px] border border-slate-100 shadow-sm h-14">
+                                                <div class="text-center">
+                                                    <span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Marks</span>
+                                                    <span class="text-[14px] font-black text-slate-800" id="builder_total_marks_inline">0 Marks</span>
                                                 </div>
-                                                <div class="w-px h-6 bg-slate-200"></div>
-                                                <div class="px-3">
-                                                    <span
-                                                        class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Structure</span>
-                                                    <span class="text-[12px] font-black text-slate-800 leading-none"
-                                                        id="builder_section_count_inline">0 Sections</span>
+                                                <div class="w-px h-8 bg-slate-100"></div>
+                                                <div class="text-center">
+                                                    <span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Structure</span>
+                                                    <span class="text-[14px] font-black text-slate-800" id="builder_section_count_inline">0 Sections</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -8568,109 +8760,52 @@ if (!empty($Tests)) {
                                         <input type="hidden" id="builder_attempts_inline" value="2">
                                     </section>
 
-                                    <section
-                                        class="card border-0 shadow-sm rounded-2xl p-4 bg-white max-w-4xl mx-auto overflow-hidden">
-                                        <div class="flex items-center gap-3">
-                                            <div class="px-3 border-e border-slate-100">
-                                                <span
-                                                    class="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Add
-                                                    Section</span>
+                                    <!-- Add Section Bar -->
+                                    <section class="card border-0 shadow-sm rounded-[24px] p-4 bg-white max-w-5xl mx-auto">
+                                        <div class="flex items-center gap-6">
+                                            <div class="px-6 border-e border-slate-100">
+                                                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Add Section</span>
                                             </div>
-                                            <div class="flex flex-wrap gap-2">
+                                            <div class="flex flex-wrap gap-3">
                                                 <button onclick="addSelectedSectionInline('MCQ')"
-                                                    class="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all text-[11px] font-bold border border-blue-100 shadow-sm">
-                                                    <i class="bi bi-patch-question"></i> MCQ Section
+                                                    class="flex items-center gap-3 px-6 py-2.5 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all text-[12px] font-black border border-blue-100 shadow-sm">
+                                                    <i class="bi bi-patch-question text-lg"></i> MCQ Section
                                                 </button>
                                                 <button onclick="addSelectedSectionInline('2 Marks')"
-                                                    class="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-xl hover:bg-purple-600 hover:text-white transition-all text-[11px] font-bold border border-purple-100 shadow-sm">
-                                                    <i class="bi bi-pencil-square"></i> 2 Marks Section
+                                                    class="flex items-center gap-3 px-6 py-2.5 bg-purple-50 text-purple-600 rounded-2xl hover:bg-purple-600 hover:text-white transition-all text-[12px] font-black border border-purple-100 shadow-sm">
+                                                    <i class="bi bi-pencil-square text-lg"></i> 2 Marks Section
                                                 </button>
                                             </div>
                                         </div>
                                     </section>
 
-                                    <section class="max-w-4xl mx-auto">
-                                        <div
-                                            class="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-                                            <div class="grid grid-cols-12 gap-0 bg-slate-100/80 border-b border-slate-200"
-                                                id="inline_builder_header" style="display: none;">
-                                                <div
-                                                    class="col-span-6 py-2 px-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                                                    Section Name / Type</div>
-                                                <div
-                                                    class="col-span-2 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">
-                                                    Questions</div>
-                                                <div
-                                                    class="col-span-2 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">
-                                                    Marks Each</div>
-                                                <div class="col-span-2 py-2 px-4"></div>
+                                    <!-- Sections Container -->
+                                    <section class="max-w-5xl mx-auto">
+                                        <div class="bg-white border border-slate-100 rounded-[32px] overflow-hidden shadow-sm min-h-[300px] flex flex-col">
+                                            <div class="grid grid-cols-12 gap-0 bg-slate-50/80 border-b border-slate-100" id="inline_builder_header" style="display: none;">
+                                                <div class="col-span-6 py-3 px-8 text-[9px] font-black text-slate-400 uppercase tracking-widest">Section Name / Type</div>
+                                                <div class="col-span-2 py-3 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Questions</div>
+                                                <div class="col-span-2 py-3 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Marks Each</div>
+                                                <div class="col-span-2 py-3 px-4"></div>
                                             </div>
-                                            <div id="builder_sections_container_inline"
-                                                class="divide-y divide-slate-100">
-                                                <div class="empty-state py-12 text-center bg-slate-50/50"
-                                                    id="builder_empty_state_inline">
-                                                    <div
-                                                        class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-200">
-                                                        <i class="bi bi-stack text-3xl"></i>
+                                            <div id="builder_sections_container_inline" class="divide-y divide-slate-50 flex-1">
+                                                <div class="empty-state py-24 text-center flex flex-col items-center justify-center h-full" id="builder_empty_state_inline">
+                                                    <div class="w-20 h-20 bg-slate-50 rounded-[24px] shadow-inner flex items-center justify-center mb-6 text-slate-200">
+                                                        <i class="bi bi-stack text-4xl"></i>
                                                     </div>
-                                                    <h5 class="text-[13px] font-bold text-slate-600 mb-1">No Sections
-                                                        Added</h5>
-                                                    <p class="text-[10px] text-slate-400">Add a section blueprint above
-                                                        to start building</p>
+                                                    <h5 class="text-[15px] font-black text-slate-700 mb-2">No Sections Added</h5>
+                                                    <p class="text-[12px] text-slate-400 font-medium max-w-[200px] mx-auto">Add a section blueprint above to start building</p>
                                                 </div>
                                             </div>
                                         </div>
                                     </section>
 
-                                    <section class="max-w-4xl mx-auto hidden" id="builder_questions_section_inline">
-                                        <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
-                                            <div class="p-6 border-b border-slate-50 flex items-center justify-between">
-                                                <div class="flex items-center gap-3">
-                                                    <div
-                                                        class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-sm">
-                                                        <i class="bi bi-file-earmark-plus-fill text-xl"></i>
-                                                    </div>
-                                                    <div>
-                                                        <h4
-                                                            class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">
-                                                            Question Content Manage</h4>
-                                                        <p class="text-[10px] text-slate-400 font-medium mb-0">Manage
-                                                            how questions are added</p>
-                                                    </div>
-                                                </div>
-                                                <div class="flex items-center gap-2">
-                                                    <button onclick="App.downloadCurrentTemplate()"
-                                                        class="w-10 h-10 bg-white border border-slate-200 text-slate-400 rounded-xl flex items-center justify-center hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all"
-                                                        title="Download CSV Template">
-                                                        <i class="bi bi-download text-lg"></i>
-                                                    </button>
-                                                    <button
-                                                        onclick="document.getElementById('builder_bulk_upload_inline').click()"
-                                                        class="px-4 h-10 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl flex items-center justify-center gap-2 hover:text-blue-600 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all text-[10px] font-bold uppercase tracking-widest">
-                                                        <i class="bi bi-folder2-open text-base"></i> Bulk Upload
-                                                    </button>
-                                                    <input type="file" id="builder_bulk_upload_inline" class="hidden"
-                                                        accept=".csv" onchange="App.handleBuilderBulkUpload(this)" />
-                                                </div>
-                                            </div>
-                                            <div class="p-6">
-                                                <div id="builder_manual_sections_container_inline" class="space-y-4">
-                                                    <div
-                                                        class="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
-                                                        <p
-                                                            class="text-slate-400 font-bold text-[11px] uppercase tracking-widest">
-                                                            Waiting for structure...</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </section>
-
-                                    <div class="max-w-4xl mx-auto py-6 flex justify-end">
+                                    <!-- Action Button -->
+                                    <div class="max-w-5xl mx-auto py-8 flex justify-end">
                                         <button
-                                            class="px-8 py-3 bg-red-600 text-white font-bold rounded-xl text-[12px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-95"
+                                            class="px-10 py-4 bg-[#dc2230] text-white font-black rounded-2xl text-[13px] uppercase tracking-[0.15em] shadow-xl shadow-red-100 transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-95 flex items-center gap-3"
                                             onclick="saveTemplateFromWizard()">
-                                            <i class="bi bi-check-lg me-2"></i> Save Template
+                                            <i class="bi bi-check-lg text-xl"></i> SAVE & USE TEMPLATE
                                         </button>
                                     </div>
                                 </div>
@@ -9090,36 +9225,13 @@ if (!empty($Tests)) {
         };
 
         // --- Global Helpers & Navigation ---
-        function switchMainTab(tabId) {
-            // Save current tab to localStorage
-            localStorage.setItem('activeTestTab', tabId);
-
-            document.querySelectorAll('.module-tab').forEach(t => {
-                const attr = t.getAttribute('onclick');
-                if (attr && attr.includes(`'${tabId}'`)) t.classList.add('active');
-                else t.classList.remove('active');
-            });
-            document.querySelectorAll('#main-content-area > main').forEach(m => m.classList.add('hidden'));
-            const target = document.getElementById('tab-content-' + tabId);
-            if (target) {
-                target.classList.remove('hidden');
-                if (tabId === 'test-creation') {
-                    setTimeout(initPacksDataTable, 100);
-                }
-                if (tabId === 'results') {
-                    if (typeof switchResultView === 'function') switchResultView('student');
-                    else App.loadCandidateResult(1);
-                }
-            }
-        }
-
         // Restore tab on load
         window.addEventListener('DOMContentLoaded', () => {
             const savedTab = localStorage.getItem('activeTestTab');
-            if (savedTab) {
+            if (savedTab && document.getElementById('tab-content-' + savedTab)) {
                 switchMainTab(savedTab);
             } else {
-                switchMainTab('Tests');
+                switchMainTab('management');
             }
         });
 
@@ -9425,7 +9537,7 @@ if (!empty($Tests)) {
                     questions: App.manualQuestions
                 };
 
-                const response = await fetch('/Test/saveTemplate', {
+                const response = await fetch('Test/saveTemplate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -9838,7 +9950,7 @@ if (!empty($Tests)) {
             const templateId = document.getElementById('edit_pack_template_id').value;
 
             try {
-                const resp = await fetch('/Test/updateTestPackTemplate', {
+                const resp = await fetch('Test/updateTestPackTemplate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -10881,7 +10993,7 @@ if (!empty($Tests)) {
                     didOpen: () => { Swal.showLoading(); }
                 });
 
-                const response = await fetch('/Test/createTestPack', {
+                const response = await fetch('Test/createTestPack', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: `assessment_id=${assessment_id}&template_id=${template_id}&pack_name=${encodeURIComponent(pack_name)}&user_role=${encodeURIComponent(user_role)}&duration=${duration}`
@@ -11122,7 +11234,7 @@ if (!empty($Tests)) {
             };
 
             try {
-                const resp = await fetch('/Test/createTest', {
+                const resp = await fetch('Test/createTest', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -11273,7 +11385,7 @@ if (!empty($Tests)) {
             });
 
             try {
-                const response = await fetch('/Test/createTest', {
+                const response = await fetch('Test/createTest', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -11314,7 +11426,7 @@ if (!empty($Tests)) {
         async function saveTemplate() {
             const name = document.getElementById('temp_name').value;
             const description = document.getElementById('temp_desc').value;
-            await fetch('/Test/saveTemplate', {
+            await fetch('Test/saveTemplate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
