@@ -150,16 +150,123 @@ if (!empty($Tests)) {
         #TestsDataTable td.dt-control {
             cursor: pointer;
             text-align: center;
-            font-size: 18px;
+            color: #94a3b8;
+            transition: all 0.2s ease;
+        }
+
+        #TestsDataTable tr.dt-hasChild td.dt-control {
+            color: #ef4444;
         }
 
         #TestsDataTable tr.dt-hasChild td.dt-control i {
-            color: var(--brand) !important;
-            transform: rotate(0deg);
+            transform: rotate(180deg);
         }
 
         #TestsDataTable tr td.dt-control i {
+            display: inline-block;
             transition: transform 0.2s ease;
+        }
+
+        /* Inline Editable Table Styles */
+        .inline-editable-input {
+            width: 100%;
+            background-color: transparent;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 0.5rem 0.75rem;
+            font-size: 12px;
+            font-weight: 600;
+            color: #334155;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            pointer-events: none;
+        }
+
+        /* Editing State */
+        tr.is-editing .inline-editable-input {
+            background-color: rgba(248, 250, 252, 0.8);
+            border-color: #e2e8f0;
+            pointer-events: auto;
+            height: 38px;
+        }
+
+        tr.is-editing .inline-editable-input:focus {
+            background-color: #ffffff;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
+            color: #1e293b;
+        }
+        
+        /* Ensure cells have consistent height and alignment */
+        #TestsDataTable td, .child-table-container td {
+            vertical-align: middle !important;
+            height: 56px;
+        }
+
+        .inline-select-container {
+            position: relative;
+        }
+
+        .inline-select-container::after {
+            content: "\F282";
+            font-family: "bootstrap-icons";
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #94a3b8;
+            pointer-events: none;
+            display: none; /* Hidden in readonly */
+        }
+
+        tr.is-editing .inline-select-container::after {
+            display: block; /* Shown when editing */
+        }
+
+        /* Toggle Action Buttons & Views */
+        [data-action="save"], .edit-view, .readonly-view { display: none !important; }
+        
+        tr.is-editing [data-action="save"] { display: flex !important; }
+        tr.is-editing .edit-view { 
+            display: flex !important; 
+            align-items: center;
+            gap: 0.5rem;
+        }
+        tr.is-editing [data-action="edit"] { display: none !important; }
+        
+        tr:not(.is-editing) .readonly-view { 
+            display: flex !important; 
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .batch-action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .batch-action-btn i {
+            line-height: 0;
+        }
+
+        #TestsDataTable tr.dt-hasChild {
+            background-color: #f8fafc;
+        }
+
+        .child-table-container {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .child-table-container {
@@ -4637,6 +4744,16 @@ if (!empty($Tests)) {
                 return array;
             },
 
+            normalizeType: function(t) {
+                if (!t) return '';
+                t = t.toString().toLowerCase().trim();
+                // Common synonyms for MCQ
+                if (t.includes('mcq') || t.includes('multiple choice') || t.includes('objective') || t === '1') return 'mcq';
+                // Common synonyms for 2-mark/Short Answer
+                if (t.includes('2-mark') || t.includes('2 mark') || t.includes('short answer') || t.includes('descriptive') || t.includes('2mark') || t === '2') return '2-mark';
+                return t;
+            },
+
             // New logic for randomized question selection during batch initialization
             generatePaperFromBank: function(qbId, templateId) {
                 const bank = QuestionBanks.find(b => b.id == qbId);
@@ -4660,22 +4777,12 @@ if (!empty($Tests)) {
                 sections.forEach((s, sIdx) => {
                     const count = parseInt(s.num_questions || s.count || 0);
                     const type = s.marks_type || s.type || 'MCQ';
+                    const targetType = this.normalizeType(type);
                     
-                    // Normalize types for matching
-                    const normalize = (t) => {
-                        if (!t) return '';
-                        t = t.toString().toLowerCase().trim();
-                        if (t.includes('2-mark') || t.includes('2 mark') || t.includes('short answer')) return '2-mark';
-                        if (t.includes('mcq') || t.includes('multiple choice')) return 'mcq';
-                        return t;
-                    };
-
-                    const targetType = normalize(type);
-                    
-                    let eligible = availablePool.filter(q => normalize(q.type) === targetType);
+                    let eligible = availablePool.filter(q => this.normalizeType(q.type) === targetType);
 
                     if (eligible.length < count) {
-                        warnings.push(`Section "${s.name || type}" requires ${count} questions, but only ${eligible.length} available in bank.`);
+                        warnings.push(`Section "${s.section_name || s.name || type}" requires ${count} questions, but only ${eligible.length} available in bank.`);
                     }
 
                     // Pick questions and remove from pool
@@ -4692,6 +4799,50 @@ if (!empty($Tests)) {
                 });
 
                 return { questions: allPickedQuestions, warnings: warnings, grouped: groupedBySection };
+            },
+
+            // Groups any list of questions according to the template's structure
+            getGroupedPaper: function(questions, templateId) {
+                const template = App.templates.find(t => t.id == templateId);
+                if (!template) {
+                    console.error("Template not found for grouping:", templateId);
+                    return null;
+                }
+
+                let sections = template.sections || [];
+                if (typeof sections === 'string') {
+                    try { sections = JSON.parse(sections); } catch (e) { sections = []; }
+                }
+
+                const groupedBySection = [];
+                const warnings = [];
+                let pool = [...questions];
+
+                sections.forEach((s) => {
+                    const type = s.marks_type || s.type || 'MCQ';
+                    const targetType = this.normalizeType(type);
+                    const count = parseInt(s.num_questions || s.count || 0);
+
+                    // Filter questions for this section type
+                    const sectionQuestions = pool.filter(q => this.normalizeType(q.type || q.marks_type) === targetType);
+                    
+                    if (sectionQuestions.length < count) {
+                        warnings.push(`Section "${s.section_name || s.name || type}" requires ${count} questions, but only ${sectionQuestions.length} matching types found.`);
+                    }
+
+                    const picked = sectionQuestions.slice(0, count);
+                    
+                    // Remove picked questions from pool to avoid double-counting
+                    const pickedIds = picked.map(p => p.id);
+                    pool = pool.filter(q => !pickedIds.includes(q.id));
+
+                    groupedBySection.push({
+                        section: s,
+                        questions: picked
+                    });
+                });
+
+                return { questions: questions, warnings: warnings, grouped: groupedBySection };
             }
         };
     </script>
@@ -5684,24 +5835,31 @@ if (!empty($Tests)) {
 
             let html = `
             <div class="bg-slate-50/50 p-6 border-y border-slate-100 child-table-container">
-                <div class="flex items-center justify-between mb-4 px-2">
-                    <h5 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0">Assigned Batches (${packs.length})</h5>
-                    <button type="button" class="btn-red-rounded text-[10px] py-1.5 px-4" onclick="openPackWizard('${d.id}')">
-                        <i class="bi bi-plus-lg me-1"></i> Add New Batch
+                <div class="flex items-center justify-between mb-6 px-2">
+                    <div>
+                        <h5 class="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em] mb-1">Assigned Batches</h5>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Manage and schedule test deployments for "${d.name}"</p>
+                    </div>
+                    <button type="button" class="px-5 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-100 hover:bg-red-700 transition-all flex items-center gap-2" onclick="addNewBatchRow('${d.id}')">
+                        <i class="bi bi-plus-lg"></i> Add New Batch
                     </button>
                 </div>
 
-                <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                    <table id="BatchTable_${d.id}" class="w-full text-left">
-                        <thead class="bg-slate-50 border-b border-slate-100">
+                <div class="bg-white rounded-[24px] border border-slate-200 overflow-hidden shadow-sm">
+                    <table id="BatchTable_${d.id}" class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50/50 border-b border-slate-100">
                             <tr>
-                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Batch Name</th>
-                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Template</th>
-                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
-                                <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Batch Name</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Template</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Assign To</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Start Time</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">End Time</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Duration</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
                             </tr>
                         </thead>
-                        <tbody></tbody>
+                        <tbody class="divide-y divide-slate-50"></tbody>
                     </table>
                 </div>
             </div>`;
@@ -5714,29 +5872,121 @@ if (!empty($Tests)) {
                 columns: [
                     {
                         data: 'pack_name',
-                        render: (data) => `
-                        <div class="flex items-center gap-3 py-1">
-                            <div class="w-8 h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center font-bold text-[10px] border border-slate-100">
-                                ${data.charAt(0)}
+                        width: '18%',
+                        className: 'px-4 py-3',
+                        render: (data, type, row) => `
+                            <input type="text" class="inline-editable-input" data-field="pack_name" value="${data}" placeholder="e.g. Morning Batch">
+                        `
+                    },
+                    {
+                        data: 'template_id',
+                        width: '15%',
+                        className: 'px-4 py-3',
+                        render: (data, type, row) => {
+                            let options = App.templates.map(t => `<option value="${t.id}" ${t.id == data ? 'selected' : ''}>${t.name}</option>`).join('');
+                            return `
+                                <div class="inline-select-container">
+                                    <select class="inline-editable-input appearance-none pr-8" data-field="template_id">
+                                        <option value="">Select Template</option>
+                                        ${options}
+                                    </select>
+                                </div>
+                            `;
+                        }
+                    },
+                    {
+                        data: 'candidates',
+                        width: '18%',
+                        className: 'px-4 py-3',
+                        render: (data, type, row) => {
+                            const val = data || 'all';
+                            const isAll = val === 'all' || val === '';
+                            let display = isAll ? 'All Candidates' : (val.split(',').length + ' Candidates');
+                            
+                            return `
+                                <div class="candidate-selector-wrapper">
+                                    <div class="readonly-view px-3 py-2 text-xs font-bold text-slate-600">
+                                        <i class="bi bi-people text-slate-400"></i>
+                                        <span>${display}</span>
+                                    </div>
+                                    <div class="edit-view">
+                                        <div class="inline-select-container flex-1">
+                                            <select class="inline-editable-input appearance-none pr-8" data-field="candidates_type" onchange="handleCandidateTypeChange(this)">
+                                                <option value="all" ${isAll ? 'selected' : ''}>All</option>
+                                                <option value="specific" ${!isAll ? 'selected' : ''}>Specific</option>
+                                            </select>
+                                        </div>
+                                        <button type="button" class="specific-picker-btn ${isAll ? 'hidden' : ''} w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 border border-transparent hover:border-blue-100 transition-all flex items-center justify-center" onclick="openCandidatePickerForBatch(this, '${row.id}')" title="Select Candidates">
+                                            <i class="bi bi-person-plus"></i>
+                                        </button>
+                                        <input type="hidden" data-field="candidates" value="${val}">
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    },
+                    {
+                        data: 'start_time',
+                        width: '12%',
+                        className: 'px-4 py-3',
+                        render: (data, type, row) => {
+                            let dateVal = row.scheduled_date || (data ? data.split(' ')[0] : '');
+                            return `
+                                <input type="date" class="inline-editable-input" data-field="scheduled_date" value="${dateVal}">
+                            `;
+                        }
+                    },
+                    {
+                        data: 'start_time',
+                        width: '10%',
+                        className: 'px-4 py-3',
+                        render: (data, type, row) => {
+                            let timeVal = data ? (data.includes(' ') ? data.split(' ')[1].substring(0, 5) : data.substring(0, 5)) : '';
+                            return `
+                                <input type="time" class="inline-editable-input px-2" data-field="start_time" value="${timeVal}">
+                            `;
+                        }
+                    },
+                    {
+                        data: 'end_time',
+                        width: '10%',
+                        className: 'px-4 py-3',
+                        render: (data, type, row) => {
+                            let timeVal = data ? (data.includes(' ') ? data.split(' ')[1].substring(0, 5) : data.substring(0, 5)) : '';
+                            return `
+                                <input type="time" class="inline-editable-input px-2" data-field="end_time" value="${timeVal}">
+                            `;
+                        }
+                    },
+                    {
+                        data: 'duration',
+                        width: '8%',
+                        className: 'text-center px-4 py-3',
+                        render: (data, type, row) => `
+                            <div class="flex items-center justify-center gap-1">
+                                <input type="number" class="inline-editable-input text-center px-1" style="width: 50px" data-field="duration" value="${data || 60}">
+                                <span class="text-[9px] font-black text-slate-300 uppercase">m</span>
                             </div>
-                            <span class="font-bold text-slate-700 text-sm">${data}</span>
-                        </div>`
-                    },
-                    {
-                        data: 'template',
-                        render: (data) => `<div class="flex items-center gap-2 text-xs font-bold text-slate-600"><i class="bi bi-file-earmark-text text-blue-500"></i> ${data ? data.name : 'Custom Layout'}</div>`
-                    },
-                    {
-                        data: 'user_role',
-                        render: (data) => `<span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 px-2 py-1 rounded">${data || 'General Access'}</span>`
+                        `
                     },
                     {
                         data: null,
-                        className: 'text-right',
+                        className: 'text-right px-6',
+                        width: '12%',
                         render: (data, type, row) => `
-                        <div class="flex items-center justify-end gap-2 px-6">
-                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-all" onclick="App.previewTestPack(${row.id})" title="Preview"><i class="bi bi-eye"></i></button>
-                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition-all" onclick="deletePack(${row.id})" title="Delete"><i class="bi bi-trash"></i></button>
+                        <div class="flex items-center justify-end gap-1.5" data-batch-id="${row.id}">
+                            <button class="batch-action-btn bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white" onclick="saveBatchInline(this, ${row.id}, ${testId})" title="Save Changes" data-action="save">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button class="batch-action-btn bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white" onclick="toggleEditBatch(this)" title="Edit Row" data-action="edit">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="batch-action-btn bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white" onclick="App.previewTestPack(${row.id})" title="View Question Paper">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="batch-action-btn bg-red-50 text-red-600 hover:bg-red-600 hover:text-white" onclick="deletePack(${row.id})" title="Delete Batch">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </div>`
                     }
                 ],
@@ -5746,6 +5996,164 @@ if (!empty($Tests)) {
                     emptyTable: "No Batches found for this Test."
                 }
             });
+        }
+
+        function addNewBatchRow(testId) {
+            const table = $(`#BatchTable_${testId}`).DataTable();
+            const newRowData = {
+                id: '',
+                pack_name: '',
+                template_id: '',
+                candidates: 'all',
+                scheduled_date: new Date().toISOString().split('T')[0],
+                start_time: '10:00',
+                end_time: '11:00',
+                duration: 60
+            };
+            
+            const rowNode = table.row.add(newRowData).draw(false).node();
+            $(rowNode).addClass('is-editing');
+            
+            rowNode.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            $(rowNode).find('input').first().focus();
+        }
+
+        function handleCandidateTypeChange(select) {
+            const wrapper = $(select).closest('.candidate-selector-wrapper');
+            const pickerBtn = wrapper.find('.specific-picker-btn');
+            const hiddenInput = wrapper.find('input[data-field="candidates"]');
+            
+            if (select.value === 'all') {
+                pickerBtn.addClass('hidden');
+                hiddenInput.val('all');
+            } else {
+                pickerBtn.removeClass('hidden');
+                // Trigger picker immediately for convenience
+                pickerBtn.click();
+            }
+        }
+
+        function openCandidatePickerForBatch(btn, batchId) {
+            const wrapper = $(btn).closest('.candidate-selector-wrapper');
+            const hiddenInput = wrapper.find('input[data-field="candidates"]');
+            const currentVal = hiddenInput.val();
+            
+            // Re-use existing candidate picker modal if possible
+            // We'll need a way to pass the selected IDs back.
+            // For now, let's use a simple prompt or a specialized modal call.
+            
+            const TestId = $(btn).closest('.child-table-container').parent().prev().find('tr').attr('id')?.replace('row_', '') || '';
+            
+            // Store current context
+            window.activeBatchPicker = {
+                input: hiddenInput,
+                wrapper: wrapper,
+                batchId: batchId
+            };
+
+            // Assuming openCandidatePicker is globally available
+            // and we can hook into its 'Save' button.
+            openCandidatePicker(TestId, currentVal === 'all' ? '' : currentVal);
+            
+            // Override the global App.saveSelectedCandidates if it exists, or hook into the modal
+            const originalSave = App.saveSelectedCandidates;
+            App.saveSelectedCandidates = function() {
+                const selected = App.selectedCandidates[TestId] || [];
+                const val = selected.join(',');
+                
+                if (window.activeBatchPicker) {
+                    window.activeBatchPicker.input.val(val || 'all');
+                    const display = val ? (selected.length + ' Candidates') : 'All Candidates';
+                    window.activeBatchPicker.wrapper.find('.readonly-view span').text(display);
+                    
+                    if (!val) {
+                        window.activeBatchPicker.wrapper.find('select').val('all');
+                        window.activeBatchPicker.wrapper.find('.specific-picker-btn').addClass('hidden');
+                    }
+                }
+                
+                // Call original and then restore it
+                if (originalSave) originalSave.apply(App, arguments);
+                App.saveSelectedCandidates = originalSave;
+                window.activeBatchPicker = null;
+            };
+        }
+
+        function toggleEditBatch(btn) {
+            const tr = $(btn).closest('tr');
+            const isEditing = tr.hasClass('is-editing');
+            
+            if (isEditing) {
+                tr.removeClass('is-editing');
+            } else {
+                tr.closest('tbody').find('tr.is-editing').removeClass('is-editing');
+                tr.addClass('is-editing');
+                tr.find('input').first().focus();
+            }
+        }
+
+        async function saveBatchInline(btn, batchId, testId) {
+            const tr = $(btn).closest('tr');
+            const data = {
+                id: batchId,
+                assessment_id: testId,
+                pack_name: tr.find('[data-field="pack_name"]').val(),
+                template_id: tr.find('[data-field="template_id"]').val(),
+                candidates: tr.find('[data-field="candidates"]').val(),
+                scheduled_date: tr.find('[data-field="scheduled_date"]').val(),
+                start_time: tr.find('[data-field="start_time"]').val(),
+                end_time: tr.find('[data-field="end_time"]').val(),
+                duration: tr.find('[data-field="duration"]').val()
+            };
+
+            if (!data.pack_name || !data.template_id) {
+                Swal.fire('Required', 'Batch Name and Template are mandatory.', 'warning');
+                return;
+            }
+
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div>';
+            btn.disabled = true;
+
+            try {
+                const formData = new URLSearchParams();
+                for (const key in data) {
+                    formData.append(key, data[key]);
+                }
+
+                const response = await fetch('/Test/createTestPack', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: data.id ? 'Batch updated successfully' : 'Batch created successfully',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                    
+                    // Update the row data with the new ID and exit edit mode
+                    const table = $(`#BatchTable_${testId}`).DataTable();
+                    const row = table.row(tr);
+                    const updatedData = { ...data, id: result.id };
+                    row.data(updatedData).draw(false);
+                    tr.removeClass('is-editing');
+                } else {
+                    Swal.fire('Error', result.message || 'Failed to save batch', 'error');
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                Swal.fire('Error', 'An unexpected error occurred.', 'error');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
         }
 
         let currentTestIdForPack = null;
@@ -7326,102 +7734,148 @@ if (!empty($Tests)) {
 
                         let sectionsHtml = '';
 
-                        // Group questions by marks_type to match sections
+                        // Group questions by section structure
                         sections.forEach((s, sIdx) => {
-                            const targetType = s.marks_type === 'Multiple Choice' ? 'MCQ' :
-                                (s.marks_type === 'Short Answer' ? '2-Mark' : s.marks_type);
-
-                            // Filter questions for this section type
-                            const sectionQuestions = questions.filter(q => q.type === targetType);
+                            const targetType = App.normalizeType(s.marks_type || s.type || 'MCQ');
+                            
+                            // Filter questions for this section
+                            const sectionQuestions = questions.filter(q => App.normalizeType(q.type) === targetType);
 
                             if (sectionQuestions.length > 0) {
                                 sectionsHtml += `
-                                <div class="mb-8 px-5">
-                                    <div class="d-flex justify-content-between align-items-center mb-4 border-b pb-2">
-                                        <h3 class="h5 fw-bold text-[#dc2230] mb-0 text-uppercase tracking-wider">${s.section_name || 'Section ' + String.fromCharCode(65 + sIdx)}</h3>
-                                        <div class="bg-[#fff1f2] text-[#dc2230] px-3 py-1.5 rounded-[8px] text-[11px] font-bold d-flex align-items-center gap-2">
-                                             <i class="bi bi-list-ul"></i> ${sectionQuestions.length} / ${s.num_questions} Questions
+                                <div class="mb-10 px-8">
+                                    <div class="flex items-center justify-between mb-6 pb-2 border-b-2 border-slate-100">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center font-black text-sm shadow-sm">${sIdx + 1}</div>
+                                            <h3 class="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-0">${s.section_name || s.name || (targetType === 'mcq' ? 'Multiple Choice' : 'Short Answer')}</h3>
+                                        </div>
+                                        <div class="px-3 py-1 bg-slate-50 border border-slate-100 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                            ${sectionQuestions.length} Questions • ${s.marks_per_question || s.marks || 1} Marks Each
                                         </div>
                                     </div>
-                            `;
+                                    <div class="space-y-6">
+                                `;
 
                                 sectionQuestions.forEach((q, qIdx) => {
-                                    const isMCQ = q.type === 'MCQ';
+                                    const isMCQ = App.normalizeType(q.type) === 'mcq';
                                     sectionsHtml += `
-                                    <div class="mb-6">
-                                        <div class="d-flex justify-content-between mb-3">
-                                            <div class="fw-bold text-[#1e293b] text-[15px]">Q${qIdx + 1}. ${q.content}</div>
-                                            <div class="text-[#1e293b] font-bold text-sm">[${q.marks} Mark]</div>
+                                    <div class="relative pl-10">
+                                        <div class="absolute left-0 top-0 w-8 h-8 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-[11px] font-black border border-slate-100">${qIdx + 1}</div>
+                                        <div class="flex justify-between items-start mb-4">
+                                            <p class="text-[14px] font-bold text-slate-800 leading-relaxed mb-0 pt-1">${q.question || q.content || 'No question text'}</p>
+                                            <span class="px-2 py-1 bg-white border border-slate-100 rounded text-[9px] font-black text-slate-400 uppercase tracking-tighter shrink-0 ml-4">${q.marks || 1} MARK</span>
                                         </div>
-                                        <div class="ps-2">
-                                            ${isMCQ ? `
-                                                <div class="row g-3">
-                                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">A) ${q.option_a || '-'}</div></div>
-                                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">B) ${q.option_b || '-'}</div></div>
-                                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">C) ${q.option_c || '-'}</div></div>
-                                                    <div class="col-md-6"><div class="text-[13px] text-[#334155]">D) ${q.option_d || '-'}</div></div>
+                                        
+                                        ${isMCQ ? `
+                                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                                ${['a', 'b', 'c', 'd'].map(opt => `
+                                                    <div class="flex items-center gap-3 p-2.5 rounded-xl border ${q.correct_answer === opt.toUpperCase() ? 'border-emerald-100 bg-emerald-50/30' : 'border-slate-50 bg-slate-50/30'}">
+                                                        <div class="w-6 h-6 rounded ${q.correct_answer === opt.toUpperCase() ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-[10px] font-black uppercase">${opt}</div>
+                                                        <span class="text-[12px] ${q.correct_answer === opt.toUpperCase() ? 'text-emerald-800 font-bold' : 'text-slate-600 font-medium'}">${q['option_' + opt] || '---'}</span>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        ` : `
+                                            <div class="p-4 bg-blue-50/30 border border-blue-100 rounded-2xl mb-4">
+                                                <div class="flex items-center gap-2 mb-2">
+                                                    <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                                    <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Expected Answer / Reference</span>
                                                 </div>
-                                            ` : `
-                                                <div class="border border-2 border-dashed border-[#e2e8f0] rounded-[12px] p-4 text-gray-400 text-[12px] bg-[#fcfcfd]">
-                                                    Response area for ${q.type} question
-                                                </div>
-                                            `}
-                                        </div>
+                                                <p class="text-[12px] text-slate-600 font-medium italic mb-0 leading-relaxed">${q.correct_answer || q.expected_answer || 'No reference answer provided.'}</p>
+                                            </div>
+                                        `}
                                     </div>
-                                `;
+                                    `;
                                 });
 
-                                sectionsHtml += `</div>`;
+                                sectionsHtml += `</div></div>`;
                             }
                         });
 
                         container.innerHTML = `
-                        <div class="bg-white mx-auto shadow-sm" style="max-width: 900px; min-height: 1000px; padding: 40px 0;">
-                            <div class="text-center mb-5 px-5">
-                                <div class="mx-auto mb-4" style="width: 80px;"><img src="https://via.placeholder.com/80" class="rounded"></div>
-                                <h2 class="fw-bold text-[#1e293b] mb-4 text-2xl">${template.paper_title || template.name}</h2>
-                                <p class="text-sm text-slate-500 font-medium mb-4">${pack.pack_name}</p>
+                        <div class="bg-white mx-auto shadow-2xl overflow-hidden" style="max-width: 900px; border-radius: 24px; margin-top: 20px; margin-bottom: 40px; border: 1px solid #f1f5f9;">
+                            <!-- Exam Header -->
+                            <div class="p-10 border-b border-slate-100 bg-slate-50/50">
+                                <div class="flex items-center justify-between mb-8">
+                                    <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-slate-100">
+                                        <img src="https://via.placeholder.com/60" class="rounded-lg grayscale opacity-50">
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="px-3 py-1 bg-red-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest inline-block mb-2 shadow-lg shadow-red-100">Official Question Paper</div>
+                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Code: ${template.code || 'BCH-' + pack.id}</div>
+                                    </div>
+                                </div>
                                 
-                                <div class="d-flex justify-content-center gap-4 mb-4">
-                                    <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[15px] min-w-[180px] shadow-sm">
-                                        <div class="w-10 h-10 bg-[#fff1f2] text-[#dc2230] rounded-full d-flex align-items-center justify-content-center"><i class="bi bi-clock"></i></div>
-                                        <div class="text-start">
-                                            <div class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">Duration</div>
-                                            <div class="fw-bold text-[#1e293b] text-md">${pack.duration} Mins</div>
+                                <div class="text-center mb-8">
+                                    <h1 class="text-3xl font-black text-slate-800 mb-2 tracking-tight">${template.paper_title || template.name}</h1>
+                                    <p class="text-slate-400 font-bold uppercase tracking-widest text-[11px]">${pack.pack_name}</p>
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-6">
+                                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                                        <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Duration</div>
+                                        <div class="text-[15px] font-black text-slate-800">${pack.duration} Minutes</div>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-center">
+                                        <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Marks</div>
+                                        <div class="text-[15px] font-black text-slate-800">${template.total_marks || 0} Marks</div>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-right">
+                                        <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Questions</div>
+                                        <div class="text-[15px] font-black text-slate-800">${questions.length} Total</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Student Info Section -->
+                            <div class="p-8 bg-white border-b border-slate-50">
+                                <div class="grid grid-cols-2 gap-8 border-2 border-dashed border-slate-100 rounded-3xl p-6">
+                                    <div class="space-y-4">
+                                        <div class="flex items-end gap-3">
+                                            <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap mb-1">Name:</span>
+                                            <div class="flex-1 border-b border-slate-200 h-6"></div>
+                                        </div>
+                                        <div class="flex items-end gap-3">
+                                            <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap mb-1">Roll No:</span>
+                                            <div class="flex-1 border-b border-slate-200 h-6"></div>
                                         </div>
                                     </div>
-                                    <div class="d-flex align-items-center gap-3 p-3 bg-white border border-[#e2e8f0] rounded-[15px] min-w-[180px] shadow-sm">
-                                        <div class="w-10 h-10 bg-[#fff1f2] text-[#dc2230] rounded-full d-flex align-items-center justify-content-center"><i class="bi bi-star"></i></div>
-                                        <div class="text-start">
-                                            <div class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest">Total Marks</div>
-                                            <div class="fw-bold text-[#1e293b] text-md">${template.total_marks || 0} Marks</div>
+                                    <div class="space-y-4">
+                                        <div class="flex items-end gap-3">
+                                            <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap mb-1">Date:</span>
+                                            <div class="flex-1 border-b border-slate-200 h-6"></div>
+                                        </div>
+                                        <div class="flex items-end gap-3">
+                                            <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap mb-1">Signature:</span>
+                                            <div class="flex-1 border-b border-slate-200 h-6"></div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="preview-divider mx-5"></div>
                             </div>
 
-                            <div class="mx-5 p-4 bg-[#fcfcfd] rounded-[15px] mb-8 border border-l-[4px] border-l-[#dc2230]">
-                                <div class="d-flex align-items-center gap-2 mb-3">
-                                    <i class="bi bi-info-circle-fill text-[#dc2230]"></i>
-                                    <h4 class="mb-0 fw-bold text-[#1e293b] text-md">Important Instructions</h4>
+                            <!-- Instructions -->
+                            <div class="p-8">
+                                <div class="bg-slate-50 rounded-2xl p-6 mb-8">
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <i class="bi bi-info-circle-fill text-slate-800 text-sm"></i>
+                                        <h4 class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-0">General Instructions</h4>
+                                    </div>
+                                    <div class="text-[12px] text-slate-500 font-medium leading-relaxed space-y-2">
+                                        ${pack.instructions ? pack.instructions.split('\n').map(line => `<p class="mb-0">• ${line}</p>`).join('') : '<p class="mb-0">• Ensure a stable internet connection if applicable.</p><p class="mb-0">• Read all questions carefully before answering.</p>'}
+                                    </div>
                                 </div>
-                                <ul class="text-[12px] text-[#475569] mb-0 ps-3">
-                                    <li class="mb-2">Read all questions carefully before attempting.</li>
-                                    <li class="mb-2">This paper consists of ${sections.length} distinct sections.</li>
-                                    <li class="mb-2">All questions are mandatory unless specified otherwise.</li>
-                                    <li>The total duration for this Test is ${pack.duration} minutes.</li>
-                                </ul>
+
+                                <!-- Questions Content -->
+                                <div class="space-y-2">${sectionsHtml || '<div class="text-center py-20 text-slate-400 italic">No questions have been added to this Batch yet.</div>'}</div>
                             </div>
 
-                            <div>${sectionsHtml || '<div class="text-center py-20 text-slate-400 italic">No questions have been added to this Batch yet.</div>'}</div>
-
-                            <div class="text-center mt-5 pt-4 text-[#94a3b8] text-[11px]">
-                                <div class="fw-bold text-[#1e293b] mb-1">© 2026 eNova Technology Solutions</div>
-                                <div>Generated via eNova Test Management Portal</div>
+                            <!-- Footer -->
+                            <div class="p-10 bg-slate-50/50 border-t border-slate-100 text-center">
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">End of Question Paper</p>
+                                <p class="text-[9px] text-slate-300 font-bold tracking-widest mb-0">© 2026 eNova Technology Solutions • System Generated Preview</p>
                             </div>
                         </div>
-                    `;
+                        `;
 
                         const modal = new bootstrap.Modal(document.getElementById('paperPreviewModal'));
                         modal.show();
@@ -7473,7 +7927,7 @@ if (!empty($Tests)) {
     <!-- MODAL: QUICK BATCH CREATION (Full Screen Template) -->
     <div class="modal fade quick-mode" id="createPackModal" tabindex="-1">
         <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content border-0 h-100 d-flex flex-column overflow-hidden">
+            <div class="modal-content border-0">
                 <div
                     class="modal-header border-0 px-8 py-4 bg-white sticky-top flex items-center justify-between shadow-sm">
                     <div class="flex items-center gap-4">
@@ -7490,7 +7944,7 @@ if (!empty($Tests)) {
                     </div>
                 </div>
 
-                <div class="modal-body p-0 bg-[#f8fafc] overflow-hidden d-flex flex-column flex-grow-1 h-100 w-100">
+                <div class="modal-body p-0 bg-[#f8fafc] overflow-hidden flex flex-col flex-1">
                     <!-- Quick Mode Header -->
                     <div id="quick-mode-header" class="px-8 py-4 bg-white border-b sticky top-0 z-50 flex items-center justify-between shadow-sm">
                         <div class="flex items-center gap-4">
@@ -7767,10 +8221,7 @@ if (!empty($Tests)) {
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div> <!-- End Grid -->
-                            </div> <!-- End batchWizardConfigView -->
+                                </div> <!-- End batchWizardConfigView -->
 
                                 <!-- Quick Mode: Generated Question Paper (Grouped) -->
                                 <div id="quick-generated-paper-section" class="space-y-6 hidden">
@@ -7790,18 +8241,18 @@ if (!empty($Tests)) {
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-3">
-                                            <button class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2" onclick="generateQuickQuestionPaper()">
+                                            <button class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2" onclick="generateQuickQuestionPaper(true)">
                                                 <i class="bi bi-shuffle"></i> Re-shuffle
                                             </button>
-                                            <button class="px-6 py-2 bg-red-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100" onclick="savePackFromWizard()">
-                                                <i class="bi bi-check-lg me-1"></i> Save Batch
+                                            <button class="px-8 py-2.5 bg-red-600 text-white font-black rounded-xl text-[10px] uppercase tracking-[0.15em] shadow-[0_8px_15px_-3px_rgba(220,34,48,0.25)] transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2" onclick="savePackFromWizard()">
+                                                <i class="bi bi-check-lg"></i> Save Batch
                                             </button>
                                         </div>
                                     </div>
                                     <div id="quick_generated_questions_container" class="space-y-8 bg-slate-50/30 rounded-3xl p-6">
                                         <!-- Populated via JS -->
-                                       </div>               
-                                </div> <!-- End quick-generated-paper-section -->
+                                    </div>               
+                                </div>
 
 
                                 <!-- HIDDEN MASTER INPUTS -->
@@ -7835,7 +8286,7 @@ if (!empty($Tests)) {
                                     <option value="<?= $t['id'] ?>"><?= esc($t['name']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-
+                            </div>
 
                             <!-- TEMPLATE BUILDER VIEW (Inline) -->
                             <div class="w-full space-y-5 hidden" id="templateBuilderInlineView">
@@ -8222,21 +8673,26 @@ if (!empty($Tests)) {
                                 </div>
                             </div>
                         </div>
-                    </div> <!-- End Middle Container (Sidebar + Main) -->
+                    </div>
 
-                    <!-- Quick Mode Footer (Sticky at bottom) -->
-                    <div id="quick-mode-footer" class="w-full py-4 px-10 bg-slate-50 border-t border-slate-200 flex items-center justify-between z-50">
-                        <button class="px-8 py-3 bg-white border border-slate-200 text-slate-500 font-bold rounded-xl text-[12px] uppercase tracking-widest transition-all hover:bg-slate-100" data-bs-dismiss="modal">Cancel & Discard</button>
+                    <!-- Quick Mode Footer (Professional Control Bar) -->
+                    <div id="quick-mode-footer" class="w-full h-20 px-8 bg-slate-50/90 backdrop-blur-md border-t border-slate-200/60 flex items-center justify-between z-[100] flex-shrink-0">
+                        <button class="text-slate-400 hover:text-red-500 font-bold text-[11px] uppercase tracking-[0.1em] transition-all flex items-center gap-2 px-2" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle-fill"></i> Cancel Setup
+                        </button>
+                        
                         <div class="flex items-center gap-3">
-                            <button id="quick-preview-btn" class="px-8 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl text-[12px] uppercase tracking-widest shadow-sm transition-all hover:bg-slate-50 flex items-center gap-2" onclick="generateQuickQuestionPaper()">
-                                <i class="bi bi-eye"></i> Preview Paper
+                            <button id="quick-preview-btn" class="h-11 px-6 bg-white border border-slate-200 text-slate-700 font-extrabold rounded-xl text-[11px] uppercase tracking-[0.05em] shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 flex items-center gap-2" onclick="generateQuickQuestionPaper(false)">
+                                <i class="bi bi-eye"></i> View Paper
                             </button>
-                            <button class="px-12 py-3 bg-red-600 text-white font-bold rounded-xl text-[12px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all hover:bg-red-700 hover:scale-[1.02]" onclick="savePackFromWizard()">
-                                <i class="bi bi-check-lg me-2"></i> Save
+                            
+                            <button class="h-11 px-10 bg-red-600 text-white font-extrabold rounded-xl text-[11px] uppercase tracking-[0.05em] shadow-[0_4px_12px_-2px_rgba(220,34,48,0.25)] transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2" onclick="savePackFromWizard()">
+                                <i class="bi bi-check-lg text-sm"></i> Save Batch
                             </button>
                         </div>
                     </div>
-                </div> <!-- End modal-body -->
+
+                </div>
             </div>
         </div>
     </div>
@@ -8900,16 +9356,19 @@ if (!empty($Tests)) {
             if (footer) footer.classList.remove('hidden');
         }
 
-        function generateQuickQuestionPaper() {
+        function generateQuickQuestionPaper(forceGenerate = false) {
             const qbId = document.getElementById('quick_qb_select').value;
             const templateId = document.getElementById('baseTemplateSelect').value;
             if (!templateId) { Swal.fire('Wait!', 'Please select a template first from the sidebar.', 'info'); return; }
-            if (!qbId) { Swal.fire('Select Bank', 'Please choose a Question Bank to fetch questions from.', 'info'); return; }
+            
+            // If we are forcing generation, we NEED a bank
+            if (forceGenerate && !qbId) { Swal.fire('Select Bank', 'Please choose a Question Bank to fetch questions from for re-shuffling.', 'info'); return; }
 
             const configView = document.getElementById('batchWizardConfigView');
             const paperSection = document.getElementById('quick-generated-paper-section');
             const footer = document.getElementById('quick-mode-footer');
             
+            // Toggle visibility
             if (configView) configView.classList.add('hidden');
             if (paperSection) paperSection.classList.remove('hidden');
             if (footer) footer.classList.add('hidden');
@@ -8919,76 +9378,112 @@ if (!empty($Tests)) {
 
             setTimeout(async () => {
                 try {
-                    const paper = App.generatePaperFromBank(qbId, templateId);
+                    let paper = null;
+                    
+                    console.log("Quick Preview Triggered", { forceGenerate, qbId, templateId, manualCount: App.manualQuestions.length });
+
+                    // Logic: Use existing manual/uploaded questions if they exist and we aren't forcing a re-shuffle
+                    if (!forceGenerate && App.manualQuestions && App.manualQuestions.length > 0) {
+                        console.log("Rendering paper from existing manual/uploaded questions...");
+                        paper = App.getGroupedPaper(App.manualQuestions, templateId);
+                    } else if (qbId) {
+                        console.log("Generating paper from selected Question Bank...");
+                        paper = App.generatePaperFromBank(qbId, templateId);
+                        if (paper) {
+                            App.manualQuestions = paper.questions || []; // Update state with generated questions
+                            console.log("Updated App.manualQuestions with", App.manualQuestions.length, "questions from bank");
+                        }
+                    } else {
+                        // No manual questions and no bank selected
+                        console.warn("No questions available and no bank selected");
+                         container.innerHTML = `
+                            <div class="text-center py-20 bg-white border border-slate-100 rounded-3xl shadow-sm">
+                                <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                    <i class="bi bi-database-exclamation text-3xl"></i>
+                                </div>
+                                <h5 class="text-sm font-black text-slate-800 uppercase tracking-widest mb-1">No Questions Found</h5>
+                                <p class="text-[11px] text-slate-400 font-medium mb-6">Please upload questions to the template or select a Question Bank to generate them.</p>
+                                <button class="px-6 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-indigo-100" onclick="closeQuickPreview()">
+                                    Back to Config
+                                </button>
+                            </div>`;
+                         return;
+                    }
+
                     if (!paper) {
-                         container.innerHTML = '<div class="text-center py-12 text-red-500 font-bold">Failed to generate paper. Template or Bank data is missing.</div>';
+                         console.error("Paper generation returned null");
+                         container.innerHTML = '<div class="text-center py-12 text-red-500 font-bold">Failed to process paper structure. Template data is missing.</div>';
                          return;
                     }
 
                     if (paper.warnings && paper.warnings.length > 0) {
+                        console.warn("Paper Warnings:", paper.warnings);
                         Swal.fire({
-                            title: 'Data Mismatch',
+                            title: 'Paper Composition Notice',
                             html: `<div class="text-left text-sm font-medium text-slate-600">${paper.warnings.map(w => `<div class="mb-2 flex items-start gap-2"><i class="bi bi-exclamation-triangle-fill text-amber-500"></i><span>${w}</span></div>`).join('')}</div>`,
-                            icon: 'warning',
+                            icon: 'info',
                             confirmButtonColor: '#4f46e5'
                         });
                     }
 
                     let groupedHtml = '';
                     if (paper.grouped && paper.grouped.length > 0) {
+                        console.log("Rendering", paper.grouped.length, "sections");
                         paper.grouped.forEach((group, sIdx) => {
                             const s = group.section;
                             const picked = group.questions;
                             const count = parseInt(s.num_questions || s.count || 0);
                             const type = s.marks_type || s.type || 'MCQ';
+                            const targetType = App.normalizeType(type);
                             const marks = s.marks_per_question || s.marks || 0;
 
                             groupedHtml += `
-                                <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white mb-6">
+                                <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white mb-6 animate-fadeIn" style="animation-delay: ${sIdx * 0.1}s">
                                     <div class="p-4 bg-slate-50/50 border-b border-slate-50 flex items-center justify-between">
                                         <div class="flex items-center gap-3">
                                             <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-800 font-black text-xs shadow-sm border border-slate-100">${sIdx + 1}</div>
                                             <div>
-                                                <h5 class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-0">${s.name || type}</h5>
-                                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0">${count} Questions • ${marks} Marks Each</p>
+                                                <h5 class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-0">${s.section_name || s.name || (targetType === 'mcq' ? 'Multiple Choice' : 'Short Answer')}</h5>
+                                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0">${picked.length} of ${count} Questions • ${marks} Marks Each</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="p-4 space-y-4">
+                                    <div class="p-6 space-y-6">
                                         ${picked && picked.length > 0 ? picked.map((q, qIdx) => `
-                                            <div class="p-4 bg-white border border-slate-100 rounded-xl hover:border-indigo-100 transition-all shadow-sm">
-                                                <div class="flex items-start justify-between mb-3">
-                                                    <div class="flex items-start gap-3">
-                                                        <div class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-black shrink-0">${qIdx + 1}</div>
-                                                        <p class="text-[13px] font-bold text-slate-800 leading-relaxed pt-0.5 whitespace-pre-wrap">${q.question || 'No question text'}</p>
-                                                    </div>
-                                                    <div class="flex flex-col items-end gap-1 shrink-0">
-                                                        <span class="px-2 py-0.5 rounded bg-slate-50 text-slate-500 text-[8px] font-black uppercase tracking-widest border border-slate-100">${q.marks || marks} Marks</span>
+                                            <div class="relative pl-10 border-b border-slate-50 pb-6 last:border-0 last:pb-0">
+                                                <div class="absolute left-0 top-0 w-8 h-8 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-[11px] font-black border border-slate-100">${qIdx + 1}</div>
+                                                <div class="flex items-start justify-between mb-4">
+                                                    <p class="text-[14px] font-bold text-slate-800 leading-relaxed pt-1 whitespace-pre-wrap mb-0">${q.question || q.content || 'No question text'}</p>
+                                                    <div class="flex flex-col items-end gap-1 shrink-0 ml-4">
+                                                        <span class="px-2 py-0.5 rounded bg-slate-50 text-slate-400 text-[8px] font-black uppercase tracking-widest border border-slate-100">${q.marks || marks} Marks</span>
                                                         ${q.difficulty ? `<span class="px-2 py-0.5 rounded ${q.difficulty === 'Hard' ? 'bg-red-50 text-red-600 border-red-100' : q.difficulty === 'Medium' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'} text-[8px] font-black uppercase tracking-widest border">${q.difficulty}</span>` : ''}
                                                     </div>
                                                 </div>
-                                                ${normalizeType(q.type || type) === 'mcq' ? `
-                                                    <div class="grid grid-cols-2 gap-3 pl-9">
+                                                ${App.normalizeType(q.type || type) === 'mcq' ? `
+                                                    <div class="grid grid-cols-2 gap-3">
                                                         ${['a', 'b', 'c', 'd'].map(opt => `
-                                                            <div class="flex items-center gap-2 p-2 rounded-lg border ${q.correct_answer === opt.toUpperCase() ? 'border-green-100 bg-green-50/30' : 'border-slate-50 bg-slate-50/20'}">
-                                                                <div class="w-5 h-5 rounded ${q.correct_answer === opt.toUpperCase() ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-[10px] font-black uppercase">${opt}</div>
-                                                                <span class="text-[11px] font-medium ${q.correct_answer === opt.toUpperCase() ? 'text-green-800' : 'text-slate-600'} whitespace-pre-wrap">${q['option_' + opt] || '---'}</span>
+                                                            <div class="flex items-center gap-3 p-2.5 rounded-xl border ${q.correct_answer === opt.toUpperCase() ? 'border-emerald-100 bg-emerald-50/30' : 'border-slate-50 bg-slate-50/20'}">
+                                                                <div class="w-6 h-6 rounded ${q.correct_answer === opt.toUpperCase() ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-[10px] font-black uppercase">${opt}</div>
+                                                                <span class="text-[12px] ${q.correct_answer === opt.toUpperCase() ? 'text-emerald-800 font-bold' : 'text-slate-600 font-medium'} whitespace-pre-wrap">${q['option_' + opt] || '---'}</span>
                                                             </div>
                                                         `).join('')}
                                                     </div>
                                                 ` : `
-                                                    <div class="pl-9">
-                                                        <div class="p-3 rounded-lg border border-indigo-50 bg-indigo-50/20">
-                                                            <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest block mb-1">Evaluation Reference</span>
-                                                            <p class="text-[11px] text-slate-600 font-medium italic mb-0 whitespace-pre-wrap">${q.correct_answer || q.expected_answer || 'No reference answer provided'}</p>
+                                                    <div class="p-4 bg-blue-50/30 border border-blue-100 rounded-2xl">
+                                                        <div class="flex items-center gap-2 mb-2">
+                                                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                                            <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Evaluation Reference</span>
                                                         </div>
+                                                        <p class="text-[12px] text-slate-600 font-medium italic mb-0 whitespace-pre-wrap leading-relaxed">${q.correct_answer || q.expected_answer || 'No reference answer provided'}</p>
                                                     </div>
                                                 `}
                                             </div>
                                         `).join('') : `
-                                            <div class="text-center py-8 border-2 border-dashed border-slate-100 rounded-2xl">
-                                                <i class="bi bi-exclamation-triangle text-slate-200 text-2xl mb-2"></i>
-                                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-300">No matching questions found in this section</p>
+                                            <div class="text-center py-12 border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/20">
+                                                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-200">
+                                                    <i class="bi bi-exclamation-triangle text-2xl"></i>
+                                                </div>
+                                                <p class="text-[11px] font-black uppercase tracking-widest text-slate-400">No matching questions found in this section</p>
                                             </div>
                                         `}
                                     </div>
@@ -8996,19 +9491,10 @@ if (!empty($Tests)) {
                             `;
                         });
                     } else {
-                        groupedHtml = '<div class="text-center py-12 text-slate-400 font-bold uppercase tracking-widest">The selected template has no sections defined.</div>';
+                        console.warn("No grouped sections found in paper");
+                        groupedHtml = '<div class="text-center py-20 bg-white border border-slate-100 rounded-3xl shadow-sm"><div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300"><i class="bi bi-stack text-3xl"></i></div><h5 class="text-sm font-black text-slate-800 uppercase tracking-widest mb-1">Incomplete Template</h5><p class="text-[11px] text-slate-400 font-medium">The selected template has no sections defined.</p></div>';
                     }
 
-                    function normalizeType(t) {
-                        if (!t) return '';
-                        t = t.toString().toLowerCase().trim();
-                        if (t.includes('2-mark') || t.includes('2 mark') || t.includes('short answer')) return '2-mark';
-                        if (t.includes('mcq') || t.includes('multiple choice')) return 'mcq';
-                        return t;
-                    }
-
-                    // Store in App state
-                    App.manualQuestions = paper.questions || [];
                     container.innerHTML = groupedHtml;
                     
                     // Scroll to paper section
