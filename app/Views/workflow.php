@@ -274,6 +274,75 @@ if (!empty($Tests)) {
             border-color: #fca5a5;
             background-color: #fef2f2;
         }
+
+        /* Quick Template Modal Styles - TRANSFORMED TO FULL SCREEN TEMPLATE */
+        #createPackModal.quick-mode .modal-dialog {
+            max-width: 100% !important;
+            width: 100% !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        #createPackModal.quick-mode .modal-content {
+            border-radius: 0 !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            overflow: hidden !important;
+            box-shadow: none !important;
+            border: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        #createPackModal.quick-mode .modal-header,
+        #createPackModal.quick-mode .w-\[500px\] {
+            display: none !important;
+        }
+        #createPackModal.quick-mode .w-\[360px\] {
+            display: flex !important;
+        }
+        #createPackModal.quick-mode #wizardMainColumn {
+            padding: 0 !important;
+        }
+        #createPackModal.quick-mode #wizard_template_section {
+            grid-column: span 10 / span 10 !important;
+        }
+        #createPackModal.quick-mode #wizard_audience_section,
+        #createPackModal.quick-mode #wizard_question_content_section,
+        #createPackModal.quick-mode #active_template_delete_btn,
+        #createPackModal.quick-mode #wizard_edit_structure_btn,
+        #createPackModal.quick-mode #active_template_tags .group-hover\:opacity-100 {
+            display: none !important;
+        }
+        #quick-qb-selector-section, #quick-generated-paper-section { display: none; }
+        #createPackModal.quick-mode #quick-qb-selector-section,
+        #createPackModal.quick-mode #quick-generated-paper-section {
+            display: block;
+        }
+        #quick-mode-header { display: none; }
+        #createPackModal.quick-mode #quick-mode-header {
+            display: flex !important;
+        }
+        #quick-mode-footer { display: none; }
+        #createPackModal.quick-mode #quick-mode-footer {
+            display: flex !important;
+        }
+        #quick-template-selector { display: none !important; }
+
+        /* Question Bank Modal Styles - TRANSFORMED TO FULL SCREEN TEMPLATE */
+        #QuestionBankModal.qb-template-mode {
+            background: #fff !important;
+            backdrop-filter: none !important;
+            padding: 0 !important;
+            align-items: stretch !important;
+        }
+        #QuestionBankModal.qb-template-mode > div {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 100vh !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
     </style>
     <style>
         :root {
@@ -3376,6 +3445,9 @@ if (!empty($Tests)) {
                     <button class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-[13px] flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm" onclick="openQuestionBankModal()">
                         <i class="bi bi-journal-bookmark"></i> Question Bank
                     </button>
+                    <button class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-[13px] flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm" onclick="openQuickTemplateModal()">
+                        <i class="bi bi-file-earmark-plus"></i> Create Template
+                    </button>
                     <button class="btn-red-rounded px-6" onclick="openCreateTest()">
                         <i class="bi bi-plus-lg me-2"></i> New Test Name
                     </button>
@@ -4022,20 +4094,25 @@ if (!empty($Tests)) {
         </div>
     </div>
 
-    <!-- Question Bank Modal -->
-    <div id="QuestionBankModal" class="custom-modal-backdrop qb-blur-overlay" onclick="if(event.target===this)closeQuestionBankModal()">
-        <div class="bg-white rounded-[32px] w-[95%] max-w-[1200px] h-[85vh] flex overflow-hidden shadow-[0_25px_80px_-15px_rgba(0,0,0,0.5)] border border-white/20">
+    <!-- Question Bank Modal (Now Full Screen Template) -->
+    <div id="QuestionBankModal" class="custom-modal-backdrop qb-template-mode" onclick="if(event.target===this)closeQuestionBankModal()">
+        <div class="bg-white w-full h-screen flex overflow-hidden">
             <!-- Sidebar -->
             <div class="w-[320px] bg-slate-50 border-r border-slate-200 flex flex-col shrink-0">
                 <div class="p-8 border-b border-slate-200 bg-white">
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
-                            <i class="bi bi-journal-bookmark text-xl"></i>
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
+                                <i class="bi bi-journal-bookmark text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-black text-slate-800 leading-tight">Question Banks</h3>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Discovery Panel</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="text-lg font-black text-slate-800 leading-tight">Question Banks</h3>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Discovery Panel</p>
-                        </div>
+                        <button class="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-colors" onclick="closeQuestionBankModal()">
+                            <i class="bi bi-x-lg text-lg"></i>
+                        </button>
                     </div>
                     <div class="relative">
                         <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
@@ -4545,8 +4622,77 @@ if (!empty($Tests)) {
             Tests: <?= json_encode($Tests ?? []) ?>,
             templates: <?= json_encode($templates ?? []) ?>,
             employees: <?= json_encode($employees ?? []) ?>,
+            QuestionBanks: <?= json_encode($questionBank ?? []) ?>,
             selectedCandidates: {}, // Stores { TestId: [empId1, empId2] }
-            manualQuestions: []
+            manualQuestions: [],
+            
+            // Helper for deterministic/random shuffle
+            shuffle: function(array) {
+                let currentIndex = array.length, randomIndex;
+                while (currentIndex != 0) {
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex--;
+                    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+                }
+                return array;
+            },
+
+            // New logic for randomized question selection during batch initialization
+            generatePaperFromBank: function(qbId, templateId) {
+                const bank = QuestionBanks.find(b => b.id == qbId);
+                const template = App.templates.find(t => t.id == templateId);
+                if (!bank || !template) return null;
+
+                let sections = template.sections || [];
+                if (typeof sections === 'string') {
+                    try { sections = JSON.parse(sections); } catch (e) { sections = []; }
+                }
+
+                let allPickedQuestions = [];
+                let availablePool = [...(bank.questions || [])];
+                
+                // Pre-shuffle the entire pool
+                this.shuffle(availablePool);
+
+                const warnings = [];
+                const groupedBySection = [];
+
+                sections.forEach((s, sIdx) => {
+                    const count = parseInt(s.num_questions || s.count || 0);
+                    const type = s.marks_type || s.type || 'MCQ';
+                    
+                    // Normalize types for matching
+                    const normalize = (t) => {
+                        if (!t) return '';
+                        t = t.toString().toLowerCase().trim();
+                        if (t.includes('2-mark') || t.includes('2 mark') || t.includes('short answer')) return '2-mark';
+                        if (t.includes('mcq') || t.includes('multiple choice')) return 'mcq';
+                        return t;
+                    };
+
+                    const targetType = normalize(type);
+                    
+                    let eligible = availablePool.filter(q => normalize(q.type) === targetType);
+
+                    if (eligible.length < count) {
+                        warnings.push(`Section "${s.name || type}" requires ${count} questions, but only ${eligible.length} available in bank.`);
+                    }
+
+                    // Pick questions and remove from pool
+                    const picked = eligible.slice(0, count);
+                    allPickedQuestions.push(...picked);
+
+                    const pickedIds = picked.map(pq => pq.id);
+                    availablePool = availablePool.filter(aq => !pickedIds.includes(aq.id));
+                    
+                    groupedBySection.push({
+                        section: s,
+                        questions: picked
+                    });
+                });
+
+                return { questions: allPickedQuestions, warnings: warnings, grouped: groupedBySection };
+            }
         };
     </script>
 
@@ -4569,10 +4715,7 @@ if (!empty($Tests)) {
             }
         }
 
-        let QuestionBanks = [
-            { id: 1, name: 'Leadership', questions: [], sections: 0 },
-            { id: 2, name: 'CI4 Security', questions: [], sections: 0 }
-        ];
+        let QuestionBanks = App.QuestionBanks || [];
         let activeQB = null;
         let activeQBCategory = 'MCQ';
 
@@ -4599,33 +4742,95 @@ if (!empty($Tests)) {
         function renderQuestionBanks() {
             const list = document.getElementById('qbList');
             if (!list) return;
-            list.innerHTML = QuestionBanks.map(bank => `
-                <div class="qb-bank-card ${activeQB && activeQB.id === bank.id ? 'active' : ''}" onclick="selectQuestionBank(${bank.id})">
-                    <div class="flex items-center gap-3">
-                        <div class="bank-icon">
-                            <i class="bi bi-journal-text"></i>
+            list.innerHTML = QuestionBanks.map(bank => {
+                const qCount = bank.questions ? bank.questions.length : 0;
+                const sections = bank.questions ? new Set(bank.questions.map(q => q.type || q.section_name)).size : 0;
+                return `
+                    <div class="qb-bank-card group relative ${activeQB && activeQB.id == bank.id ? 'active' : ''}" onclick="selectQuestionBank(${bank.id})">
+                        <div class="flex items-center gap-3">
+                            <div class="bank-icon">
+                                <i class="bi bi-journal-text"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-xs font-black text-slate-800 truncate mb-0.5">${bank.name}</h4>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${qCount} Questions • ${sections} Sections</p>
+                            </div>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="text-xs font-black text-slate-800 truncate mb-0.5">${bank.name}</h4>
-                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${bank.questions.length} Questions</p>
-                        </div>
+                        <!-- Delete Action for Bank -->
+                        <button class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded bg-red-50 text-red-500 hidden group-hover:flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm" 
+                                onclick="event.stopPropagation(); deleteQuestionBank(${bank.id})">
+                            <i class="bi bi-trash3 text-[10px]"></i>
+                        </button>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+            syncQBDropdowns();
+        }
+
+        function syncQBDropdowns() {
+            const qbSelect = document.getElementById('quick_qb_select');
+            if (qbSelect) {
+                const currentValue = qbSelect.value;
+                qbSelect.innerHTML = '<option value="" disabled selected>-- Select a Question Bank --</option>' + 
+                    QuestionBanks.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+                if (currentValue) qbSelect.value = currentValue;
+            }
+        }
+
+        async function deleteQuestionBank(id) {
+            const confirmed = await Swal.fire({
+                title: 'Delete Question Bank?',
+                text: "This will permanently delete the bank and ALL its questions. This action cannot be undone.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2230',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, delete everything'
+            });
+
+            if (!confirmed.isConfirmed) return;
+
+            try {
+                const response = await fetch(`/Test/deleteQuestionBank/${id}`, { method: 'POST' });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // Update local state
+                    QuestionBanks = QuestionBanks.filter(b => b.id != id);
+                    
+                    // If we deleted the active bank, deselect it
+                    if (activeQB && activeQB.id == id) {
+                        activeQB = null;
+                        document.getElementById('qbActiveWorkspace').classList.add('hidden');
+                        document.getElementById('qbEmptyState').classList.remove('hidden');
+                    }
+                    
+                    renderQuestionBanks();
+                    Swal.fire({ icon: 'success', title: 'Bank Deleted', timer: 1500, showConfirmButton: false });
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                Swal.fire('Error', error.message || 'Failed to delete bank', 'error');
+            }
         }
 
         function selectQuestionBank(id) {
-            activeQB = QuestionBanks.find(b => b.id === id);
+            activeQB = QuestionBanks.find(b => b.id == id);
+            if (!activeQB) return;
+            
             renderQuestionBanks();
             
-            document.getElementById('qbEmptyState').classList.add('hidden');
-            document.getElementById('qbActiveWorkspace').classList.remove('hidden');
+            const emptyState = document.getElementById('qbEmptyState');
+            const workspace = document.getElementById('qbActiveWorkspace');
+            if (emptyState) emptyState.classList.add('hidden');
+            if (workspace) workspace.classList.remove('hidden');
             
             // Restore standard header if it was in create mode
             restoreQBHeader();
             selectQBCategory(activeQBCategory); // Apply category
 
-            document.getElementById('activeQBName').textContent = activeQB.name;
+            const nameEl = document.getElementById('activeQBName');
+            if (nameEl) nameEl.textContent = activeQB.name;
             updateQBCounters();
             
             renderQBQuestions();
@@ -4633,8 +4838,12 @@ if (!empty($Tests)) {
 
         function updateQBCounters() {
             if (activeQB) {
-                document.getElementById('activeQBQuestionsCount').textContent = activeQB.questions.length;
-                document.getElementById('activeQBSectionsCount').textContent = new Set(activeQB.questions.map(q => q.section_name)).size;
+                const qCount = activeQB.questions ? activeQB.questions.length : 0;
+                document.getElementById('activeQBQuestionsCount').textContent = qCount;
+                
+                // Sections are distinct categories within this bank
+                const sections = activeQB.questions ? new Set(activeQB.questions.map(q => q.type || q.marks_type)).size : 0;
+                document.getElementById('activeQBSectionsCount').textContent = sections;
             }
         }
 
@@ -4685,7 +4894,8 @@ if (!empty($Tests)) {
                         <i class="bi bi-plus-lg me-2"></i> Add Question
                     </button>
                     <div class="flex items-center gap-3">
-                        <button class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2" onclick="switchQBView('bulk')">
+                        <input type="file" id="qbDirectFileInput" class="hidden" onchange="handleQBFileUpload(this)">
+                        <button class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2" onclick="document.getElementById('qbDirectFileInput').click()">
                             <i class="bi bi-cloud-arrow-up"></i> Bulk Upload
                         </button>
                         <button class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2" onclick="downloadQBTemplate()">
@@ -4848,40 +5058,72 @@ if (!empty($Tests)) {
         }
 
 
-        function saveQuestionInline() {
+        async function saveQuestionInline() {
             const content = document.getElementById('inlineQContent').value.trim();
             if (!content) return;
             
-            const newQ = {
-                id: Date.now(),
+            const qData = {
+                repository_id: activeQB.id,
                 question: content,
                 type: activeQBCategory === '2 Marks' ? 'Short Answer' : 'MCQ',
                 marks: activeQBCategory === '2 Marks' ? 2 : 1,
-                section_name: activeQBCategory
+                category: activeQB.name
             };
             
             if (activeQBCategory === 'MCQ') {
-                newQ.option_a = document.getElementById('inlineOptA').value;
-                newQ.option_b = document.getElementById('inlineOptB').value;
-                newQ.option_c = document.getElementById('inlineOptC').value;
-                newQ.option_d = document.getElementById('inlineOptD').value;
-                newQ.correct_answer = document.getElementById('inlineCorrect').value;
+                qData.option_a = document.getElementById('inlineOptA').value;
+                qData.option_b = document.getElementById('inlineOptB').value;
+                qData.option_c = document.getElementById('inlineOptC').value;
+                qData.option_d = document.getElementById('inlineOptD').value;
+                qData.correct_answer = document.getElementById('inlineCorrect').value;
             } else {
                 const expEl = document.getElementById('inlineExpected');
-                newQ.expected_answer = expEl ? expEl.value : '';
+                qData.correct_answer = expEl ? expEl.value : '';
             }
             
-            activeQB.questions.push(newQ);
-            updateQBCounters();
-            renderQBQuestions();
-            renderQuestionBanks();
+            try {
+                const response = await fetch('/Test/saveQBQuestion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(qData)
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    qData.id = result.id;
+                    if (!activeQB.questions) activeQB.questions = [];
+                    activeQB.questions.push(qData);
+                    updateQBCounters();
+                    renderQBQuestions();
+                    renderQuestionBanks();
+                    syncQBDropdowns();
+                    Swal.fire({ icon: 'success', title: 'Question Saved', timer: 1000, showConfirmButton: false });
+                }
+            } catch (e) { console.error(e); }
         }
 
-        function deleteQuestion(id) {
-            activeQB.questions = activeQB.questions.filter(q => (q.id || '').toString() !== id.toString());
-            updateQBCounters();
-            renderQBQuestions();
-            renderQuestionBanks();
+        async function deleteQuestion(id) {
+            const confirmed = await Swal.fire({
+                title: 'Delete Question?',
+                text: "This will permanently remove the question from the bank.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2230',
+                confirmButtonText: 'Yes, delete it'
+            });
+
+            if (!confirmed.isConfirmed) return;
+
+            try {
+                const response = await fetch(`/Test/deleteQBQuestion/${id}`, { method: 'POST' });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    activeQB.questions = activeQB.questions.filter(q => (q.id || '').toString() !== id.toString());
+                    updateQBCounters();
+                    renderQBQuestions();
+                    renderQuestionBanks();
+                    Swal.fire({ icon: 'success', title: 'Deleted!', timer: 1000, showConfirmButton: false });
+                }
+            } catch (e) { console.error(e); }
         }
 
         function editQuestionInline(id) {
@@ -4961,25 +5203,39 @@ if (!empty($Tests)) {
             document.getElementById('editCorrect').value = opt;
         }
 
-        function updateQuestionInline(id) {
+        async function updateQuestionInline(id) {
             const idx = activeQB.questions.findIndex(q => (q.id || '').toString() === id.toString());
             if (idx === -1) return;
             
             const q = activeQB.questions[idx];
-            q.question = document.getElementById('editQContent').value.trim();
+            const updatedData = {
+                question: document.getElementById('editQContent').value.trim()
+            };
             
             if (q.type === 'MCQ') {
-                q.option_a = document.getElementById('editOptA').value;
-                q.option_b = document.getElementById('editOptB').value;
-                q.option_c = document.getElementById('editOptC').value;
-                q.option_d = document.getElementById('editOptD').value;
-                q.correct_answer = document.getElementById('editCorrect').value;
+                updatedData.option_a = document.getElementById('editOptA').value;
+                updatedData.option_b = document.getElementById('editOptB').value;
+                updatedData.option_c = document.getElementById('editOptC').value;
+                updatedData.option_d = document.getElementById('editOptD').value;
+                updatedData.correct_answer = document.getElementById('editCorrect').value;
             } else {
                 const expEl = document.getElementById('editExpected');
-                q.expected_answer = expEl ? expEl.value : (q.expected_answer || '');
+                updatedData.correct_answer = expEl ? expEl.value : (q.expected_answer || '');
             }
-            
-            renderQBQuestions();
+
+            try {
+                const response = await fetch(`/Test/updateQBQuestion/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    Object.assign(q, updatedData);
+                    renderQBQuestions();
+                    Swal.fire({ icon: 'success', title: 'Updated!', timer: 1000, showConfirmButton: false });
+                }
+            } catch (e) { console.error(e); }
         }
 
         function promptCreateQB() {
@@ -5021,7 +5277,7 @@ if (!empty($Tests)) {
             `;
         }
 
-        function saveInlineQB() {
+        async function saveInlineQB() {
             const input = document.getElementById('inlineQBName');
             const name = input.value.trim();
             
@@ -5032,15 +5288,34 @@ if (!empty($Tests)) {
                 return;
             }
             
-            const newId = QuestionBanks.length + 1;
-            QuestionBanks.push({
-                id: newId,
-                name: name,
-                questions: [],
-                sections: 0
-            });
-            renderQuestionBanks();
-            selectQuestionBank(newId);
+            Swal.fire({ title: 'Saving Bank...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+            try {
+                const response = await fetch('/Test/saveQuestionBank', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    const newBank = {
+                        id: result.id,
+                        name: result.name,
+                        questions: [],
+                        sections: 0
+                    };
+                    QuestionBanks.push(newBank);
+                    renderQuestionBanks();
+                    syncQBDropdowns();
+                    selectQuestionBank(newBank.id);
+                    Swal.fire({ icon: 'success', title: 'Bank Created!', timer: 1500, showConfirmButton: false });
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                Swal.fire('Error', error.message || 'Failed to save bank', 'error');
+            }
         }
 
         function cancelInlineCreate() {
@@ -5053,64 +5328,7 @@ if (!empty($Tests)) {
             }
         }
 
-        function switchQBView(view) {
-            const content = document.getElementById('qbContentArea');
-            if (view === 'bulk') {
-                content.innerHTML = `
-                    <div class="max-w-2xl mx-auto py-10">
-                        <div class="bg-white rounded-[32px] p-8 border border-slate-100 shadow-xl">
-                            <div class="flex items-center gap-4 mb-8">
-                                <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
-                                    <i class="bi bi-cloud-arrow-up text-3xl"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-xl font-black text-slate-800">Bulk Upload</h3>
-                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Process Excel Metadata</p>
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4 mb-8">
-                                <div class="p-6 rounded-2xl border-2 border-dashed border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer transition-all text-center group" onclick="downloadQBTemplate()">
-                                    <div class="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                        <i class="bi bi-file-earmark-arrow-down text-blue-500 text-xl"></i>
-                                    </div>
-                                    <h4 class="text-xs font-black text-slate-700 uppercase tracking-widest mb-1">Download</h4>
-                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Excel Template</p>
-                                </div>
-                                <div class="p-6 rounded-2xl border-2 border-dashed border-slate-100 hover:border-green-200 hover:bg-green-50/30 cursor-pointer transition-all text-center group relative">
-                                    <input type="file" id="qbFileInput" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleQBFileUpload(this)">
-                                    <div class="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                        <i class="bi bi-file-earmark-arrow-up text-green-500 text-xl"></i>
-                                    </div>
-                                    <h4 class="text-xs font-black text-slate-700 uppercase tracking-widest mb-1">Upload</h4>
-                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Filled Template</p>
-                                </div>
-                            </div>
 
-                            <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                                <h5 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Upload Instructions</h5>
-                                <ul class="space-y-3">
-                                    <li class="flex items-start gap-3">
-                                        <div class="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-[10px] shrink-0 font-bold">1</div>
-                                        <p class="text-[11px] font-bold text-slate-500 leading-relaxed">MCQ questions MUST contain 4 options (A-D) and the correct answer column filled.</p>
-                                    </li>
-                                    <li class="flex items-start gap-3">
-                                        <div class="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-[10px] shrink-0 font-bold">2</div>
-                                        <p class="text-[11px] font-bold text-slate-500 leading-relaxed">For 2 Marks / Short Answer, use the 'expected_answer' field instead of options.</p>
-                                    </li>
-                                </ul>
-                            </div>
-                            
-                            <div class="mt-8 flex justify-end">
-                                <button class="px-8 py-3 bg-slate-100 text-slate-400 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-all" onclick="renderQBQuestions()">Cancel</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                Swal.fire('Manual Upload', 'Manual entry form coming soon. Please use Bulk Upload for now.', 'info');
-            }
-        }
 
         function downloadQBTemplate() {
             const headers = "section_name,question,type,option_a,option_b,option_c,option_d,correct_answer,marks,expected_answer\n";
@@ -5125,45 +5343,69 @@ if (!empty($Tests)) {
             a.click();
         }
 
-        function handleQBFileUpload(input) {
+        async function handleQBFileUpload(input) {
             const file = input.files[0];
-            if (!file) return;
+            if (!file || !activeQB) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const text = e.target.result;
-                const rows = text.split('\n').slice(1); // Skip headers
-                const questions = rows.filter(r => r.trim()).map(r => {
-                    const cols = r.split(',');
+                const rows = text.split('\n');
+                let startIndex = 0;
+                // Skip headers and comments
+                while (startIndex < rows.length && (rows[startIndex].trim() === '' || rows[startIndex].startsWith('#') || rows[startIndex].toLowerCase().includes('section_name'))) {
+                    startIndex++;
+                }
+
+                const questions = rows.slice(startIndex).filter(r => r.trim()).map(r => {
+                    const cols = r.split(',').map(c => c.replace(/^"|"$/g, '').trim());
                     return {
-                        section_name: cols[0],
+                        section_name: cols[0] || 'General',
                         question: cols[1],
-                        type: cols[2],
-                        option_a: cols[3],
-                        option_b: cols[4],
-                        option_c: cols[5],
-                        option_d: cols[6],
-                        correct_answer: cols[7],
-                        marks: cols[8],
-                        expected_answer: cols[9]
+                        type: cols[2] === 'Short Answer' ? 'Short Answer' : 'MCQ',
+                        option_a: cols[3] || '',
+                        option_b: cols[4] || '',
+                        option_c: cols[5] || '',
+                        option_d: cols[6] || '',
+                        correct_answer: cols[7] || '',
+                        marks: parseInt(cols[8]) || (cols[2] === 'Short Answer' ? 2 : 1),
+                        expected_answer: cols[9] || ''
                     };
                 });
 
-                if (activeQB) {
-                    activeQB.questions = questions;
-                    activeQB.sections = new Set(questions.map(q => q.section_name)).size;
-                    
-                    Swal.fire({
-                        title: 'Success!',
-                        text: `${questions.length} questions imported successfully.`,
-                        icon: 'success',
-                        confirmButtonColor: '#dc2230'
-                    }).then(() => {
-                        renderQBQuestions();
-                        document.getElementById('activeQBQuestionsCount').textContent = activeQB.questions.length;
-                        document.getElementById('activeQBSectionsCount').textContent = activeQB.sections;
-                        renderQuestionBanks();
+                if (questions.length === 0) {
+                    Swal.fire('Empty File', 'No questions found in the CSV.', 'warning');
+                    return;
+                }
+
+                Swal.fire({ title: 'Importing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+                try {
+                    const response = await fetch('/Test/bulkSaveQBQuestions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            repository_id: activeQB.id,
+                            questions: questions
+                        })
                     });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        // Refresh activeQB questions by refetching or just adding locally (if backend doesn't return them)
+                        // For simplicity, we'll just reload the page or refetch the list
+                        Swal.fire({
+                            title: 'Success!',
+                            text: `${questions.length} questions imported and saved permanently.`,
+                            icon: 'success',
+                            confirmButtonColor: '#dc2230'
+                        }).then(() => {
+                            location.reload(); // Hard refresh to ensure everything is in sync with DB
+                        });
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'Failed to save questions: ' + error.message, 'error');
                 }
             };
             reader.readAsText(file);
@@ -5669,9 +5911,22 @@ if (!empty($Tests)) {
             // Find template data and update duration
             const t = App.templates.find(item => item.id == templateId);
             if (t) {
+                // Auto-fill batch name if empty
+                const qBatchName = document.getElementById('quick_batch_name');
+                const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                if (qBatchName && !qBatchName.value) {
+                    qBatchName.value = t.name + ' - ' + todayStr;
+                    document.getElementById('pack_wizard_name').value = qBatchName.value;
+                }
+
                 const duration = t.duration || 60;
                 const durationInput = document.getElementById('pack_duration');
                 if (durationInput) durationInput.value = duration;
+
+                // Also sync to quick mode duration if visible
+                const qBatchDuration = document.getElementById('quick_batch_duration');
+                if (qBatchDuration) qBatchDuration.value = duration;
+
                 updateSummary();
             }
         }
@@ -5708,7 +5963,7 @@ if (!empty($Tests)) {
             const category = document.getElementById('pack_user_role').value;
 
             // Ensure candidate summary is updated (especially the role display)
-            updateWizardCandidateLabel();
+            // updateWizardCandidateLabel();
 
             const shuffle = document.getElementById('pack_shuffle').checked;
             const shuffle_options = document.getElementById('pack_shuffle_options').checked;
@@ -5759,8 +6014,32 @@ if (!empty($Tests)) {
 
 
         async function savePackFromWizard() {
+            // Ensure Quick Mode inputs are synced to master
+            const qName = document.getElementById('quick_batch_name');
+            const qDuration = document.getElementById('quick_batch_duration');
+            if (qName) document.getElementById('pack_wizard_name').value = qName.value;
+            if (qDuration) document.getElementById('pack_duration').value = qDuration.value;
+
+            console.log("Save Triggered. Syncing values...", {
+                batchName: document.getElementById('pack_wizard_name').value,
+                duration: document.getElementById('pack_duration').value
+            });
+
             if (!validatePackWizard()) {
-                Swal.fire('Incomplete Form', 'Please ensure all required fields (Name, Template, Duration) are filled and at least one candidate is selected.', 'warning');
+                const name = document.getElementById('pack_wizard_name').value.trim();
+                const template = document.getElementById('baseTemplateSelect').value;
+                const duration = document.getElementById('pack_duration').value;
+                let missing = [];
+                if (!name) missing.push("Batch Name");
+                if (!template) missing.push("Template Selection");
+                if (!duration || parseInt(duration) <= 0) missing.push("Valid Duration");
+
+                Swal.fire({
+                    title: 'Incomplete Form',
+                    html: `Please check the following required fields:<br><br><ul class="text-left text-xs text-red-600 font-bold list-disc pl-5">` + 
+                          missing.map(m => `<li>${m}</li>`).join('') + `</ul>`,
+                    icon: 'warning'
+                });
                 return;
             }
 
@@ -5774,9 +6053,33 @@ if (!empty($Tests)) {
             const endTime = document.getElementById('pack_scheduled_date').value + ' ' + document.getElementById('pack_end_time').value;
             const candidates = App.selectedCandidates[testId] || [];
 
+            // Randomized Question Selection Fallback: 
+            // If in Quick Mode and no questions picked yet, pick them now
+            const modalEl = document.getElementById('createPackModal');
+            if (modalEl && modalEl.classList.contains('quick-mode') && App.manualQuestions.length === 0) {
+                const qbId = document.getElementById('quick_qb_select').value;
+                if (qbId) {
+                    const paper = App.generatePaperFromBank(qbId, templateId);
+                    if (paper) {
+                        if (paper.warnings.length > 0) {
+                            const confirm = await Swal.fire({
+                                title: 'Insufficient Questions',
+                                html: paper.warnings.join('<br>'),
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Proceed Anyway',
+                                cancelButtonText: 'Wait, let me check'
+                            });
+                            if (!confirm.isConfirmed) return;
+                        }
+                        App.manualQuestions = paper.questions;
+                    }
+                }
+            }
+
             Swal.fire({
-                title: 'Initializing Batch...',
-                text: 'Setting up the test phase and assignments.',
+                title: 'Saving Test Data...',
+                text: 'Persisting batch settings and question assignments.',
                 allowOutsideClick: false,
                 didOpen: () => { Swal.showLoading(); }
             });
@@ -5805,6 +6108,13 @@ if (!empty($Tests)) {
                 formData.append('candidates', candidates.join(','));
                 formData.append('manual_questions', JSON.stringify(App.manualQuestions));
 
+                // Log the exact payload for debugging as requested
+                console.group("🚀 Final Save Payload");
+                for (let [key, value] of formData.entries()) {
+                    console.log(`${key}:`, value);
+                }
+                console.groupEnd();
+
                 const response = await fetch('/Test/createTestPack', {
                     method: 'POST',
                     body: formData
@@ -5812,12 +6122,22 @@ if (!empty($Tests)) {
 
                 const result = await response.json();
                 if (result.status === 'success') {
-                    Swal.fire({ title: 'Success!', text: 'Batch initialized successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
+                    Swal.fire({ 
+                        title: 'Success!', 
+                        text: 'Test batch and assignments saved successfully.', 
+                        icon: 'success', 
+                        timer: 2000, 
+                        showConfirmButton: false 
+                    }).then(() => {
+                        if (typeof renderTable === 'function') renderTable();
+                        closeModal('createPackModal');
+                    });
                 } else {
-                    throw new Error(result.message || 'Failed to create batch');
+                    throw new Error(result.message || 'Failed to save batch');
                 }
             } catch (e) {
-                Swal.fire('Error', e.message || 'Failed to initialize Batch.', 'error');
+                console.error(e);
+                Swal.fire('Error', e.message || 'Failed to save Batch.', 'error');
             }
         }
 
@@ -5829,10 +6149,12 @@ if (!empty($Tests)) {
             if (view === 'template') {
                 configView.classList.add('hidden');
                 builderView.classList.remove('hidden');
+                if (document.getElementById('quick-mode-footer')) document.getElementById('quick-mode-footer').classList.add('hidden');
                 if (discoverySidebar) discoverySidebar.classList.add('opacity-50', 'pointer-events-none');
             } else {
                 configView.classList.remove('hidden');
                 builderView.classList.add('hidden');
+                if (document.getElementById('quick-mode-footer')) document.getElementById('quick-mode-footer').classList.remove('hidden');
                 if (discoverySidebar) discoverySidebar.classList.remove('opacity-50', 'pointer-events-none');
             }
         }
@@ -5955,10 +6277,60 @@ if (!empty($Tests)) {
 
         App.handleBuilderBulkUpload = (input) => {
             if (!input.files || !input.files[0]) return;
-            Swal.fire({ title: 'Simulating Upload...', text: 'Integrating questions into template structure', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-            setTimeout(() => {
-                Swal.fire({ title: 'Success', text: 'Questions integrated into the structure blueprint.', icon: 'success', timer: 2000 });
-            }, 1500);
+            const file = input.files[0];
+            const reader = new FileReader();
+            
+            Swal.fire({ title: 'Processing Upload...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            
+            reader.onload = (e) => {
+                try {
+                    const text = e.target.result;
+                    const lines = text.split('\n');
+                    const questions = [];
+                    
+                    lines.forEach((line, idx) => {
+                        // Skip empty, comments, and header
+                        if (!line.trim() || line.startsWith('#') || idx === 0) return;
+                        
+                        // Simple CSV parse (handling quotes)
+                        const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+                        if (parts && parts.length >= 8) {
+                            const clean = (s) => s ? s.replace(/^"|"$/g, '').trim() : '';
+                            questions.push({
+                                section_name: clean(parts[0]),
+                                question: clean(parts[1]),
+                                type: clean(parts[2]),
+                                option_a: clean(parts[3]),
+                                option_b: clean(parts[4]),
+                                option_c: clean(parts[5]),
+                                option_d: clean(parts[6]),
+                                correct_answer: clean(parts[7]),
+                                marks: parseInt(clean(parts[8])) || 1
+                            });
+                        }
+                    });
+                    
+                    if (questions.length === 0) {
+                        Swal.fire('Empty File', 'No valid questions found in the CSV. Please check the template format.', 'warning');
+                        return;
+                    }
+                    
+                    App.manualQuestions = questions;
+                    Swal.fire({ 
+                        title: 'Questions Uploaded', 
+                        text: `${questions.length} questions integrated into the template.`, 
+                        icon: 'success', 
+                        timer: 2000 
+                    });
+                    
+                    if (typeof updateManualQCount === 'function') updateManualQCount();
+                } catch (err) {
+                    console.error("CSV Parse Error:", err);
+                    Swal.fire('Upload Failed', 'Error parsing CSV file.', 'error');
+                }
+            };
+            reader.onerror = () => Swal.fire('Error', 'Failed to read file', 'error');
+            reader.readAsText(file);
         };
 
         async function saveTemplateFromWizard() {
@@ -6178,6 +6550,21 @@ if (!empty($Tests)) {
 
             // Update Manual Entry View
             App.renderManualSections(sections);
+
+            // Quick Mode logic: Show QB selector
+            const modalEl = document.getElementById('createPackModal');
+            if (modalEl && modalEl.classList.contains('quick-mode')) {
+                const qbSection = document.getElementById('quick-qb-selector-section');
+                if (qbSection) {
+                    qbSection.classList.remove('hidden');
+                    // Populate QB select
+                    const qbSelect = document.getElementById('quick_qb_select');
+                    if (qbSelect) {
+                        qbSelect.innerHTML = '<option value="" disabled selected>-- Select a Question Bank --</option>' + 
+                            QuestionBanks.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+                    }
+                }
+            }
         }
 
         function openManualQuestionModal() {
@@ -6234,18 +6621,68 @@ if (!empty($Tests)) {
             const name = document.getElementById('pack_wizard_name');
             const template = document.getElementById('baseTemplateSelect');
             const duration = document.getElementById('pack_duration');
-            const candidates = App.selectedCandidates[currentTestIdForPack] || [];
+            
+            // Check candidates for the CURRENT active test
+            const testId = currentTestIdForPack;
+            const candidates = App.selectedCandidates[testId] || [];
 
-            if (!name.value.trim()) { showError('pack_wizard_name', true); isValid = false; } else { showError('pack_wizard_name', false); }
-            if (!template.value) { showError('baseTemplateSelect', true); isValid = false; } else { showError('baseTemplateSelect', false); }
-            if (!duration.value) { showError('pack_duration', true); isValid = false; } else { showError('pack_duration', false); }
+            // Visible fields for Quick Mode feedback
+            const qName = document.getElementById('quick_batch_name');
+            const qDuration = document.getElementById('quick_batch_duration');
 
+            console.group("Batch Validation Report");
+            console.log("Target Test ID:", testId);
+            console.log("Name Field:", name ? `'${name.value}'` : "MISSING");
+            console.log("Template Field:", template ? `'${template.value}'` : "MISSING");
+            console.log("Duration Field:", duration ? `'${duration.value}'` : "MISSING");
+            console.log("Candidates Selected:", candidates.length, candidates);
+            console.groupEnd();
+
+            // 1. Name Validation
+            if (!name || !name.value.trim()) { 
+                showError('pack_wizard_name', true); 
+                if(qName) qName.classList.add('is-invalid', 'border-red-500');
+                isValid = false; 
+                console.warn("❌ Validation Fail: Batch Name is empty");
+            } else { 
+                showError('pack_wizard_name', false); 
+                if(qName) qName.classList.remove('is-invalid', 'border-red-500');
+            }
+
+            // 2. Template Validation
+            if (!template || !template.value || template.value === "") { 
+                showError('baseTemplateSelect', true); 
+                isValid = false; 
+                console.warn("❌ Validation Fail: No template selected");
+            } else { 
+                showError('baseTemplateSelect', false); 
+            }
+            
+            // 3. Duration Validation
+            if (!duration || !duration.value || parseInt(duration.value) <= 0) { 
+                showError('pack_duration', true); 
+                if(qDuration) qDuration.classList.add('is-invalid', 'border-red-500');
+                isValid = false; 
+                console.warn("❌ Validation Fail: Invalid duration");
+            } else { 
+                showError('pack_duration', false); 
+                if(qDuration) qDuration.classList.remove('is-invalid', 'border-red-500');
+            }
+
+            // 4. Candidate Validation - REMOVED (Optional)
+            /*
             if (candidates.length === 0) {
                 showError('wizardCandidateCountLabel', true);
+                const candSummary = document.getElementById('wizard_candidate_summary');
+                if(candSummary) candSummary.classList.add('border-red-500', 'bg-red-50');
                 isValid = false;
+                console.warn("❌ Validation Fail: No candidates selected for test ID:", testId);
             } else {
                 showError('wizardCandidateCountLabel', false);
+                const candSummary = document.getElementById('wizard_candidate_summary');
+                if(candSummary) candSummary.classList.remove('border-red-500', 'bg-red-50');
             }
+            */
 
             return isValid;
         }
@@ -7033,7 +7470,8 @@ if (!empty($Tests)) {
         });
     </script>
 
-    <div class="modal fade" id="createPackModal" tabindex="-1">
+    <!-- MODAL: QUICK BATCH CREATION (Full Screen Template) -->
+    <div class="modal fade quick-mode" id="createPackModal" tabindex="-1">
         <div class="modal-dialog modal-fullscreen">
             <div class="modal-content border-0">
                 <div
@@ -7052,8 +7490,24 @@ if (!empty($Tests)) {
                     </div>
                 </div>
 
-                <div class="modal-body p-0 bg-[#f8fafc] overflow-hidden">
-                    <div class="flex h-full">
+                <div class="modal-body p-0 bg-[#f8fafc] overflow-hidden flex flex-col flex-1 h-full">
+                    <!-- Quick Mode Header -->
+                    <div id="quick-mode-header" class="px-8 py-4 bg-white border-b sticky top-0 z-50 flex items-center justify-between shadow-sm">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shadow-sm">
+                                <i class="bi bi-lightning-charge-fill text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-black text-slate-800 mb-0">Quick Test Setup</h3>
+                                <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider mb-0">Select a template to configure your test structure</p>
+                            </div>
+                        </div>
+                        <button type="button" class="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-colors" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg text-lg"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex flex-1 overflow-hidden" style="min-height: 0;">
                         <!-- 1. LEFT SIDEBAR: Discovery -->
                         <div class="w-[360px] bg-white border-e flex flex-col p-6 overflow-y-auto">
                             <div class="flex items-center gap-2.5 mb-5">
@@ -7148,8 +7602,10 @@ if (!empty($Tests)) {
 
                         <!-- 2. MAIN CONTENT -->
                         <div class="flex-1 overflow-y-auto px-8 py-10" id="wizardMainColumn">
+                            <!-- Quick Mode Template Selector (Removed from here) -->
+
                             <!-- BATCH CONFIG VIEW -->
-                            <div class="w-full space-y-4" id="batchWizardConfigView">
+                            <div class="w-full space-y-4 px-6 max-w-6xl mx-auto" id="batchWizardConfigView">
                                 <!-- TOP ROW: Template (70%) & Target Audience (30%) -->
                                 <div class="grid grid-cols-10 gap-4 items-start">
                                     <!-- 1. TEMPLATE DETAILS SECTION (70%) -->
@@ -7176,7 +7632,7 @@ if (!empty($Tests)) {
                                                         onclick="deleteActiveTemplate()" title="Delete Template">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
-                                                    <button
+                                                    <button id="wizard_edit_structure_btn"
                                                         class="px-4 py-2 bg-slate-50 text-slate-600 border border-slate-100 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm"
                                                         onclick="openTemplateBuilder()">
                                                         <i class="bi bi-pencil-square me-2"></i> Edit Structure
@@ -7197,72 +7653,100 @@ if (!empty($Tests)) {
                                             </div>
 
                                             <div id="template_details_active" class="hidden animate-fadeIn">
-                                                <div
-                                                    class="flex flex-col lg:flex-row items-center justify-between gap-6">
-                                                    <div class="flex-1 w-full">
-                                                        <div class="flex items-center gap-2 mb-2">
-                                                            <div class="w-1 h-4 bg-red-500 rounded-full"></div>
-                                                            <label
-                                                                class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Active
-                                                                Template</label>
+                                                <div class="flex flex-col gap-6">
+                                                    <!-- Row 1: Template Name (Readonly) & Marks/Sections -->
+                                                    <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+                                                        <div class="flex-1 w-full">
+                                                            <div class="flex items-center gap-2 mb-2">
+                                                                <div class="w-1 h-4 bg-slate-300 rounded-full"></div>
+                                                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Template</label>
+                                                            </div>
+                                                            <input id="active_template_name" class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-black h-11 px-4 text-slate-700 focus:ring-0 transition-all opacity-80" readonly value="--" />
                                                         </div>
-                                                        <input id="active_template_name"
-                                                            class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-black h-11 px-4 text-slate-700 focus:ring-0 transition-all opacity-80"
-                                                            readonly value="--" />
-                                                    </div>
 
-                                                    <div
-                                                        class="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100 h-11 self-end mb-0.5">
-                                                        <div class="px-3">
-                                                            <span
-                                                                class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Total
-                                                                Marks</span>
-                                                            <input id="active_template_marks_input"
-                                                                class="bg-transparent border-0 p-0 text-[12px] font-black text-slate-800 leading-none w-16 focus:ring-0"
-                                                                readonly value="0 Marks">
-                                                        </div>
-                                                        <div class="w-px h-6 bg-slate-200"></div>
-                                                        <div class="px-3">
-                                                            <span
-                                                                class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Structure</span>
-                                                            <input id="active_template_sections_input"
-                                                                class="bg-transparent border-0 p-0 text-[12px] font-black text-slate-800 leading-none w-20 focus:ring-0"
-                                                                readonly value="0 Sections">
+                                                        <div class="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100 h-11 self-end mb-0.5">
+                                                            <div class="px-3">
+                                                                <span class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Total Marks</span>
+                                                                <input id="active_template_marks_input" class="bg-transparent border-0 p-0 text-[12px] font-black text-slate-800 leading-none w-16 focus:ring-0" readonly value="0 Marks">
+                                                            </div>
+                                                            <div class="w-px h-6 bg-slate-200"></div>
+                                                            <div class="px-3">
+                                                                <span class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Structure</span>
+                                                                <input id="active_template_sections_input" class="bg-transparent border-0 p-0 text-[12px] font-black text-slate-800 leading-none w-20 focus:ring-0" readonly value="0 Sections">
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
+                                            <div id="active_template_tags" class="mt-4 space-y-2"></div>
+                                            
+                                            <!-- Quick Mode: Question Bank Selector -->
+                                            <div id="quick-qb-selector-section" class="mt-8 pt-8 border-t border-slate-100 hidden">
+                                                <div class="flex items-center gap-4 mb-4">
+                                                    <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
+                                                        <i class="bi bi-database-fill text-xl"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h4 class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-0">Select Question Bank</h4>
+                                                        <p class="text-[9px] text-slate-400 font-bold uppercase mb-0">Choose the repository to fetch questions from</p>
+                                                    </div>
+                                                </div>
+                                                <select id="quick_qb_select" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-[13px] font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 transition-all">
+                                                    <option value="" disabled selected>-- Select a Question Bank --</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- 2. CANDIDATE ASSIGNMENT (30%) -->
-                                    <div
+                                    <!-- 2. CANDIDATE ASSIGNMENT & SETTINGS (30%) -->
+                                    <div id="wizard_audience_section"
                                         class="col-span-3 card border-0 shadow-sm rounded-2xl overflow-hidden bg-white h-full">
-                                        <div class="p-3 h-full flex flex-col justify-between">
-                                            <div class="flex items-center justify-between mb-3">
-                                                <div class="flex items-center gap-2">
-                                                    <div
-                                                        class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
-                                                        <i class="bi bi-people-fill text-base"></i>
+                                        <div class="p-4 h-full flex flex-col gap-6">
+                                            <!-- Batch Settings (Name & Duration) -->
+                                            <div id="quick_mode_batch_settings" class="space-y-4">
+                                                <div>
+                                                    <div class="flex items-center gap-2 mb-2">
+                                                        <div class="w-1 h-4 bg-red-500 rounded-full"></div>
+                                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Batch Name <span class="text-red-500">*</span></label>
                                                     </div>
-                                                    <div>
-                                                        <h4
-                                                            class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-0">
-                                                            Audience</h4>
-                                                        <p class="text-[9px] text-slate-400 font-medium mb-0">
-                                                            Participating candidates</p>
-                                                    </div>
+                                                    <input id="quick_batch_name" 
+                                                        oninput="document.getElementById('pack_wizard_name').value = this.value; updateSummary();"
+                                                        class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 text-slate-700 focus:ring-4 focus:ring-red-50 transition-all shadow-sm" 
+                                                        placeholder="Enter batch name..." />
                                                 </div>
-                                                <button
-                                                    class="w-8 h-8 bg-white border border-slate-200 text-slate-600 rounded-lg flex items-center justify-center hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm"
-                                                    onclick="openCandidatePickerForWizard()"
-                                                    title="Select Participants">
-                                                    <i class="bi bi-person-plus-fill"></i>
-                                                </button>
+                                                <div>
+                                                    <div class="flex items-center gap-2 mb-2">
+                                                        <div class="w-1 h-4 bg-red-500 rounded-full"></div>
+                                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration (Mins) <span class="text-red-500">*</span></label>
+                                                    </div>
+                                                    <input type="number" id="quick_batch_duration" value="60"
+                                                        oninput="document.getElementById('pack_duration').value = this.value; updateSummary();"
+                                                        class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 text-slate-700 focus:ring-4 focus:ring-red-50 transition-all shadow-sm" />
+                                                </div>
                                             </div>
+                                            <div class="border-t border-slate-100 pt-6 hidden">
+                                                <div class="flex items-center justify-between mb-4">
+                                                    <div class="flex items-center gap-3">
+                                                        <div
+                                                            class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
+                                                            <i class="bi bi-people-fill text-base"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h4
+                                                                class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-0">
+                                                                Audience</h4>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        class="w-8 h-8 bg-white border border-slate-200 text-slate-600 rounded-lg flex items-center justify-center hover:border-emerald-500 hover:text-emerald-600 transition-all shadow-sm"
+                                                        onclick="openCandidatePickerForWizard()"
+                                                        title="Select Participants">
+                                                        <i class="bi bi-person-plus-fill"></i>
+                                                    </button>
+                                                </div>
 
                                             <div id="wizard_candidate_summary"
-                                                class="bg-slate-50 rounded-xl p-3 border border-slate-100 flex-1">
+                                                class="bg-slate-50 rounded-xl p-3 border border-slate-100 flex-1 hidden">
                                                 <div
                                                     class="flex flex-col items-center justify-center h-full text-center py-2">
                                                     <div class="flex items-center justify-center gap-3 mb-2">
@@ -7285,57 +7769,40 @@ if (!empty($Tests)) {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </div> <!-- End Grid -->
+                            </div> <!-- End batchWizardConfigView -->
 
-                                <!-- 3. QUESTION PAPER MANAGEMENT (100%) -->
-                                <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
-                                    <div class="p-6 border-b border-slate-50 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <div
-                                                class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-sm">
-                                                <i class="bi bi-file-earmark-plus-fill text-xl"></i>
-                                            </div>
-                                            <div>
-                                                <h4
-                                                    class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">
-                                                    Question Content</h4>
-                                                <p class="text-[10px] text-slate-400 font-medium mb-0">Manage how
-                                                    questions are added</p>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <button onclick="document.getElementById('pack_blueprint_upload').click()"
-                                                class="px-4 h-10 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl flex items-center justify-center gap-2 hover:text-blue-600 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all text-[10px] font-bold uppercase tracking-widest"
-                                                title="Browse Local Files">
-                                                <i class="bi bi-folder2-open text-base"></i> Bulk Upload
+                                <!-- Quick Mode: Generated Question Paper (Grouped) -->
+                                <div id="quick-generated-paper-section" class="space-y-6 hidden">
+                                    <div class="flex items-center justify-between px-2 mb-6">
+                                        <div class="flex items-center gap-4">
+                                            <button class="w-10 h-10 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center hover:bg-slate-200 transition-all shadow-sm" onclick="closeQuickPreview()" title="Back to Config">
+                                                <i class="bi bi-arrow-left text-xl"></i>
                                             </button>
-                                            <button onclick="App.downloadCurrentTemplate()"
-                                                class="w-10 h-10 bg-white border border-slate-200 text-slate-400 rounded-xl flex items-center justify-center hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all"
-                                                title="Download CSV Template">
-                                                <i class="bi bi-download text-lg"></i>
-                                            </button>
-                                            <input type="file" id="pack_blueprint_upload" class="hidden" accept=".csv"
-                                                onchange="App.handleRealBulkUpload(this)" />
-                                        </div>
-                                    </div>
-
-                                    <div class="p-6">
-                                        <div id="question_mode_manual" class="animate-fadeIn">
-                                            <div id="manual_sections_entry_container" class="space-y-4">
-                                                <div
-                                                    class="py-20 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
-                                                    <div
-                                                        class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm text-slate-200">
-                                                        <i class="bi bi-layout-text-sidebar text-3xl"></i>
-                                                    </div>
-                                                    <p
-                                                        class="text-slate-400 font-bold text-[11px] uppercase tracking-widest">
-                                                        Select a template to begin manual entry</p>
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
+                                                    <i class="bi bi-file-earmark-ruled-fill text-xl"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">Generated Question Paper</h4>
+                                                    <p class="text-[10px] text-slate-400 font-medium mb-0">Review the selected questions before saving</p>
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="flex items-center gap-3">
+                                            <button class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2" onclick="generateQuickQuestionPaper()">
+                                                <i class="bi bi-shuffle"></i> Re-shuffle
+                                            </button>
+                                            <button class="px-6 py-2 bg-red-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100" onclick="savePackFromWizard()">
+                                                <i class="bi bi-check-lg me-1"></i> Save Batch
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
+                                    <div id="quick_generated_questions_container" class="space-y-8 bg-slate-50/30 rounded-3xl p-6">
+                                        <!-- Populated via JS -->
+                                       </div>               
+                                </div> <!-- End quick-generated-paper-section -->
+
 
                                 <!-- HIDDEN MASTER INPUTS -->
                                 <div class="hidden">
@@ -7368,7 +7835,7 @@ if (!empty($Tests)) {
                                     <option value="<?= $t['id'] ?>"><?= esc($t['name']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                            </div>
+
 
                             <!-- TEMPLATE BUILDER VIEW (Inline) -->
                             <div class="w-full space-y-5 hidden" id="templateBuilderInlineView">
@@ -7527,7 +7994,7 @@ if (!empty($Tests)) {
                                         <button
                                             class="px-8 py-3 bg-red-600 text-white font-bold rounded-xl text-[12px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-95"
                                             onclick="saveTemplateFromWizard()">
-                                            <i class="bi bi-check-lg me-2"></i> Save & Use Template
+                                            <i class="bi bi-check-lg me-2"></i> Save Template
                                         </button>
                                     </div>
                                 </div>
@@ -7755,8 +8222,21 @@ if (!empty($Tests)) {
                                 </div>
                             </div>
                         </div>
+                    </div> <!-- End Middle Container (Sidebar + Main) -->
+
+                    <!-- Quick Mode Footer (Sticky at bottom) -->
+                    <div id="quick-mode-footer" class="w-full py-4 px-10 bg-slate-50 border-t border-slate-200 flex items-center justify-between z-50">
+                        <button class="px-8 py-3 bg-white border border-slate-200 text-slate-500 font-bold rounded-xl text-[12px] uppercase tracking-widest transition-all hover:bg-slate-100" data-bs-dismiss="modal">Cancel & Discard</button>
+                        <div class="flex items-center gap-3">
+                            <button id="quick-preview-btn" class="px-8 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl text-[12px] uppercase tracking-widest shadow-sm transition-all hover:bg-slate-50 flex items-center gap-2" onclick="generateQuickQuestionPaper()">
+                                <i class="bi bi-eye"></i> Preview Paper
+                            </button>
+                            <button class="px-12 py-3 bg-red-600 text-white font-bold rounded-xl text-[12px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all hover:bg-red-700 hover:scale-[1.02]" onclick="savePackFromWizard()">
+                                <i class="bi bi-check-lg me-2"></i> Save
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </div> <!-- End modal-body -->
             </div>
         </div>
     </div>
@@ -8320,6 +8800,11 @@ if (!empty($Tests)) {
             document.getElementById('pack_shuffle').checked = true;
             document.getElementById('pack_proctored').checked = true;
             document.getElementById('pack_lockdown').checked = true;
+            
+            // Initialize candidate storage for this test if it doesn't exist
+            if (!App.selectedCandidates[currentTestIdForPack]) {
+                App.selectedCandidates[currentTestIdForPack] = [];
+            }
 
             // 2. Reset Sidebar Interactive Inputs
             document.getElementById('summary_name').value = 'New Batch';
@@ -8353,7 +8838,189 @@ if (!empty($Tests)) {
             }
         }
 
+        function openQuickTemplateModal() {
+            const modalEl = document.getElementById('createPackModal');
+            if (!modalEl) return;
+            
+            // Ensure we start in config view, not preview
+            closeQuickPreview();
+            
+            // Set Quick Mode
+            modalEl.classList.add('quick-mode');
+            
+            // Hide generated sections initially (redundant with closeQuickPreview but safe)
+            const qbSection = document.getElementById('quick-qb-selector-section');
+            const paperSection = document.getElementById('quick-generated-paper-section');
+            if (qbSection) qbSection.classList.add('hidden');
+            if (paperSection) paperSection.classList.add('hidden');
+            
+            // Sync Question Banks dropdown
+            if (typeof syncQBDropdowns === 'function') {
+                syncQBDropdowns();
+            }
 
+            // Reset Quick Mode specific inputs
+            const qBatchName = document.getElementById('quick_batch_name');
+            if (qBatchName) qBatchName.value = '';
+            const qBatchDuration = document.getElementById('quick_batch_duration');
+            if (qBatchDuration) qBatchDuration.value = '60';
+
+            // If no test is currently active for pack, default to the first one available
+            if (!currentTestIdForPack) {
+                if (App.Tests && App.Tests.length > 0) {
+                    currentTestIdForPack = App.Tests[0].id;
+                } else {
+                    // Fallback to a dummy ID if no tests exist (should ideally not happen if UI is gated)
+                    currentTestIdForPack = 'temp_' + Date.now();
+                }
+            }
+            
+            // Open standard wizard logic but with specific reset
+            openPackWizard(currentTestIdForPack);
+            
+            // Additional Quick Mode resets
+            const qSelector = document.querySelector('#quick-template-selector select');
+            if (qSelector) qSelector.selectedIndex = 0;
+
+            // Listen for modal close to remove quick-mode class
+            const resetModal = () => {
+                modalEl.classList.remove('quick-mode');
+                modalEl.removeEventListener('hidden.bs.modal', resetModal);
+            };
+            modalEl.addEventListener('hidden.bs.modal', resetModal);
+        }
+
+        function closeQuickPreview() {
+            const configView = document.getElementById('batchWizardConfigView');
+            const paperSection = document.getElementById('quick-generated-paper-section');
+            const footer = document.getElementById('quick-mode-footer');
+            
+            if (configView) configView.classList.remove('hidden');
+            if (paperSection) paperSection.classList.add('hidden');
+            if (footer) footer.classList.remove('hidden');
+        }
+
+        function generateQuickQuestionPaper() {
+            const qbId = document.getElementById('quick_qb_select').value;
+            const templateId = document.getElementById('baseTemplateSelect').value;
+            if (!templateId) { Swal.fire('Wait!', 'Please select a template first from the sidebar.', 'info'); return; }
+            if (!qbId) { Swal.fire('Select Bank', 'Please choose a Question Bank to fetch questions from.', 'info'); return; }
+
+            const configView = document.getElementById('batchWizardConfigView');
+            const paperSection = document.getElementById('quick-generated-paper-section');
+            const footer = document.getElementById('quick-mode-footer');
+            
+            if (configView) configView.classList.add('hidden');
+            if (paperSection) paperSection.classList.remove('hidden');
+            if (footer) footer.classList.add('hidden');
+
+            const container = document.getElementById('quick_generated_questions_container');
+            container.innerHTML = '<div class="text-center py-24"><div class="spinner-border text-red-600 mb-4" style="width: 3rem; height: 3rem;"></div><p class="text-[12px] font-black uppercase tracking-widest text-slate-400">Assembling Question Paper...</p></div>';
+
+            setTimeout(async () => {
+                try {
+                    const paper = App.generatePaperFromBank(qbId, templateId);
+                    if (!paper) {
+                         container.innerHTML = '<div class="text-center py-12 text-red-500 font-bold">Failed to generate paper. Template or Bank data is missing.</div>';
+                         return;
+                    }
+
+                    if (paper.warnings && paper.warnings.length > 0) {
+                        Swal.fire({
+                            title: 'Data Mismatch',
+                            html: `<div class="text-left text-sm font-medium text-slate-600">${paper.warnings.map(w => `<div class="mb-2 flex items-start gap-2"><i class="bi bi-exclamation-triangle-fill text-amber-500"></i><span>${w}</span></div>`).join('')}</div>`,
+                            icon: 'warning',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                    }
+
+                    let groupedHtml = '';
+                    if (paper.grouped && paper.grouped.length > 0) {
+                        paper.grouped.forEach((group, sIdx) => {
+                            const s = group.section;
+                            const picked = group.questions;
+                            const count = parseInt(s.num_questions || s.count || 0);
+                            const type = s.marks_type || s.type || 'MCQ';
+                            const marks = s.marks_per_question || s.marks || 0;
+
+                            groupedHtml += `
+                                <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white mb-6">
+                                    <div class="p-4 bg-slate-50/50 border-b border-slate-50 flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-800 font-black text-xs shadow-sm border border-slate-100">${sIdx + 1}</div>
+                                            <div>
+                                                <h5 class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-0">${s.name || type}</h5>
+                                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0">${count} Questions • ${marks} Marks Each</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-4 space-y-4">
+                                        ${picked && picked.length > 0 ? picked.map((q, qIdx) => `
+                                            <div class="p-4 bg-white border border-slate-100 rounded-xl hover:border-indigo-100 transition-all shadow-sm">
+                                                <div class="flex items-start justify-between mb-3">
+                                                    <div class="flex items-start gap-3">
+                                                        <div class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-black shrink-0">${qIdx + 1}</div>
+                                                        <p class="text-[13px] font-bold text-slate-800 leading-relaxed pt-0.5 whitespace-pre-wrap">${q.question || 'No question text'}</p>
+                                                    </div>
+                                                    <div class="flex flex-col items-end gap-1 shrink-0">
+                                                        <span class="px-2 py-0.5 rounded bg-slate-50 text-slate-500 text-[8px] font-black uppercase tracking-widest border border-slate-100">${q.marks || marks} Marks</span>
+                                                        ${q.difficulty ? `<span class="px-2 py-0.5 rounded ${q.difficulty === 'Hard' ? 'bg-red-50 text-red-600 border-red-100' : q.difficulty === 'Medium' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'} text-[8px] font-black uppercase tracking-widest border">${q.difficulty}</span>` : ''}
+                                                    </div>
+                                                </div>
+                                                ${normalizeType(q.type || type) === 'mcq' ? `
+                                                    <div class="grid grid-cols-2 gap-3 pl-9">
+                                                        ${['a', 'b', 'c', 'd'].map(opt => `
+                                                            <div class="flex items-center gap-2 p-2 rounded-lg border ${q.correct_answer === opt.toUpperCase() ? 'border-green-100 bg-green-50/30' : 'border-slate-50 bg-slate-50/20'}">
+                                                                <div class="w-5 h-5 rounded ${q.correct_answer === opt.toUpperCase() ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-[10px] font-black uppercase">${opt}</div>
+                                                                <span class="text-[11px] font-medium ${q.correct_answer === opt.toUpperCase() ? 'text-green-800' : 'text-slate-600'} whitespace-pre-wrap">${q['option_' + opt] || '---'}</span>
+                                                            </div>
+                                                        `).join('')}
+                                                    </div>
+                                                ` : `
+                                                    <div class="pl-9">
+                                                        <div class="p-3 rounded-lg border border-indigo-50 bg-indigo-50/20">
+                                                            <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest block mb-1">Evaluation Reference</span>
+                                                            <p class="text-[11px] text-slate-600 font-medium italic mb-0 whitespace-pre-wrap">${q.correct_answer || q.expected_answer || 'No reference answer provided'}</p>
+                                                        </div>
+                                                    </div>
+                                                `}
+                                            </div>
+                                        `).join('') : `
+                                            <div class="text-center py-8 border-2 border-dashed border-slate-100 rounded-2xl">
+                                                <i class="bi bi-exclamation-triangle text-slate-200 text-2xl mb-2"></i>
+                                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-300">No matching questions found in this section</p>
+                                            </div>
+                                        `}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        groupedHtml = '<div class="text-center py-12 text-slate-400 font-bold uppercase tracking-widest">The selected template has no sections defined.</div>';
+                    }
+
+                    function normalizeType(t) {
+                        if (!t) return '';
+                        t = t.toString().toLowerCase().trim();
+                        if (t.includes('2-mark') || t.includes('2 mark') || t.includes('short answer')) return '2-mark';
+                        if (t.includes('mcq') || t.includes('multiple choice')) return 'mcq';
+                        return t;
+                    }
+
+                    // Store in App state
+                    App.manualQuestions = paper.questions || [];
+                    container.innerHTML = groupedHtml;
+                    
+                    // Scroll to paper section
+                    setTimeout(() => {
+                        paperSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                } catch (error) {
+                    console.error("Preview Generation Error:", error);
+                    container.innerHTML = '<div class="text-center py-12 text-red-500 font-bold">An error occurred while generating the paper preview. Check console for details.</div>';
+                }
+            }, 600);
+        }
 
         function handleTestNameChange(value) {
             // Trigger the visibility logic

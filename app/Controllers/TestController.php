@@ -9,6 +9,7 @@ use App\Models\TestPackModel;
 use App\Models\QuestionModel;
 use App\Models\EmployeeModel;
 use App\Models\QuestionBankModel;
+use App\Models\QuestionBankRepositoryModel;
 use CodeIgniter\Controller;
 
 class TestController extends BaseController
@@ -41,9 +42,22 @@ class TestController extends BaseController
 
         try {
             $employees = (new EmployeeModel())->findAll();
-            $questionBank = (new QuestionBankModel())->findAll();
+            
+            $repoModel = new QuestionBankRepositoryModel();
+            $qModel = new QuestionBankModel();
+            
+            $repos = $repoModel->findAll();
+            $questionBank = [];
+            
+            foreach ($repos as $repo) {
+                $questionBank[] = [
+                    'id' => $repo['id'],
+                    'name' => $repo['name'],
+                    'questions' => $qModel->where('repository_id', $repo['id'])->findAll()
+                ];
+            }
+
         } catch (\Exception $e) {
-            // Tables might not exist yet, use fallbacks
             $employees = [];
             $questionBank = [];
         }
@@ -58,8 +72,14 @@ class TestController extends BaseController
 
         if (empty($questionBank)) {
             $questionBank = [
-                ['id' => 1, 'text' => 'What is the output of 2 + "2"?', 'type' => 'MCQ', 'category' => 'JavaScript', 'difficulty' => 'Easy', 'marks' => 1],
-                ['id' => 2, 'text' => 'Explain closures in JavaScript.', 'type' => '2-Mark', 'category' => 'JavaScript', 'difficulty' => 'Medium', 'marks' => 2]
+                [
+                    'id' => 1, 
+                    'name' => 'General', 
+                    'questions' => [
+                        ['id' => 1, 'question' => 'What is the output of 2 + "2"?', 'type' => 'MCQ', 'category' => 'General', 'option_a' => '4', 'option_b' => '22', 'option_c' => 'Error', 'option_d' => 'None', 'correct_answer' => 'B', 'marks' => 1],
+                        ['id' => 2, 'question' => 'Explain closures in JavaScript.', 'type' => 'Short Answer', 'category' => 'General', 'marks' => 2]
+                    ]
+                ]
             ];
         }
 
@@ -503,5 +523,121 @@ class TestController extends BaseController
             }
         }
         exit;
+    }
+
+    public function saveQBQuestion()
+    {
+        $model = new QuestionBankModel();
+        $data = $this->request->getJSON(true);
+        if (!$data) $data = $this->request->getPost();
+
+        $id = $model->insert([
+            'repository_id' => $data['repository_id'],
+            'question' => $data['question'],
+            'type' => $data['type'],
+            'option_a' => $data['option_a'] ?? '',
+            'option_b' => $data['option_b'] ?? '',
+            'option_c' => $data['option_c'] ?? '',
+            'option_d' => $data['option_d'] ?? '',
+            'correct_answer' => $data['correct_answer'] ?? '',
+            'marks' => $data['marks'] ?? 1,
+            'category' => $data['category'] ?? ''
+        ]);
+
+        if ($id) {
+            return $this->response->setJSON(['status' => 'success', 'id' => $id]);
+        }
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Failed to save question']);
+    }
+
+    public function updateQBQuestion($id)
+    {
+        $model = new QuestionBankModel();
+        $data = $this->request->getJSON(true);
+        if (!$data) $data = $this->request->getPost();
+
+        $model->update($id, [
+            'question' => $data['question'],
+            'option_a' => $data['option_a'] ?? '',
+            'option_b' => $data['option_b'] ?? '',
+            'option_c' => $data['option_c'] ?? '',
+            'option_d' => $data['option_d'] ?? '',
+            'correct_answer' => $data['correct_answer'] ?? ''
+        ]);
+
+        return $this->response->setJSON(['status' => 'success']);
+    }
+
+    public function deleteQBQuestion($id)
+    {
+        $model = new QuestionBankModel();
+        $model->delete($id);
+        return $this->response->setJSON(['status' => 'success']);
+    }
+
+    public function saveQuestionBank()
+    {
+        $repoModel = new QuestionBankRepositoryModel();
+        $data = $this->request->getJSON(true);
+        if (!$data) $data = $this->request->getPost();
+
+        $id = $repoModel->insert([
+            'name' => $data['name']
+        ]);
+
+        if ($id) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'id' => $id,
+                'name' => $data['name'],
+                'questions' => []
+            ]);
+        }
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Failed to save bank']);
+    }
+
+    public function bulkSaveQBQuestions()
+    {
+        $model = new QuestionBankModel();
+        $data = $this->request->getJSON(true);
+        if (!$data) $data = $this->request->getPost();
+
+        $repoId = $data['repository_id'] ?? null;
+        $questions = $data['questions'] ?? [];
+
+        if (!$repoId || empty($questions)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Missing data']);
+        }
+
+        foreach ($questions as $q) {
+            $model->insert([
+                'repository_id' => $repoId,
+                'question' => $q['question'],
+                'type' => $q['type'] ?? 'MCQ',
+                'option_a' => $q['option_a'] ?? '',
+                'option_b' => $q['option_b'] ?? '',
+                'option_c' => $q['option_c'] ?? '',
+                'option_d' => $q['option_d'] ?? '',
+                'correct_answer' => $q['correct_answer'] ?? '',
+                'marks' => $q['marks'] ?? 1,
+                'category' => $q['section_name'] ?? ''
+            ]);
+        }
+
+        return $this->response->setJSON(['status' => 'success']);
+    }
+
+    public function deleteQuestionBank($id)
+    {
+        $repoModel = new QuestionBankRepositoryModel();
+        $qModel = new QuestionBankModel();
+
+        // Delete all questions in this bank first
+        $qModel->where('repository_id', $id)->delete();
+        
+        if ($repoModel->delete($id)) {
+            return $this->response->setJSON(['status' => 'success']);
+        }
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Failed to delete bank']);
     }
 }
