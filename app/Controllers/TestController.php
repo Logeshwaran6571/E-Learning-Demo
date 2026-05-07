@@ -300,6 +300,7 @@ class TestController extends BaseController
             'duration' => $data['duration'] ?? 60,
             'start_time' => $data['start_time'] ?? null,
             'end_time' => $data['end_time'] ?? null,
+            'scheduled_date' => $data['scheduled_date'] ?? null,
             'instructions' => $data['instructions'] ?? null,
             'pass_mark' => $data['pass_mark'] ?? 50,
             'max_attempts' => $data['max_attempts'] ?? 1,
@@ -309,7 +310,8 @@ class TestController extends BaseController
             'browser_lockdown' => $data['browser_lockdown'] ?? 0,
             'show_results' => $data['show_results'] ?? 0,
             'allow_backtracking' => $data['allow_backtracking'] ?? 0,
-            'candidates' => $data['candidates'] ?? ''
+            'candidates' => $data['candidates'] ?? '',
+            'candidates_type' => $data['candidates_type'] ?? 'all'
         ];
 
         if (isset($data['id']) && !empty($data['id'])) {
@@ -344,6 +346,22 @@ class TestController extends BaseController
         }
 
         return $this->response->setJSON(['status' => 'success', 'id' => $packId]);
+    }
+
+    public function publishTestPack()
+    {
+        $id = $this->request->getPost('id');
+        if (!$id) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Batch ID is missing']);
+        }
+
+        $model = new \App\Models\TestPackModel();
+        try {
+            $model->update($id, ['status' => 'published']);
+            return $this->response->setJSON(['status' => 'success']);
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['status' => 'error', 'message' => $e->getMessage()]);
+        }
     }
 
     public function deletePack($id)
@@ -473,23 +491,32 @@ class TestController extends BaseController
     public function getPackQuestions($id)
     {
         $questionModel = new QuestionModel();
-        $questions = $questionModel->where('test_pack_id', $id)->findAll();
+        $packQuestions = $questionModel->where('test_pack_id', $id)->findAll();
         
         $tpModel = new TestPackModel();
         $pack = $tpModel->find($id);
         
-        // Fetch template info for the header
+        // Fetch template info
         $templateModel = new TemplateModel();
         $template = $templateModel->find($pack['template_id']);
 
+        // Fetch template questions
+        $templateQuestions = $questionModel->where('template_id', $template['id'])->findAll();
+
         $sections = (new TemplateSectionModel())->where('template_id', $template['id'])->findAll();
+        
+        // Fetch parent assessment for shuffle settings
+        $testModel = new TestModel();
+        $test = $testModel->find($pack['assessment_id']);
         
         return $this->response->setJSON([
             'status' => 'success',
             'pack' => $pack,
+            'test' => $test,
             'template' => $template,
             'sections' => $sections,
-            'questions' => $questions
+            'packQuestions' => $packQuestions,
+            'templateQuestions' => $templateQuestions
         ]);
     }
 

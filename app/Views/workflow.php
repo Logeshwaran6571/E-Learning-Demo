@@ -232,13 +232,24 @@ if (!empty($Tests)) {
             display: flex !important; 
             align-items: center;
             gap: 0.5rem;
+            position: relative;
+            z-index: 10;
         }
         tr.is-editing [data-action="edit"] { display: none !important; }
+        tr.is-editing .readonly-view { display: none !important; }
         
         tr:not(.is-editing) .readonly-view { 
             display: flex !important; 
             align-items: center;
             gap: 0.5rem;
+        }
+
+        tr.is-editing .inline-editable-input {
+            background-color: #ffffff !important;
+            border-color: #e2e8f0 !important;
+            pointer-events: auto !important;
+            cursor: text !important;
+            height: 38px;
         }
 
         .batch-action-btn {
@@ -250,6 +261,31 @@ if (!empty($Tests)) {
             justify-content: center;
             transition: all 0.2s ease;
             font-size: 14px;
+        }
+
+        /* Published Row State */
+        tr.is-published {
+            background-color: rgba(240, 253, 244, 0.5);
+        }
+
+        tr.is-published .inline-editable-input {
+            color: #059669;
+            font-weight: 700;
+        }
+
+        .published-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background-color: #ecfdf5;
+            color: #059669;
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border: 1px solid #d1fae5;
         }
 
         .batch-action-btn i {
@@ -4754,6 +4790,29 @@ if (!empty($Tests)) {
                 return t;
             },
 
+            shuffleOptions: function(q) {
+                const options = ['a', 'b', 'c', 'd'].map(key => ({
+                    key: key.toUpperCase(),
+                    value: q['option_' + key]
+                })).filter(o => o.value && o.value.trim() !== '');
+                
+                // Fisher-Yates shuffle
+                for (let i = options.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [options[i], options[j]] = [options[j], options[i]];
+                }
+                return options;
+            },
+
+            shuffleArray: function(array) {
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
+            },
+
             // New logic for randomized question selection during batch initialization
             generatePaperFromBank: function(qbId, templateId) {
                 const bank = QuestionBanks.find(b => b.id == qbId);
@@ -5869,13 +5928,29 @@ if (!empty($Tests)) {
         function initBatchDataTable(testId, packs) {
             $(`#BatchTable_${testId}`).DataTable({
                 data: packs,
+                rowCallback: function(row, data) {
+                    if (data.status === 'published') {
+                        $(row).addClass('is-published');
+                    } else {
+                        $(row).removeClass('is-published');
+                    }
+                    
+                    if (data._isEditing) {
+                        $(row).addClass('is-editing');
+                    } else {
+                        $(row).removeClass('is-editing');
+                    }
+                },
                 columns: [
                     {
                         data: 'pack_name',
                         width: '18%',
                         className: 'px-4 py-3',
                         render: (data, type, row) => `
-                            <input type="text" class="inline-editable-input" data-field="pack_name" value="${data}" placeholder="e.g. Morning Batch">
+                            <div class="flex flex-col gap-1">
+                                <input type="text" class="inline-editable-input" data-field="pack_name" value="${data}" placeholder="e.g. Morning Batch" ${row.status === 'published' ? 'readonly' : ''}>
+                                ${row.status === 'published' ? '<div class="published-badge"><i class="bi bi-shield-check"></i> Published</div>' : ''}
+                            </div>
                         `
                     },
                     {
@@ -5886,7 +5961,7 @@ if (!empty($Tests)) {
                             let options = App.templates.map(t => `<option value="${t.id}" ${t.id == data ? 'selected' : ''}>${t.name}</option>`).join('');
                             return `
                                 <div class="inline-select-container">
-                                    <select class="inline-editable-input appearance-none pr-8" data-field="template_id">
+                                    <select class="inline-editable-input appearance-none pr-8" data-field="template_id" ${row.status === 'published' ? 'disabled' : ''}>
                                         <option value="">Select Template</option>
                                         ${options}
                                     </select>
@@ -5899,9 +5974,14 @@ if (!empty($Tests)) {
                         width: '18%',
                         className: 'px-4 py-3',
                         render: (data, type, row) => {
+                            const type_val = row.candidates_type || (data && data !== 'all' ? 'specific' : 'all');
+                            const isAll = type_val === 'all';
                             const val = data || 'all';
-                            const isAll = val === 'all' || val === '';
-                            let display = isAll ? 'All Candidates' : (val.split(',').length + ' Candidates');
+                            const totalCount = App.employees ? App.employees.length : 0;
+                            const specificCount = (val && val !== 'all') ? val.split(',').length : 0;
+                            
+                            let display = isAll ? `All Candidates (${totalCount})` : `Specific Candidates (${specificCount})`;
+                            const isPublished = row.status === 'published';
                             
                             return `
                                 <div class="candidate-selector-wrapper">
@@ -5911,12 +5991,12 @@ if (!empty($Tests)) {
                                     </div>
                                     <div class="edit-view">
                                         <div class="inline-select-container flex-1">
-                                            <select class="inline-editable-input appearance-none pr-8" data-field="candidates_type" onchange="handleCandidateTypeChange(this)">
-                                                <option value="all" ${isAll ? 'selected' : ''}>All</option>
-                                                <option value="specific" ${!isAll ? 'selected' : ''}>Specific</option>
+                                            <select class="inline-editable-input appearance-none pr-8" data-field="candidates_type" onchange="handleCandidateTypeChange(this)" ${isPublished ? 'disabled' : ''}>
+                                                <option value="all" ${type_val === 'all' ? 'selected' : ''}>All</option>
+                                                <option value="specific" ${type_val === 'specific' ? 'selected' : ''}>Specific</option>
                                             </select>
                                         </div>
-                                        <button type="button" class="specific-picker-btn ${isAll ? 'hidden' : ''} w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 border border-transparent hover:border-blue-100 transition-all flex items-center justify-center" onclick="openCandidatePickerForBatch(this, '${row.id}')" title="Select Candidates">
+                                        <button type="button" class="specific-picker-btn ${isAll ? 'hidden' : ''} w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 border border-transparent hover:border-blue-100 transition-all flex items-center justify-center" onclick="openCandidatePickerForBatch(this, '${row.id}')" title="Select Candidates" ${isPublished ? 'disabled' : ''}>
                                             <i class="bi bi-person-plus"></i>
                                         </button>
                                         <input type="hidden" data-field="candidates" value="${val}">
@@ -5932,7 +6012,7 @@ if (!empty($Tests)) {
                         render: (data, type, row) => {
                             let dateVal = row.scheduled_date || (data ? data.split(' ')[0] : '');
                             return `
-                                <input type="date" class="inline-editable-input" data-field="scheduled_date" value="${dateVal}">
+                                <input type="date" class="inline-editable-input" data-field="scheduled_date" value="${dateVal}" ${row.status === 'published' ? 'readonly' : ''}>
                             `;
                         }
                     },
@@ -5943,7 +6023,7 @@ if (!empty($Tests)) {
                         render: (data, type, row) => {
                             let timeVal = data ? (data.includes(' ') ? data.split(' ')[1].substring(0, 5) : data.substring(0, 5)) : '';
                             return `
-                                <input type="time" class="inline-editable-input px-2" data-field="start_time" value="${timeVal}">
+                                <input type="time" class="inline-editable-input px-2" data-field="start_time" value="${timeVal}" oninput="updateDuration(this)" ${row.status === 'published' ? 'readonly' : ''}>
                             `;
                         }
                     },
@@ -5954,7 +6034,7 @@ if (!empty($Tests)) {
                         render: (data, type, row) => {
                             let timeVal = data ? (data.includes(' ') ? data.split(' ')[1].substring(0, 5) : data.substring(0, 5)) : '';
                             return `
-                                <input type="time" class="inline-editable-input px-2" data-field="end_time" value="${timeVal}">
+                                <input type="time" class="inline-editable-input px-2" data-field="end_time" value="${timeVal}" oninput="updateDuration(this)" ${row.status === 'published' ? 'readonly' : ''}>
                             `;
                         }
                     },
@@ -5964,7 +6044,7 @@ if (!empty($Tests)) {
                         className: 'text-center px-4 py-3',
                         render: (data, type, row) => `
                             <div class="flex items-center justify-center gap-1">
-                                <input type="number" class="inline-editable-input text-center px-1" style="width: 50px" data-field="duration" value="${data || 60}">
+                                <input type="number" class="inline-editable-input text-center px-1" style="width: 50px" data-field="duration" value="${data || 60}" ${row.status === 'published' ? 'readonly' : ''}>
                                 <span class="text-[9px] font-black text-slate-300 uppercase">m</span>
                             </div>
                         `
@@ -5972,22 +6052,34 @@ if (!empty($Tests)) {
                     {
                         data: null,
                         className: 'text-right px-6',
-                        width: '12%',
-                        render: (data, type, row) => `
-                        <div class="flex items-center justify-end gap-1.5" data-batch-id="${row.id}">
-                            <button class="batch-action-btn bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white" onclick="saveBatchInline(this, ${row.id}, ${testId})" title="Save Changes" data-action="save">
-                                <i class="bi bi-check-lg"></i>
-                            </button>
-                            <button class="batch-action-btn bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white" onclick="toggleEditBatch(this)" title="Edit Row" data-action="edit">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="batch-action-btn bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white" onclick="App.previewTestPack(${row.id})" title="View Question Paper">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            <button class="batch-action-btn bg-red-50 text-red-600 hover:bg-red-600 hover:text-white" onclick="deletePack(${row.id})" title="Delete Batch">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>`
+                        width: '15%',
+                        render: (data, type, row) => {
+                            const isPublished = row.status === 'published';
+                            return `
+                            <div class="flex items-center justify-end gap-1.5" data-batch-id="${row.id}">
+                                ${!isPublished ? `
+                                    <button class="batch-action-btn bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white" onclick="saveBatchInline(this, '${row.id}', '${testId}')" title="Save Changes" data-action="save">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                    <button class="batch-action-btn bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white" onclick="toggleEditBatch(this)" title="Edit Row" data-action="edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="batch-action-btn bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white" onclick="publishBatch(this, '${row.id}', '${testId}')" title="Publish Batch">
+                                        <i class="bi bi-send-check"></i>
+                                    </button>
+                                    <button class="batch-action-btn bg-red-50 text-red-600 hover:bg-red-600 hover:text-white" onclick="deletePack('${row.id}')" title="Delete Batch">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                ` : `
+                                    <div class="w-8 h-8 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg" title="Batch Published & Locked">
+                                        <i class="bi bi-lock-fill"></i>
+                                    </div>
+                                `}
+                                <button class="batch-action-btn bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white" onclick="App.previewTestPack('${row.id}')" title="View Question Paper">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>`
+                        }
                     }
                 ],
                 dom: 't',
@@ -5998,6 +6090,83 @@ if (!empty($Tests)) {
             });
         }
 
+        function updateDuration(input) {
+            const tr = $(input).closest('tr');
+            const startTime = tr.find('[data-field="start_time"]').val();
+            const endTime = tr.find('[data-field="end_time"]').val();
+
+            if (startTime && endTime) {
+                const start = new Date(`2000-01-01T${startTime}`);
+                let end = new Date(`2000-01-01T${endTime}`);
+                
+                if (end < start) {
+                    end = new Date(`2000-01-02T${endTime}`);
+                }
+                
+                const diff = (end - start) / (1000 * 60);
+                tr.find('[data-field="duration"]').val(Math.max(0, Math.floor(diff)));
+            }
+        }
+
+        async function publishBatch(btn, batchId, testId) {
+            if (!batchId) {
+                Swal.fire('Wait', 'Please save the batch before publishing.', 'info');
+                return;
+            }
+
+            const result = await Swal.fire({
+                title: 'Publish Batch?',
+                text: "Once published, this batch cannot be edited.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#f1f5f9',
+                confirmButtonText: 'Yes, Publish it!',
+                customClass: {
+                    cancelButton: '!text-slate-600'
+                }
+            });
+
+            if (result.isConfirmed) {
+                btn.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div>';
+                btn.disabled = true;
+
+                try {
+                    const response = await fetch('/Test/publishTestPack', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `id=${batchId}`
+                    });
+
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Published!',
+                            text: 'Batch has been locked and published.',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        
+                        const table = $(`#BatchTable_${testId}`).DataTable();
+                        const tr = $(btn).closest('tr');
+                        const row = table.row(tr);
+                        const rowData = row.data();
+                        rowData.status = 'published';
+                        row.data(rowData).draw(false);
+                    } else {
+                        Swal.fire('Error', data.message || 'Failed to publish', 'error');
+                        btn.innerHTML = '<i class="bi bi-send-check"></i>';
+                        btn.disabled = false;
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                    btn.innerHTML = '<i class="bi bi-send-check"></i>';
+                    btn.disabled = false;
+                }
+            }
+        }
+
         function addNewBatchRow(testId) {
             const table = $(`#BatchTable_${testId}`).DataTable();
             const newRowData = {
@@ -6005,29 +6174,39 @@ if (!empty($Tests)) {
                 pack_name: '',
                 template_id: '',
                 candidates: 'all',
+                status: 'draft',
+                _isEditing: true,
                 scheduled_date: new Date().toISOString().split('T')[0],
                 start_time: '10:00',
                 end_time: '11:00',
                 duration: 60
             };
             
-            const rowNode = table.row.add(newRowData).draw(false).node();
-            $(rowNode).addClass('is-editing');
+            table.row.add(newRowData).draw(false);
             
-            rowNode.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            $(rowNode).find('input').first().focus();
+            setTimeout(() => {
+                const trNode = $(`#BatchTable_${testId} tbody tr`).last();
+                trNode[0]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                trNode.find('input').first().focus();
+            }, 100);
         }
 
         function handleCandidateTypeChange(select) {
             const wrapper = $(select).closest('.candidate-selector-wrapper');
             const pickerBtn = wrapper.find('.specific-picker-btn');
             const hiddenInput = wrapper.find('input[data-field="candidates"]');
+            const displaySpan = wrapper.find('.readonly-view span');
+            const totalCount = App.employees ? App.employees.length : 0;
             
             if (select.value === 'all') {
                 pickerBtn.addClass('hidden');
                 hiddenInput.val('all');
+                displaySpan.text(`All Candidates (${totalCount})`);
             } else {
                 pickerBtn.removeClass('hidden');
+                const val = hiddenInput.val();
+                const count = (val && val !== 'all') ? val.split(',').length : 0;
+                displaySpan.text(`Specific Candidates (${count})`);
                 // Trigger picker immediately for convenience
                 pickerBtn.click();
             }
@@ -6042,7 +6221,7 @@ if (!empty($Tests)) {
             // We'll need a way to pass the selected IDs back.
             // For now, let's use a simple prompt or a specialized modal call.
             
-            const TestId = $(btn).closest('.child-table-container').parent().prev().find('tr').attr('id')?.replace('row_', '') || '';
+            const TestId = $(btn).closest('table').attr('id').replace('BatchTable_', '');
             
             // Store current context
             window.activeBatchPicker = {
@@ -6062,13 +6241,16 @@ if (!empty($Tests)) {
                 const val = selected.join(',');
                 
                 if (window.activeBatchPicker) {
-                    window.activeBatchPicker.input.val(val || 'all');
-                    const display = val ? (selected.length + ' Candidates') : 'All Candidates';
+                    const totalCount = App.employees ? App.employees.length : 0;
+                    const display = val ? `Specific Candidates (${selected.length})` : `All Candidates (${totalCount})`;
+                    
+                    window.activeBatchPicker.input.val(val);
                     window.activeBatchPicker.wrapper.find('.readonly-view span').text(display);
                     
                     if (!val) {
                         window.activeBatchPicker.wrapper.find('select').val('all');
                         window.activeBatchPicker.wrapper.find('.specific-picker-btn').addClass('hidden');
+                        window.activeBatchPicker.input.val('all');
                     }
                 }
                 
@@ -6081,14 +6263,26 @@ if (!empty($Tests)) {
 
         function toggleEditBatch(btn) {
             const tr = $(btn).closest('tr');
-            const isEditing = tr.hasClass('is-editing');
+            const table = tr.closest('table').DataTable();
+            const row = table.row(tr);
+            const data = row.data();
             
-            if (isEditing) {
-                tr.removeClass('is-editing');
-            } else {
-                tr.closest('tbody').find('tr.is-editing').removeClass('is-editing');
-                tr.addClass('is-editing');
-                tr.find('input').first().focus();
+            // Close other editing rows if any
+            table.rows().every(function() {
+                const d = this.data();
+                if (d._isEditing && d.id !== data.id) {
+                    d._isEditing = false;
+                    this.data(d);
+                }
+            });
+
+            data._isEditing = !data._isEditing;
+            row.data(data).draw(false);
+            
+            if (data._isEditing) {
+                setTimeout(() => {
+                    $(row.node()).find('input').first().focus();
+                }, 50);
             }
         }
 
@@ -6103,7 +6297,8 @@ if (!empty($Tests)) {
                 scheduled_date: tr.find('[data-field="scheduled_date"]').val(),
                 start_time: tr.find('[data-field="start_time"]').val(),
                 end_time: tr.find('[data-field="end_time"]').val(),
-                duration: tr.find('[data-field="duration"]').val()
+                duration: tr.find('[data-field="duration"]').val(),
+                candidates_type: tr.find('[data-field="candidates_type"]').val()
             };
 
             if (!data.pack_name || !data.template_id) {
@@ -6141,9 +6336,9 @@ if (!empty($Tests)) {
                     // Update the row data with the new ID and exit edit mode
                     const table = $(`#BatchTable_${testId}`).DataTable();
                     const row = table.row(tr);
-                    const updatedData = { ...data, id: result.id };
+                    const originalData = row.data();
+                    const updatedData = { ...originalData, ...data, id: result.id, status: 'draft', _isEditing: false };
                     row.data(updatedData).draw(false);
-                    tr.removeClass('is-editing');
                 } else {
                     Swal.fire('Error', result.message || 'Failed to save batch', 'error');
                 }
@@ -6239,6 +6434,11 @@ if (!empty($Tests)) {
 
             // Also update wizard label if active
             updateWizardCandidateLabel();
+
+            // Trigger hook for inline batch editing if active
+            if (typeof App.saveSelectedCandidates === 'function') {
+                App.saveSelectedCandidates();
+            }
 
             closeModal('candidatePickerModal');
         }
@@ -7729,8 +7929,19 @@ if (!empty($Tests)) {
                     const result = await response.json();
 
                     if (result.status === 'success') {
-                        const { pack, template, sections, questions } = result;
+                        const { pack, test, template, sections, packQuestions, templateQuestions } = result;
                         const container = document.getElementById('previewPaperContent');
+
+                        // Fallback: Use pack-specific questions if they exist, otherwise use template-based questions
+                        let questions = packQuestions && packQuestions.length > 0 ? packQuestions : templateQuestions;
+                        
+                        // Apply Question Shuffling if enabled
+                        const shouldShuffleQuestions = (pack.shuffle_questions == 1 || test.shuffle_questions == 1);
+                        const shouldShuffleOptions = (pack.shuffle_options == 1 || test.shuffle_options == 1);
+                        
+                        if (shouldShuffleQuestions) {
+                            questions = App.shuffleArray(questions);
+                        }
 
                         let sectionsHtml = '';
 
@@ -7758,6 +7969,20 @@ if (!empty($Tests)) {
 
                                 sectionQuestions.forEach((q, qIdx) => {
                                     const isMCQ = App.normalizeType(q.type) === 'mcq';
+                                    
+                                    // Handle Option Shuffling
+                                    let optionsToRender = [];
+                                    if (isMCQ) {
+                                        if (shouldShuffleOptions) {
+                                            optionsToRender = App.shuffleOptions(q);
+                                        } else {
+                                            optionsToRender = ['a', 'b', 'c', 'd'].map(opt => ({
+                                                key: opt.toUpperCase(),
+                                                value: q['option_' + opt]
+                                            })).filter(o => o.value && o.value.trim() !== '');
+                                        }
+                                    }
+
                                     sectionsHtml += `
                                     <div class="relative pl-10">
                                         <div class="absolute left-0 top-0 w-8 h-8 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-[11px] font-black border border-slate-100">${qIdx + 1}</div>
@@ -7768,10 +7993,10 @@ if (!empty($Tests)) {
                                         
                                         ${isMCQ ? `
                                             <div class="grid grid-cols-2 gap-3 mb-4">
-                                                ${['a', 'b', 'c', 'd'].map(opt => `
-                                                    <div class="flex items-center gap-3 p-2.5 rounded-xl border ${q.correct_answer === opt.toUpperCase() ? 'border-emerald-100 bg-emerald-50/30' : 'border-slate-50 bg-slate-50/30'}">
-                                                        <div class="w-6 h-6 rounded ${q.correct_answer === opt.toUpperCase() ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-[10px] font-black uppercase">${opt}</div>
-                                                        <span class="text-[12px] ${q.correct_answer === opt.toUpperCase() ? 'text-emerald-800 font-bold' : 'text-slate-600 font-medium'}">${q['option_' + opt] || '---'}</span>
+                                                ${optionsToRender.map(opt => `
+                                                    <div class="flex items-center gap-3 p-2.5 rounded-xl border ${q.correct_answer === opt.key ? 'border-emerald-100 bg-emerald-50/30' : 'border-slate-50 bg-slate-50/30'}">
+                                                        <div class="w-6 h-6 rounded ${q.correct_answer === opt.key ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-[10px] font-black uppercase">${opt.key}</div>
+                                                        <span class="text-[12px] ${q.correct_answer === opt.key ? 'text-emerald-800 font-bold' : 'text-slate-600 font-medium'}">${opt.value}</span>
                                                     </div>
                                                 `).join('')}
                                             </div>
