@@ -7473,7 +7473,7 @@ if (!empty($Tests)) {
     <!-- MODAL: QUICK BATCH CREATION (Full Screen Template) -->
     <div class="modal fade quick-mode" id="createPackModal" tabindex="-1">
         <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content border-0">
+            <div class="modal-content border-0 h-100 d-flex flex-column overflow-hidden">
                 <div
                     class="modal-header border-0 px-8 py-4 bg-white sticky-top flex items-center justify-between shadow-sm">
                     <div class="flex items-center gap-4">
@@ -7490,7 +7490,7 @@ if (!empty($Tests)) {
                     </div>
                 </div>
 
-                <div class="modal-body p-0 bg-[#f8fafc] overflow-hidden flex flex-col flex-1 h-full">
+                <div class="modal-body p-0 bg-[#f8fafc] overflow-hidden d-flex flex-column flex-grow-1 h-100 w-100">
                     <!-- Quick Mode Header -->
                     <div id="quick-mode-header" class="px-8 py-4 bg-white border-b sticky top-0 z-50 flex items-center justify-between shadow-sm">
                         <div class="flex items-center gap-4">
