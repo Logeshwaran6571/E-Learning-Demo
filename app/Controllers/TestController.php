@@ -179,6 +179,49 @@ class TestController extends BaseController
         return $total;
     }
 
+    private function syncTemplateQuestions(int $templateId, array $questions): void
+    {
+        $questionModel = new QuestionModel();
+        $questionModel->where('template_id', $templateId)->delete();
+
+        foreach ($questions as $q) {
+            if (trim((string) ($q['question'] ?? '')) === '') {
+                continue;
+            }
+
+            $questionModel->insert([
+                'template_id' => $templateId,
+                'section_idx' => $q['sectionIdx'] ?? $q['section_idx'] ?? 0,
+                'type' => $q['type'] ?? 'MCQ',
+                'question' => $q['question'] ?? '',
+                'option_a' => $q['option_a'] ?? '',
+                'option_b' => $q['option_b'] ?? '',
+                'option_c' => $q['option_c'] ?? '',
+                'option_d' => $q['option_d'] ?? '',
+                'correct_answer' => $q['correct_answer'] ?? '',
+                'marks' => $q['marks'] ?? 1,
+                'knowledge_type' => $q['knowledge_type'] ?? null,
+            ]);
+        }
+    }
+
+    private function getTemplateWithRelations(int $templateId): ?array
+    {
+        $templateModel = new TemplateModel();
+        $sectionModel = new TemplateSectionModel();
+        $questionModel = new QuestionModel();
+
+        $template = $templateModel->find($templateId);
+        if (!$template) {
+            return null;
+        }
+
+        $template['sections'] = $sectionModel->where('template_id', $templateId)->findAll();
+        $template['questions'] = $questionModel->where('template_id', $templateId)->findAll();
+
+        return $template;
+    }
+
     public function deleteTemplate($id)
     {
         $templateModel = new TemplateModel();
@@ -291,12 +334,15 @@ class TestController extends BaseController
         $model = new TestPackModel();
         $questionModel = new QuestionModel();
         $data = $this->request->getPost();
+        $templateId = (isset($data['template_id']) && $data['template_id'] !== '')
+            ? (int) $data['template_id']
+            : null;
         
         $packData = [
             'assessment_id' => $data['assessment_id'],
             'pack_name' => $data['pack_name'],
             'user_role' => $data['user_role'] ?? 'General',
-            'template_id' => $data['template_id'],
+            'template_id' => $templateId,
             'duration' => $data['duration'] ?? 60,
             'start_time' => $data['start_time'] ?? null,
             'end_time' => $data['end_time'] ?? null,
@@ -321,17 +367,24 @@ class TestController extends BaseController
             $packId = $model->insert($packData);
         }
 
+        $decodedQuestions = [];
+
         // Save manual questions if provided
         if (isset($data['manual_questions'])) {
-            $questions = json_decode($data['manual_questions'], true);
-            if (is_array($questions)) {
+            $decodedQuestions = json_decode($data['manual_questions'], true);
+            if (is_array($decodedQuestions)) {
                 // If updating, we might want to keep existing ones or clear them
                 // For this workflow, we'll clear and re-insert the manual ones
                 $questionModel->where('test_pack_id', $packId)->delete();
 
-                foreach ($questions as $q) {
+                foreach ($decodedQuestions as $q) {
+                    if (trim((string) ($q['question'] ?? '')) === '') {
+                        continue;
+                    }
+
                     $questionModel->insert([
                         'test_pack_id' => $packId,
+                        'section_idx' => $q['sectionIdx'] ?? $q['section_idx'] ?? 0,
                         'question' => $q['question'],
                         'type' => $q['type'],
                         'option_a' => $q['option_a'] ?? '',
@@ -339,13 +392,56 @@ class TestController extends BaseController
                         'option_c' => $q['option_c'] ?? '',
                         'option_d' => $q['option_d'] ?? '',
                         'correct_answer' => $q['correct_answer'] ?? '',
-                        'marks' => $q['marks'] ?? 1
+                        'marks' => $q['marks'] ?? 1,
+                        'knowledge_type' => $q['knowledge_type'] ?? null,
                     ]);
                 }
             }
         }
 
-        return $this->response->setJSON(['status' => 'success', 'id' => $packId]);
+        // If no manual questions were sent, fall back to template questions.
+        // This keeps published packs renderable in student view/evaluation flows.
+        if (empty($decodedQuestions) && !empty($templateId)) {
+            $templateQuestions = $questionModel->where('template_id', $templateId)->findAll();
+            if (!empty($templateQuestions)) {
+                $questionModel->where('test_pack_id', $packId)->delete();
+                foreach ($templateQuestions as $q) {
+                    if (trim((string) ($q['question'] ?? '')) === '') {
+                        continue;
+                    }
+
+                    $questionModel->insert([
+                        'test_pack_id' => $packId,
+                        'section_idx' => $q['section_idx'] ?? 0,
+                        'question' => $q['question'],
+                        'type' => $q['type'] ?? 'MCQ',
+                        'option_a' => $q['option_a'] ?? '',
+                        'option_b' => $q['option_b'] ?? '',
+                        'option_c' => $q['option_c'] ?? '',
+                        'option_d' => $q['option_d'] ?? '',
+                        'correct_answer' => $q['correct_answer'] ?? '',
+                        'marks' => $q['marks'] ?? 1,
+                        'knowledge_type' => $q['knowledge_type'] ?? null,
+                    ]);
+                }
+            }
+        }
+
+        $syncedTemplate = null;
+        if (
+            !empty($templateId) &&
+            ($data['sync_template_questions'] ?? '0') === '1' &&
+            is_array($decodedQuestions)
+        ) {
+            $this->syncTemplateQuestions($templateId, $decodedQuestions);
+            $syncedTemplate = $this->getTemplateWithRelations($templateId);
+        }
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'id' => $packId,
+            'template' => $syncedTemplate,
+        ]);
     }
 
     public function publishTestPack()

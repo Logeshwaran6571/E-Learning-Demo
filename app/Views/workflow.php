@@ -197,10 +197,13 @@ if (!empty($Tests)) {
             color: #1e293b;
         }
 
-        .hidden { display: none !important; }
-        
+        .hidden {
+            display: none !important;
+        }
+
         /* Ensure cells have consistent height and alignment */
-        #TestsDataTable td, .child-table-container td {
+        #TestsDataTable td,
+        .child-table-container td {
             vertical-align: middle !important;
             height: 56px;
         }
@@ -219,29 +222,44 @@ if (!empty($Tests)) {
             font-size: 10px;
             color: #94a3b8;
             pointer-events: none;
-            display: none; /* Hidden in readonly */
+            display: none;
+            /* Hidden in readonly */
         }
 
         tr.is-editing .inline-select-container::after {
-            display: block; /* Shown when editing */
+            display: block;
+            /* Shown when editing */
         }
 
         /* Toggle Action Buttons & Views */
-        [data-action="save"], .edit-view, .readonly-view { display: none !important; }
-        
-        tr.is-editing [data-action="save"] { display: flex !important; }
-        tr.is-editing .edit-view { 
-            display: flex !important; 
+        [data-action="save"],
+        .edit-view,
+        .readonly-view {
+            display: none !important;
+        }
+
+        tr.is-editing [data-action="save"] {
+            display: flex !important;
+        }
+
+        tr.is-editing .edit-view {
+            display: flex !important;
             align-items: center;
             gap: 0.5rem;
             position: relative;
             z-index: 10;
         }
-        tr.is-editing [data-action="edit"] { display: none !important; }
-        tr.is-editing .readonly-view { display: none !important; }
-        
-        tr:not(.is-editing) .readonly-view { 
-            display: flex !important; 
+
+        tr.is-editing [data-action="edit"] {
+            display: none !important;
+        }
+
+        tr.is-editing .readonly-view {
+            display: none !important;
+        }
+
+        tr:not(.is-editing) .readonly-view {
+            display: flex !important;
             align-items: center;
             gap: 0.5rem;
         }
@@ -303,8 +321,15 @@ if (!empty($Tests)) {
         }
 
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .child-table-container {
@@ -421,13 +446,20 @@ if (!empty($Tests)) {
         }
 
         /* Quick Template Modal Styles - TRANSFORMED TO FULL SCREEN TEMPLATE */
+        #createPackModal.quick-mode {
+            overflow: hidden !important;
+        }
+
         #createPackModal.quick-mode .modal-dialog {
             max-width: 100% !important;
             width: 100% !important;
             height: 100vh !important;
             margin: 0 !important;
             padding: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
         }
+
         #createPackModal.quick-mode .modal-content {
             border-radius: 0 !important;
             height: 100vh !important;
@@ -437,20 +469,52 @@ if (!empty($Tests)) {
             border: none !important;
             display: flex !important;
             flex-direction: column !important;
+            position: relative !important;
         }
+
+        #createPackModal.quick-mode .modal-body {
+            flex: 1 1 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+        }
+
+        #createPackModal.quick-mode #quick-mode-footer {
+            display: flex;
+            flex-shrink: 0 !important;
+            height: 64px !important;
+            background: #f8fafc !important;
+            z-index: 1050 !important;
+            position: sticky !important;
+            bottom: 0 !important;
+            border-top: 1px solid #e2e8f0 !important;
+        }
+
         #createPackModal.quick-mode .modal-header,
         #createPackModal.quick-mode .w-\[500px\] {
             display: none !important;
         }
+
         #createPackModal.quick-mode .w-\[360px\] {
             display: flex !important;
         }
+
         #createPackModal.quick-mode #wizardMainColumn {
             padding: 0 !important;
+            overflow-y: auto !important;
+            min-height: 0 !important;
+            height: calc(100vh - 128px) !important;
+            max-height: calc(100vh - 128px) !important;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
+
         #createPackModal.quick-mode #wizard_template_section {
             grid-column: span 10 / span 10 !important;
         }
+
         #createPackModal.quick-mode #wizard_audience_section,
         #createPackModal.quick-mode #wizard_question_content_section,
         #createPackModal.quick-mode #active_template_delete_btn,
@@ -458,20 +522,62 @@ if (!empty($Tests)) {
         #createPackModal.quick-mode #active_template_tags .group-hover\:opacity-100 {
             display: none !important;
         }
-        #quick-qb-selector-section, #quick-generated-paper-section { display: none; }
+
+        #quick-qb-selector-section,
+        #quick-generated-paper-section {
+            display: none;
+        }
+
         #createPackModal.quick-mode #quick-qb-selector-section,
         #createPackModal.quick-mode #quick-generated-paper-section {
             display: block;
         }
-        #quick-mode-header { display: none; }
+
+        /* Ensure full generated paper is scrollable via the main container */
+        #createPackModal.quick-mode #quick-generated-paper-section {
+            max-height: none !important;
+            overflow: visible !important;
+            padding-bottom: 80px;
+        }
+
+        #createPackModal.quick-mode #quick_generated_questions_container {
+            overflow: visible;
+        }
+
+        /* Ensure builder-mode generated questions are scrollable and usable */
+        #createPackModal.quick-mode #builder_questions_section_inline {
+            max-height: none;
+            overflow: visible;
+        }
+
+        #createPackModal.quick-mode #builder_questions_container_inline {
+            height: auto;
+            max-height: none;
+            min-height: 0;
+            overflow: visible !important;
+            padding-right: 0;
+            padding-bottom: 24px;
+            scroll-behavior: smooth;
+            overscroll-behavior: auto;
+        }
+
+        #quick-mode-header {
+            display: none;
+        }
+
         #createPackModal.quick-mode #quick-mode-header {
             display: flex !important;
         }
-        #quick-mode-footer { display: none; }
-        #createPackModal.quick-mode #quick-mode-footer {
-            display: flex !important;
+
+        #quick-mode-footer {
+            display: none;
         }
-        #quick-template-selector { display: none !important; }
+
+        /* Handled above */
+
+        #quick-template-selector {
+            display: none !important;
+        }
 
         /* Question Bank Modal Styles - TRANSFORMED TO FULL SCREEN TEMPLATE */
         #QuestionBankModal.qb-template-mode {
@@ -480,7 +586,8 @@ if (!empty($Tests)) {
             padding: 0 !important;
             align-items: stretch !important;
         }
-        #QuestionBankModal.qb-template-mode > div {
+
+        #QuestionBankModal.qb-template-mode>div {
             width: 100% !important;
             max-width: 100% !important;
             height: 100vh !important;
@@ -2738,7 +2845,7 @@ if (!empty($Tests)) {
 
         .builder-main {
             display: grid;
-            grid-template-columns: 340px 1fr;
+            grid-template-columns: 390px 1fr;
             flex: 1;
             overflow: hidden;
         }
@@ -2813,7 +2920,7 @@ if (!empty($Tests)) {
             background: #fff;
             border: 1px solid #f1f5f9;
             border-radius: 14px;
-            padding: 1rem;
+            padding: 1.05rem 1.1rem;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
@@ -3376,26 +3483,127 @@ if (!empty($Tests)) {
         }
 
         /* Question Bank Modal Styles */
+        .qb-sidebar {
+            width: 342px;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .qb-sidebar-header {
+            padding: 20px 22px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #fff;
+        }
+
+        .qb-sidebar-title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .qb-sidebar-title-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff1f2;
+            color: var(--brand);
+            border: 1px solid #ffe4e6;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .qb-sidebar-title-row h4 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #0b1220;
+        }
+
+        .qb-sidebar-title-row p {
+            margin: 2px 0 0;
+            font-size: 10px;
+            line-height: 1.2;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: #475569;
+        }
+
+        .qb-sidebar-search {
+            position: relative;
+        }
+
+        .qb-sidebar-search i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .qb-sidebar-search input {
+            width: 100%;
+            height: 38px;
+            padding: 0 12px 0 34px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e293b;
+            transition: all .18s ease;
+            outline: none;
+        }
+
+        .qb-sidebar-search input:focus {
+            background: #fff;
+            border-color: #fecdd3;
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, .08);
+        }
+
+        .qb-sidebar-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 14px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
         .qb-bank-card {
             background: #fff;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
-            padding: 12px 16px;
+            padding: 10px 10px;
             cursor: pointer;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            min-height: 54px;
         }
 
         .qb-bank-card:hover {
             border-color: var(--brand);
-            transform: translateX(4px);
+            transform: translateX(2px);
             background: #fff;
-            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 10px -4px rgba(15, 23, 42, .18);
         }
 
         .qb-bank-card.active {
             border-color: var(--brand);
             background: #fef2f2;
-            box-shadow: 0 4px 12px -2px rgba(220, 34, 48, 0.1);
+            box-shadow: 0 3px 10px -2px rgba(220, 34, 48, 0.08);
         }
 
         .qb-bank-card.active .bank-icon {
@@ -3405,17 +3613,67 @@ if (!empty($Tests)) {
         }
 
         .bank-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
             background: #f8fafc;
             color: #94a3b8;
             border: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 14px;
             transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .qb-bank-main {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .qb-bank-title {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 800;
+            color: #0b1220;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .qb-bank-meta {
+            margin-top: 3px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .qb-bank-delete {
+            width: 24px;
+            height: 24px;
+            border-radius: 7px;
+            border: 0;
+            background: #fef2f2;
+            color: #ef4444;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.18s ease;
+            margin-left: 6px;
+        }
+
+        .qb-bank-delete:hover {
+            background: #ef4444;
+            color: #fff;
         }
 
         .qb-section-card {
@@ -3473,21 +3731,40 @@ if (!empty($Tests)) {
             border-color: #dc2230 !important;
             background: #fef2f2;
         }
+
         .correct-opt-selector.active .selector-dot {
             opacity: 1 !important;
             transform: scale(1.1);
         }
-        
+
         .animate-shake {
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
         }
 
         @keyframes shake {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            20%, 80% { transform: translate3d(2px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-            40%, 60% { transform: translate3d(4px, 0, 0); }
+
+            10%,
+            90% {
+                transform: translate3d(-1px, 0, 0);
+            }
+
+            20%,
+            80% {
+                transform: translate3d(2px, 0, 0);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translate3d(-4px, 0, 0);
+            }
+
+            40%,
+            60% {
+                transform: translate3d(4px, 0, 0);
+            }
         }
+
         .dropdown-menu {
             animation: dropdownFade 0.3s ease-out;
             transform-origin: top right;
@@ -3496,10 +3773,19 @@ if (!empty($Tests)) {
             padding: 10px !important;
             min-width: 240px !important;
         }
+
         @keyframes dropdownFade {
-            from { opacity: 0; transform: scale(0.95) translateY(-10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
+
         .dropdown-item {
             display: flex !important;
             align-items: center !important;
@@ -3507,7 +3793,11 @@ if (!empty($Tests)) {
             padding: 12px 16px !important;
             transition: all 0.2s ease !important;
         }
-        .dropdown-item i { font-size: 1.1rem; }
+
+        .dropdown-item i {
+            font-size: 1.1rem;
+        }
+
         .dropdown-item:hover {
             background-color: #f8fafc !important;
             color: #dc2230 !important;
@@ -3577,33 +3867,40 @@ if (!empty($Tests)) {
 
         <div class="nav-right">
             <div class="dropdown">
-                <div class="user-profile dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="user-profile dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown"
+                    aria-expanded="false">
                     <img src="https://i.pravatar.cc/150?u=logesh" class="user-avatar" alt="Avatar">
                     <span>Logeshwaran S</span>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                         <polyline points="6 9 12 15 18 9" />
                     </svg>
                 </div>
-                <ul class="dropdown-menu dropdown-menu-end shadow-2xl border-0 rounded-3xl p-2 mt-2" aria-labelledby="profileDropdown">
+                <ul class="dropdown-menu dropdown-menu-end shadow-2xl border-0 rounded-3xl p-2 mt-2"
+                    aria-labelledby="profileDropdown">
                     <li class="px-3 py-2 border-b border-slate-50 mb-1">
                         <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Signed in as</div>
                         <div class="text-[12px] font-bold text-slate-800">Admin User</div>
                     </li>
                     <li>
-                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 transition-all flex items-center gap-3" href="javascript:void(0)" onclick="switchMainTab('management')">
+                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 transition-all flex items-center gap-3"
+                            href="javascript:void(0)" onclick="switchMainTab('management')">
                             <i class="bi bi-speedometer2 text-lg"></i>
                             Admin Dashboard
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all flex items-center gap-3" href="javascript:void(0)" onclick="switchMainTab('execution')">
+                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all flex items-center gap-3"
+                            href="javascript:void(0)" onclick="switchMainTab('execution')">
                             <i class="bi bi-mortarboard text-lg"></i>
                             Student Dashboard
                         </a>
                     </li>
-                    <li><hr class="dropdown-divider border-slate-50 mx-2"></li>
                     <li>
-                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all flex items-center gap-3" href="javascript:void(0)">
+                        <hr class="dropdown-divider border-slate-50 mx-2">
+                    </li>
+                    <li>
+                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all flex items-center gap-3"
+                            href="javascript:void(0)">
                             <i class="bi bi-box-arrow-right text-lg"></i>
                             Logout
                         </a>
@@ -3628,24 +3925,15 @@ if (!empty($Tests)) {
                     <p class="text-sm text-gray-500">Manage your Test lifecycle from headers to Batches.</p>
                 </div>
                 <div class="flex gap-3">
-                    <button
-                        class="px-5 py-2.5 rounded-xl border border-blue-100 text-[#2563eb] font-bold text-[13px] flex items-center gap-2 hover:bg-blue-50 transition-all shadow-sm"
-                        onclick="switchMainTab('results')">
-                        <i class="bi bi-file-earmark-text"></i> Results & Evaluation
-                    </button>
-                    <button
-                        class="px-5 py-2.5 rounded-xl border border-blue-100 text-[#2563eb] font-bold text-[13px] flex items-center gap-2 hover:bg-blue-50 transition-all shadow-sm"
-                        onclick="switchMainTab('execution')">
-                        <i class="bi bi-play-circle"></i> Execution View
-                    </button>
-                    <button class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-[13px] flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm" onclick="openQuestionBankModal()">
-                        <i class="bi bi-journal-bookmark"></i> Question Bank
-                    </button>
-                    <button class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-[13px] flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm" onclick="openQuickTemplateModal()">
-                        <i class="bi bi-file-earmark-plus"></i> Create Template
-                    </button>
+
                     <button class="btn-red-rounded px-6" onclick="openCreateTest()">
                         <i class="bi bi-plus-lg me-2"></i> New Test Name
+                    </button>
+                    <button class="btn-red-rounded px-6" onclick="openQuestionBankModal()">
+                        <i class="bi bi-journal-bookmark me-2"></i> Question Bank
+                    </button>
+                    <button class="btn-red-rounded px-6" onclick="openQuickTemplateModal()">
+                        <i class="bi bi-file-earmark-plus me-2"></i> Create Template
                     </button>
                 </div>
             </div>
@@ -3655,18 +3943,24 @@ if (!empty($Tests)) {
                 <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                     <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-0">Test Headers</h4>
                     <div class="flex items-center gap-4">
-                        <div class="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                        <div
+                            class="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
                             <i class="bi bi-filter text-slate-400 text-[10px]"></i>
-                            <select id="typeFilter" class="text-[10px] font-black text-slate-500 border-0 focus:ring-0 cursor-pointer bg-transparent uppercase tracking-wider p-0" onchange="filterByType(this.value)">
+                            <select id="typeFilter"
+                                class="text-[10px] font-black text-slate-500 border-0 focus:ring-0 cursor-pointer bg-transparent uppercase tracking-wider p-0"
+                                onchange="filterByType(this.value)">
                                 <option value="">All Types</option>
                                 <option value="Technical">Technical</option>
                                 <option value="Compliance">Compliance</option>
                                 <option value="Behavioral">Behavioral</option>
                             </select>
                         </div>
-                        <div class="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm w-[250px]">
+                        <div
+                            class="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm w-[250px]">
                             <i class="bi bi-search text-slate-400 text-[10px]"></i>
-                            <input type="text" class="text-[10px] font-black text-slate-500 border-0 focus:ring-0 p-0 w-full placeholder:text-slate-300 uppercase tracking-wider" placeholder="Search tests..." oninput="searchTests(this.value)">
+                            <input type="text"
+                                class="text-[10px] font-black text-slate-500 border-0 focus:ring-0 p-0 w-full placeholder:text-slate-300 uppercase tracking-wider"
+                                placeholder="Search tests..." oninput="searchTests(this.value)">
                         </div>
                     </div>
                 </div>
@@ -3676,12 +3970,23 @@ if (!empty($Tests)) {
                             <tr>
                                 <th class="hidden">ID</th>
                                 <th class="w-12"></th>
-                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Test Name</th>
-                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Category</th>
-                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Type</th>
-                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Assign To</th>
-                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Batches</th>
-                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Actions</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    Test Name</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                                    Category</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                                    Type</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                                    Assign To</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                                    Batches</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                                    Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -3971,16 +4276,11 @@ if (!empty($Tests)) {
             <!-- Sidebar: Discovery -->
             <div class="builder-sidebar">
                 <div class="sidebar-header">
-                    <h5 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-4">Discovery</h5>
-                    <div class="filter-tabs mb-4">
-                        <div class="filter-tab active" onclick="filterSidebar('All', this)">All</div>
-                        <div class="filter-tab" onclick="filterSidebar('Performance', this)">Performance</div>
-                        <div class="filter-tab" onclick="filterSidebar('Compliance', this)">Compliance</div>
-                    </div>
+                    <h5 class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-4">Discovery</h5>
                     <div class="relative">
-                        <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
                         <input type="text" id="sidebar_search"
-                            class="w-full bg-slate-50 border-0 rounded-xl py-2.5 pl-11 pr-4 text-xs focus:ring-2 focus:ring-red-100 transition-all"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-[12px] font-semibold text-slate-700 focus:ring-2 focus:ring-red-100 focus:border-red-200 transition-all"
                             placeholder="Search templates..." oninput="searchSidebar(this.value)" />
                     </div>
                 </div>
@@ -3989,7 +4289,7 @@ if (!empty($Tests)) {
                 </div>
                 <div class="p-4 border-top border-slate-100 bg-white">
                     <button
-                        class="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border border-dashed border-slate-200"
+                        class="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-[12px] font-bold uppercase tracking-widest transition-all border border-dashed border-slate-300"
                         onclick="resetBuilder()">
                         <i class="bi bi-plus-lg mr-2"></i> Create New
                     </button>
@@ -4243,8 +4543,10 @@ if (!empty($Tests)) {
                                 <i class="bi bi-chevron-down"></i>
                             </button>
                             <div class="multiselect-options" id="multiselect_options">
-                                <label class="ms-option font-bold text-slate-800 border-b border-slate-100 rounded-none mb-2 pb-3">
-                                    <input type="checkbox" id="select_all_roles" onchange="selectAllRoles(this)"> Select All
+                                <label
+                                    class="ms-option font-bold text-slate-800 border-b border-slate-100 rounded-none mb-2 pb-3">
+                                    <input type="checkbox" id="select_all_roles" onchange="selectAllRoles(this)"> Select
+                                    All
                                 </label>
                                 <label class="ms-option"><input type="checkbox" value="Developers"
                                         onchange="updateMultiselectLabel()"> Developers</label>
@@ -4291,83 +4593,138 @@ if (!empty($Tests)) {
         </div>
     </div>
 
+
     <!-- Question Bank Modal (Now Full Screen Template) -->
-    <div id="QuestionBankModal" class="custom-modal-backdrop qb-template-mode" onclick="if(event.target===this)closeQuestionBankModal()">
-        <div class="bg-white w-full h-screen flex overflow-hidden">
-            <!-- Sidebar -->
-            <div class="w-[320px] bg-slate-50 border-r border-slate-200 flex flex-col shrink-0">
-                <div class="p-8 border-b border-slate-200 bg-white">
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
-                                <i class="bi bi-journal-bookmark text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-black text-slate-800 leading-tight">Question Banks</h3>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Discovery Panel</p>
-                            </div>
-                        </div>
-                        <button class="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-colors" onclick="closeQuestionBankModal()">
-                            <i class="bi bi-x-lg text-lg"></i>
-                        </button>
+    <div id="QuestionBankModal" class="custom-modal-backdrop qb-template-mode"
+        onclick="if(event.target===this)closeQuestionBankModal()">
+        <div class="bg-white w-full h-screen flex flex-col overflow-hidden">
+            <!-- Global Top Header (Matches Create Template Style) -->
+            <div class="px-8 py-3 bg-white border-b sticky top-0 z-50 flex items-center justify-between shadow-sm flex-shrink-0">
+                <div class="flex items-center gap-4">
+                    <div class="w-9 h-9 bg-red-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-red-100">
+                        <i class="bi bi-journal-bookmark-fill text-lg"></i>
                     </div>
-                    <div class="relative">
-                        <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input type="text" placeholder="Search banks..." class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold focus:bg-white focus:ring-4 focus:ring-red-50 focus:border-red-200 outline-none transition-all placeholder:text-slate-400" oninput="filterBanks(this.value)">
+                    <div>
+                        <h3 class="text-base font-black text-slate-800 leading-tight">Question Bank Manager</h3>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Discovery & Repository Control</p>
                     </div>
                 </div>
-                <div class="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar" id="qbList">
-                    <!-- Bank items will be rendered here -->
-                </div>
-                <div class="p-6 border-t border-slate-200 bg-white">
-                    <button class="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black text-[10px] uppercase tracking-widest hover:border-red-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center gap-2" onclick="promptCreateQB()">
-                        <i class="bi bi-plus-lg"></i> Create New Question Bank
+                <div class="flex items-center gap-3">
+                    <button id="qbCreateBankBtn" class="px-7 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-red-100"
+                        onclick="promptCreateQB()">
+                        <i class="bi bi-plus-lg text-xs"></i> Create Question Bank
                     </button>
+                    <button class="px-8 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+                        onclick="closeQuestionBankModal()">Go Back</button>
                 </div>
             </div>
 
-            <!-- Workspace -->
-            <div class="flex-1 flex flex-col bg-white overflow-hidden relative" id="qbWorkspace">
-                <!-- Empty State -->
-                <div id="qbEmptyState" class="flex-1 flex flex-col items-center justify-center p-12 text-center bg-slate-50/30">
-                    <div class="w-24 h-24 bg-white rounded-[40px] shadow-xl flex items-center justify-center mb-8 border border-slate-100">
-                        <i class="bi bi-journal-bookmark text-4xl text-slate-200"></i>
-                    </div>
-                    <h4 class="text-xl font-black text-slate-700 mb-3">No Bank Selected</h4>
-                    <p class="text-sm text-slate-400 max-w-xs mx-auto font-medium">Choose a question bank from the sidebar to start managing your repository.</p>
-                </div>
-
-                <!-- Active Workspace -->
-                <div id="qbActiveWorkspace" class="hidden flex-1 flex flex-col overflow-hidden">
-                    <!-- Header -->
-                    <div id="qbHeader" class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white z-10 shadow-sm">
-                        <div id="qbHeaderTitle">
-                            <h3 class="text-2xl font-black text-slate-800" id="activeQBName">---</h3>
-                            <div class="flex items-center gap-4 mt-2">
-                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
-                                    <i class="bi bi-collection"></i> <span id="activeQBSectionsCount">0</span> Sections
-                                </span>
-                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
-                                    <i class="bi bi-question-circle"></i> <span id="activeQBQuestionsCount">0</span> Questions
-                                </span>
+            <div class="flex flex-1 overflow-hidden" style="min-height: 0;">
+                <!-- Sidebar -->
+                <div class="qb-sidebar">
+                    <div class="qb-sidebar-header">
+                        <div class="qb-sidebar-title-row">
+                            <span class="qb-sidebar-title-icon">
+                                <i class="bi bi-stack"></i>
+                            </span>
+                            <div>
+                                <h4>Repositories</h4>
+                                <p>Repository Library</p>
                             </div>
                         </div>
-                        <div id="qbHeaderActions" class="flex items-center gap-3">
-                            <button id="btnCategoryMCQ" class="px-6 py-2 rounded-xl bg-red-600 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all" onclick="selectQBCategory('MCQ')">MCQ</button>
-                            <button id="btnCategory2M" class="px-6 py-2 rounded-xl bg-slate-50 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100" onclick="selectQBCategory('2 Marks')">2 Marks</button>
+                    <div class="qb-sidebar-search">
+                        <i class="bi bi-search"></i>
+                        <input type="text" placeholder="Search banks..."
+                            oninput="filterBanks(this.value)">
+                    </div>
+                </div>
+                <div class="qb-sidebar-list custom-scrollbar" id="qbList">
+                    <!-- Bank items will be rendered here -->
+                </div>
+                <!-- Create button moved to top right -->
+            </div>
+
+            <!-- Workspace -->
+                <!-- Workspace -->
+                <div class="flex-1 flex flex-col bg-slate-50/50 overflow-hidden relative" id="qbWorkspace">
+                    <div class="flex-1 overflow-y-auto relative custom-scrollbar pb-12">
+                        
+                        <!-- Sticky Navigation Arrows (Relative to screen width) -->
+                        <div id="qbNavigationArrows" class="hidden sticky top-[45vh] h-0 flex justify-between items-center pointer-events-none z-50 px-[4%]">
+                            <button class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition-all shadow-xl active:scale-90 pointer-events-auto border-4 border-white" onclick="navigateQBCategory(-1)">
+                                <i class="bi bi-chevron-left text-lg"></i>
+                            </button>
+                            <button class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition-all shadow-xl active:scale-90 pointer-events-auto border-4 border-white" onclick="navigateQBCategory(1)">
+                                <i class="bi bi-chevron-right text-lg"></i>
+                            </button>
+                        </div>
+
+                        <div class="px-[5%] mt-6 space-y-6">
+                            <!-- Main Content Card (Matches Create Template Style) -->
+                            <div class="card bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden p-8 min-h-[420px] space-y-8">
+                                
+                                <!-- Header Bar: Active Info & Stats -->
+                                <div id="qbUnifiedHeader" class="flex items-center justify-between">
+                                    <div class="flex items-center gap-6">
+                                        <!-- Bank Title Block -->
+                                        <div class="flex items-center gap-4 bg-slate-50/50 px-6 py-3.5 rounded-3xl border border-slate-100 min-w-[280px]">
+                                            <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-red-600 shadow-sm border border-slate-50">
+                                                <i class="bi bi-journal-text text-xl"></i>
+                                            </div>
+                                            <div>
+                                                <h3 id="activeQBName" class="text-lg font-black text-slate-800 mb-0 leading-tight">Select a Bank</h3>
+                                                <p id="activeQBSubtitle" class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0">Repository Context</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Dashboard Stats -->
+                                        <div id="qbHeaderStats" class="hidden bg-slate-50/50 px-8 py-3 rounded-3xl border border-slate-100 flex items-center gap-10 animate-fadeIn">
+                                            <div class="text-center">
+                                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Sections</p>
+                                                <p id="activeQBSectionsCount" class="text-xl font-black text-slate-800 leading-none">0</p>
+                                            </div>
+                                            <div class="w-px h-8 bg-slate-200"></div>
+                                            <div class="text-center">
+                                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Questions</p>
+                                                <p id="activeQBQuestionsCount" class="text-xl font-black text-red-600 leading-none">0</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Button Row -->
+                                    <div class="flex items-center gap-4"></div>
+                                </div>
+
+                                <!-- Controls Row: Tabs & Bulk Actions -->
+                                <div id="qbSecondaryControls" class="hidden flex items-center justify-between bg-slate-50/30 px-8 py-1 rounded-2xl border border-slate-100 animate-fadeIn">
+                                    <div id="qbCategoryTabs" class="flex gap-10"></div>
+                                    <div id="qbHeaderActions" class="flex items-center gap-3"></div>
+                                </div>
+
+                                <!-- State Containers -->
+                                <div id="qbEmptyState" class="py-20 flex flex-col items-center justify-center text-center animate-fadeIn">
+                                    <div class="w-24 h-24 bg-white rounded-[40px] shadow-xl flex items-center justify-center mb-8 border border-slate-100">
+                                        <i class="bi bi-journal-bookmark text-5xl text-slate-100"></i>
+                                    </div>
+                                    <h4 class="text-2xl font-black text-slate-700 mb-4">No Bank Selected</h4>
+                                    <p class="text-base text-slate-400 max-w-sm mx-auto font-medium leading-relaxed">Please select a question bank from the left panel to begin managing your repository.</p>
+                                </div>
+
+                                <div id="qbContentArea" class="hidden pb-10 animate-fadeIn"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Content -->
-                    <div class="flex-1 overflow-y-auto p-8 bg-slate-50/50 custom-scrollbar" id="qbContentArea">
-                        <!-- Dynamic Content (Questions or Upload View) -->
+                    <!-- Footer Action Bar -->
+                    <div id="qbFooter" class="hidden px-[5%] py-3 border-t border-slate-100 bg-white flex justify-end items-center shadow-[0_-15px_60px_-20px_rgba(0,0,0,0.08)] z-10 shrink-0">
+                        <button class="px-10 py-3 bg-red-600 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-red-200 hover:bg-red-700 hover:scale-[1.02] active:scale-95 transition-all"
+                            onclick="saveAllQBDetails()">
+                            Save
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    </div>
     </div>
 
     <!-- MODAL: NEW Batch -->
@@ -4822,9 +5179,10 @@ if (!empty($Tests)) {
             QuestionBanks: <?= json_encode($questionBank ?? []) ?>,
             selectedCandidates: {}, // Stores { TestId: [empId1, empId2] }
             manualQuestions: [],
-            
+            quickModePaperSource: null,
+
             // Helper for deterministic/random shuffle
-            shuffle: function(array) {
+            shuffle: function (array) {
                 let currentIndex = array.length, randomIndex;
                 while (currentIndex != 0) {
                     randomIndex = Math.floor(Math.random() * currentIndex);
@@ -4834,7 +5192,7 @@ if (!empty($Tests)) {
                 return array;
             },
 
-            normalizeType: function(t) {
+            normalizeType: function (t) {
                 if (!t) return '';
                 t = t.toString().toLowerCase().trim();
                 // Common synonyms for MCQ
@@ -4844,12 +5202,12 @@ if (!empty($Tests)) {
                 return t;
             },
 
-            shuffleOptions: function(q) {
+            shuffleOptions: function (q) {
                 const options = ['a', 'b', 'c', 'd'].map(key => ({
                     key: key.toUpperCase(),
                     value: q['option_' + key]
                 })).filter(o => o.value && o.value.trim() !== '');
-                
+
                 // Fisher-Yates shuffle
                 for (let i = options.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
@@ -4858,7 +5216,7 @@ if (!empty($Tests)) {
                 return options;
             },
 
-            shuffleArray: function(array) {
+            shuffleArray: function (array) {
                 const newArray = [...array];
                 for (let i = newArray.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
@@ -4868,19 +5226,22 @@ if (!empty($Tests)) {
             },
 
             // New logic for randomized question selection during batch initialization
-            generatePaperFromBank: function(qbId, templateId) {
+            generatePaperFromBank: function (qbId, templateOrBuilder) {
                 const bank = QuestionBanks.find(b => b.id == qbId);
-                const template = App.templates.find(t => t.id == templateId);
-                if (!bank || !template) return null;
+                if (!bank) return null;
 
-                let sections = template.sections || [];
-                if (typeof sections === 'string') {
-                    try { sections = JSON.parse(sections); } catch (e) { sections = []; }
+                let sections = [];
+                if (templateOrBuilder && typeof templateOrBuilder === 'object' && Array.isArray(templateOrBuilder.sections)) {
+                    sections = templateOrBuilder.sections;
+                } else {
+                    const template = App.templates.find(t => t.id == templateOrBuilder);
+                    if (!template) return null;
+                    sections = getTemplateSections(template);
                 }
 
                 let allPickedQuestions = [];
                 let availablePool = [...(bank.questions || [])];
-                
+
                 // Pre-shuffle the entire pool
                 this.shuffle(availablePool);
 
@@ -4891,7 +5252,7 @@ if (!empty($Tests)) {
                     const count = parseInt(s.num_questions || s.count || 0);
                     const type = s.marks_type || s.type || 'MCQ';
                     const targetType = this.normalizeType(type);
-                    
+
                     let eligible = availablePool.filter(q => this.normalizeType(q.type) === targetType);
 
                     if (eligible.length < count) {
@@ -4899,12 +5260,18 @@ if (!empty($Tests)) {
                     }
 
                     // Pick questions and remove from pool
-                    const picked = eligible.slice(0, count);
+                    const rawPicked = eligible.slice(0, count);
+                    const picked = rawPicked.map(q => normalizeQuestionRecord({
+                        ...q,
+                        sectionIdx: sIdx,
+                        type: s.marks_type || s.type || q.type || 'MCQ',
+                        marks: parseInt(s.marks_per_question || s.marks || q.marks || 0, 10) || 0
+                    }, sIdx));
                     allPickedQuestions.push(...picked);
 
-                    const pickedIds = picked.map(pq => pq.id);
+                    const pickedIds = rawPicked.map(pq => pq.id);
                     availablePool = availablePool.filter(aq => !pickedIds.includes(aq.id));
-                    
+
                     groupedBySection.push({
                         section: s,
                         questions: picked
@@ -4915,36 +5282,35 @@ if (!empty($Tests)) {
             },
 
             // Groups any list of questions according to the template's structure
-            getGroupedPaper: function(questions, templateId) {
+            getGroupedPaper: function (questions, templateId) {
                 const template = App.templates.find(t => t.id == templateId);
                 if (!template) {
                     console.error("Template not found for grouping:", templateId);
                     return null;
                 }
 
-                let sections = template.sections || [];
-                if (typeof sections === 'string') {
-                    try { sections = JSON.parse(sections); } catch (e) { sections = []; }
-                }
+                const sections = getTemplateSections(template);
 
                 const groupedBySection = [];
                 const warnings = [];
-                let pool = [...questions];
+                let pool = normalizeQuestionList(questions);
 
-                sections.forEach((s) => {
+                sections.forEach((s, sectionIdx) => {
                     const type = s.marks_type || s.type || 'MCQ';
                     const targetType = this.normalizeType(type);
                     const count = parseInt(s.num_questions || s.count || 0);
 
-                    // Filter questions for this section type
-                    const sectionQuestions = pool.filter(q => this.normalizeType(q.type || q.marks_type) === targetType);
-                    
+                    let sectionQuestions = pool.filter(q => String(q.sectionIdx ?? q.section_idx ?? '') === String(sectionIdx));
+                    if (sectionQuestions.length === 0) {
+                        sectionQuestions = pool.filter(q => this.normalizeType(q.type || q.marks_type) === targetType);
+                    }
+
                     if (sectionQuestions.length < count) {
                         warnings.push(`Section "${s.section_name || s.name || type}" requires ${count} questions, but only ${sectionQuestions.length} matching types found.`);
                     }
 
                     const picked = sectionQuestions.slice(0, count);
-                    
+
                     // Remove picked questions from pool to avoid double-counting
                     const pickedIds = picked.map(p => p.id);
                     pool = pool.filter(q => !pickedIds.includes(q.id));
@@ -4984,18 +5350,20 @@ if (!empty($Tests)) {
         let activeQBCategory = 'MCQ';
 
         // --- Question Bank Management Logic ---
-        window.openQuestionBankModal = function() {
+        window.openQuestionBankModal = function () {
             const modal = document.getElementById('QuestionBankModal');
             if (modal) {
                 modal.classList.add('open');
                 document.body.style.overflow = 'hidden';
                 renderQuestionBanks();
+                // Always start in "New Bank" mode on initial open.
+                promptCreateQB();
             } else {
                 console.error("QuestionBankModal element not found!");
             }
         };
 
-        window.closeQuestionBankModal = function() {
+        window.closeQuestionBankModal = function () {
             const modal = document.getElementById('QuestionBankModal');
             if (modal) {
                 modal.classList.remove('open');
@@ -5007,21 +5375,21 @@ if (!empty($Tests)) {
             const list = document.getElementById('qbList');
             if (!list) return;
             list.innerHTML = QuestionBanks.map(bank => {
+                const isActive = activeQB && activeQB.id == bank.id;
                 const qCount = bank.questions ? bank.questions.length : 0;
-                const sections = bank.questions ? new Set(bank.questions.map(q => q.type || q.section_name)).size : 0;
+                const sections = bank.questions ? new Set(bank.questions.map(q => q.type || q.marks_type)).size : 0;
                 return `
-                    <div class="qb-bank-card group relative ${activeQB && activeQB.id == bank.id ? 'active' : ''}" onclick="selectQuestionBank(${bank.id})">
-                        <div class="flex items-center gap-3">
-                            <div class="bank-icon">
-                                <i class="bi bi-journal-text"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <h4 class="text-xs font-black text-slate-800 truncate mb-0.5">${bank.name}</h4>
-                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${qCount} Questions • ${sections} Sections</p>
-                            </div>
+                    <div class="qb-bank-card group ${isActive ? 'active shadow-lg shadow-red-50' : ''}" onclick="selectQuestionBank(${bank.id})">
+                        <div class="bank-icon">
+                            <i class="bi bi-journal-text"></i>
                         </div>
+                        <div class="qb-bank-main">
+                            <h4 class="qb-bank-title">${bank.name}</h4>
+                            <p class="qb-bank-meta">${qCount} Questions • ${sections} Sections</p>
+                        </div>
+
                         <!-- Delete Action for Bank -->
-                        <button class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded bg-red-50 text-red-500 hidden group-hover:flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm" 
+                        <button class="qb-bank-delete"
                                 onclick="event.stopPropagation(); deleteQuestionBank(${bank.id})">
                             <i class="bi bi-trash3 text-[10px]"></i>
                         </button>
@@ -5035,10 +5403,201 @@ if (!empty($Tests)) {
             const qbSelect = document.getElementById('quick_qb_select');
             if (qbSelect) {
                 const currentValue = qbSelect.value;
-                qbSelect.innerHTML = '<option value="" disabled selected>-- Select a Question Bank --</option>' + 
+                qbSelect.innerHTML = '<option value="" disabled selected>-- Select a Question Bank --</option>' +
                     QuestionBanks.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
                 if (currentValue) qbSelect.value = currentValue;
             }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function normalizeQuestionRecord(question = {}, fallbackSectionIdx = null) {
+            return {
+                ...question,
+                sectionIdx: question.sectionIdx ?? question.section_idx ?? fallbackSectionIdx,
+                marks: parseInt(question.marks ?? 0, 10) || 0,
+                type: question.type || question.marks_type || '',
+                question: question.question || '',
+                option_a: question.option_a || '',
+                option_b: question.option_b || '',
+                option_c: question.option_c || '',
+                option_d: question.option_d || '',
+                correct_answer: question.correct_answer || ''
+            };
+        }
+
+        function normalizeQuestionList(questions = []) {
+            return Array.isArray(questions) ? questions.map(q => normalizeQuestionRecord(q)) : [];
+        }
+
+        function getTemplateSections(template) {
+            let sections = template?.sections || [];
+            if (typeof sections === 'string') {
+                try {
+                    sections = JSON.parse(sections);
+                } catch (e) {
+                    sections = [];
+                }
+            }
+            return Array.isArray(sections) ? sections : [];
+        }
+
+        function hydrateTemplateQuestions(templateId, questions = []) {
+            const normalized = normalizeQuestionList(questions);
+            if (normalized.length === 0) return [];
+
+            const hasSectionIndexes = normalized.some(q => q.sectionIdx !== null && q.sectionIdx !== undefined && q.sectionIdx !== '');
+            if (hasSectionIndexes) {
+                return normalized;
+            }
+
+            const groupedPaper = App.getGroupedPaper ? App.getGroupedPaper(normalized, templateId) : null;
+            if (!groupedPaper || !Array.isArray(groupedPaper.grouped)) {
+                return normalized;
+            }
+
+            return groupedPaper.grouped.flatMap((group, sectionIdx) =>
+                normalizeQuestionList(group.questions || []).map(question => ({
+                    ...question,
+                    sectionIdx
+                }))
+            );
+        }
+
+        function renderActiveTemplateQuestions(template, sections, questions) {
+            const container = document.getElementById('active_template_questions');
+            if (!container) return;
+
+            if (!template || !Array.isArray(sections) || sections.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const normalizedQuestions = hydrateTemplateQuestions(template.id, questions);
+            if (normalizedQuestions.length === 0) {
+                container.innerHTML = `
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/40 px-5 py-4 text-center">
+                        <p class="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 mb-1">Question Preview</p>
+                        <p class="text-[12px] font-medium text-slate-500 mb-0">No saved questions on this template yet. Choose a Question Bank and save the batch to attach questions.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const grouped = sections.map((section, idx) => ({
+                section: section,
+                questions: normalizedQuestions.filter(q => String(q.sectionIdx ?? q.section_idx ?? '') === String(idx))
+            }));
+
+            const missingIndexedSections = grouped.every(group => group.questions.length === 0);
+            const resolvedGroups = missingIndexedSections
+                ? ((App.getGroupedPaper(normalizedQuestions, template.id) || {}).grouped || [])
+                : grouped;
+
+            container.innerHTML = `
+                <div class="pt-2">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-1 h-4 bg-indigo-500 rounded-full"></div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Saved Questions</label>
+                    </div>
+                    <div class="space-y-3">
+                        ${resolvedGroups.map((group, sectionIdx) => {
+                const section = group.section || sections[sectionIdx] || {};
+                const pickedQuestions = normalizeQuestionList(group.questions || []);
+                const sectionName = escapeHtml(section.section_name || section.name || section.marks_type || section.type || `Section ${sectionIdx + 1}`);
+                const marksEach = parseInt(section.marks_per_question || section.marks || 0, 10) || 0;
+
+                return `
+                                <div class="rounded-2xl border border-slate-100 bg-slate-50/40 overflow-hidden">
+                                    <div class="px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between gap-3">
+                                        <div>
+                                            <h5 class="text-[12px] font-black text-slate-800 mb-1">${sectionName}</h5>
+                                            <p class="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-0">${pickedQuestions.length} Saved Questions • ${marksEach} Marks Each</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-3 space-y-2">
+                                        ${pickedQuestions.length > 0 ? pickedQuestions.map((question, questionIdx) => {
+                    const isMcq = App.normalizeType(question.type) === 'mcq';
+                    const options = ['a', 'b', 'c', 'd']
+                        .map(opt => question[`option_${opt}`] ? `<span class="inline-flex items-center gap-1 rounded-lg bg-white border border-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">${opt.toUpperCase()}. ${escapeHtml(question[`option_${opt}`])}</span>` : '')
+                        .join('');
+
+                    return `
+                                                <div class="rounded-xl border border-slate-100 bg-white px-3 py-3">
+                                                    <div class="flex items-start justify-between gap-3">
+                                                        <p class="text-[11px] font-semibold text-slate-700 mb-0">${questionIdx + 1}. ${escapeHtml(question.question || 'Untitled question')}</p>
+                                                        <span class="shrink-0 rounded-lg bg-slate-50 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-500">${escapeHtml(question.marks || marksEach)}M</span>
+                                                    </div>
+                                                    ${isMcq && options ? `<div class="mt-2 flex flex-wrap gap-2">${options}</div>` : ''}
+                                                    ${!isMcq && question.correct_answer ? `<p class="mt-2 text-[10px] font-medium text-slate-500 mb-0"><span class="font-black uppercase tracking-widest text-slate-400">Expected Answer:</span> ${escapeHtml(question.correct_answer)}</p>` : ''}
+                                                </div>
+                                            `;
+                }).join('') : `
+                                            <div class="rounded-xl border border-dashed border-slate-200 bg-white/70 px-3 py-4 text-center text-[11px] font-medium text-slate-400">
+                                                No questions saved for this section yet.
+                                            </div>
+                                        `}
+                                    </div>
+                                </div>
+                            `;
+            }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function generateQuestionsForQuickMode(templateId, qbId) {
+            if (
+                App.quickModePaperSource &&
+                String(App.quickModePaperSource.templateId) === String(templateId) &&
+                String(App.quickModePaperSource.qbId) === String(qbId) &&
+                Array.isArray(App.manualQuestions) &&
+                App.manualQuestions.length > 0
+            ) {
+                return App.getGroupedPaper(App.manualQuestions, templateId);
+            }
+
+            const paper = App.generatePaperFromBank(qbId, templateId);
+            if (!paper) {
+                Swal.fire('Error', 'Failed to generate questions from the selected template and bank.', 'error');
+                return null;
+            }
+
+            if ((paper.questions || []).length === 0) {
+                Swal.fire('No Questions Found', 'The selected Question Bank does not contain questions for this template structure.', 'warning');
+                return null;
+            }
+
+            if (paper.warnings && paper.warnings.length > 0) {
+                const confirm = await Swal.fire({
+                    title: 'Insufficient Questions',
+                    html: paper.warnings.join('<br>'),
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Proceed Anyway',
+                    cancelButtonText: 'Wait, let me check'
+                });
+                if (!confirm.isConfirmed) {
+                    return null;
+                }
+            }
+
+            App.manualQuestions = normalizeQuestionList(paper.questions || []);
+            App.quickModePaperSource = { templateId, qbId };
+            return paper;
+        }
+
+        function handleQuickQuestionBankChange(select) {
+            if (!select) return;
+            select.classList.remove('border-red-500', 'ring-2', 'ring-red-100');
+            App.quickModePaperSource = null;
         }
 
         async function deleteQuestionBank(id) {
@@ -5058,16 +5617,13 @@ if (!empty($Tests)) {
                 const response = await fetch(`/Test/deleteQuestionBank/${id}`, { method: 'POST' });
                 const result = await response.json();
                 if (result.status === 'success') {
-                    // Update local state
                     QuestionBanks = QuestionBanks.filter(b => b.id != id);
-                    
-                    // If we deleted the active bank, deselect it
+
                     if (activeQB && activeQB.id == id) {
                         activeQB = null;
-                        document.getElementById('qbActiveWorkspace').classList.add('hidden');
-                        document.getElementById('qbEmptyState').classList.remove('hidden');
+                        resetToQBEmptyState();
                     }
-                    
+
                     renderQuestionBanks();
                     Swal.fire({ icon: 'success', title: 'Bank Deleted', timer: 1500, showConfirmButton: false });
                 } else {
@@ -5078,162 +5634,424 @@ if (!empty($Tests)) {
             }
         }
 
+
+        function resetToQBEmptyState() {
+            const nameEl = document.getElementById('activeQBName');
+            const subtitleEl = document.getElementById('activeQBSubtitle');
+            if (nameEl) nameEl.textContent = 'Select a Bank';
+            if (subtitleEl) subtitleEl.textContent = 'Repository Context';
+            
+            const show = ['qbEmptyState'];
+            const hide = ['qbContentArea', 'qbHeaderStats', 'qbSecondaryControls', 'qbFooter', 'qbNavigationArrows'];
+            
+            show.forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+            hide.forEach(id => document.getElementById(id)?.classList.add('hidden'));
+            updateQBCreateButtonVisibility();
+        }
+
+        function updateQBCreateButtonVisibility() {
+            const createBtn = document.getElementById('qbCreateBankBtn');
+            if (!createBtn) return;
+            const isCreateMode = !!(activeQB && activeQB.isDraft);
+            createBtn.classList.toggle('hidden', isCreateMode);
+        }
+
+        async function updateQuestionInline(id) {
+            const idx = activeQB.questions.findIndex(q => (q.id || '').toString() === id.toString());
+            if (idx === -1) return;
+
+            const q = activeQB.questions[idx];
+            const updatedData = {
+                question: document.getElementById('editQContent').value.trim()
+            };
+
+            if (q.type === 'MCQ') {
+                updatedData.option_a = document.getElementById('editOptA').value;
+                updatedData.option_b = document.getElementById('editOptB').value;
+                updatedData.option_c = document.getElementById('editOptC').value;
+                updatedData.option_d = document.getElementById('editOptD').value;
+                updatedData.correct_answer = document.getElementById('editCorrect').value;
+            } else {
+                const expEl = document.getElementById('editExpected');
+                updatedData.correct_answer = expEl ? expEl.value : (q.expected_answer || '');
+            }
+
+            try {
+                const response = await fetch(`/Test/updateQBQuestion/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    Object.assign(q, updatedData);
+                    renderQBQuestions();
+                    Swal.fire({ icon: 'success', title: 'Updated!', timer: 1000, showConfirmButton: false });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function promptCreateQB() {
+            activeQB = {
+                id: null,
+                name: '',
+                questions: [],
+                isDraft: true
+            };
+            updateQBCreateButtonVisibility();
+            renderQuestionBanks();
+
+            const hide = ['qbEmptyState'];
+            const show = ['qbContentArea', 'qbHeaderStats', 'qbSecondaryControls', 'qbFooter', 'qbNavigationArrows'];
+            
+            hide.forEach(id => document.getElementById(id)?.classList.add('hidden'));
+            show.forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+
+            const nameEl = document.getElementById('activeQBName');
+            const subtitleEl = document.getElementById('activeQBSubtitle');
+            if (nameEl) {
+                nameEl.innerHTML = `
+                    <input type="text" id="inlineQBName" class="w-full text-xl font-black text-slate-800 border-b-2 border-red-500 focus:outline-none bg-transparent placeholder:text-slate-300 py-1 pr-2" placeholder="Enter Bank Name..." autofocus oninput="if(activeQB){activeQB.name=this.value.trim();}">
+                `;
+            }
+            if (subtitleEl) subtitleEl.textContent = 'Draft Repository Context';
+            const tabsContainer = document.getElementById('qbCategoryTabs');
+            if (tabsContainer) {
+                tabsContainer.innerHTML = `
+                    <div class="flex gap-10">
+                        <div class="relative py-3">
+                            <button class="text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeQBCategory === 'MCQ' ? 'text-red-600' : 'text-slate-400 hover:text-slate-500'}" onclick="selectQBCategory('MCQ')">MCQ</button>
+                            ${activeQBCategory === 'MCQ' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
+                        </div>
+                        <div class="relative py-3">
+                            <button class="text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeQBCategory === '2 Marks' ? 'text-red-600' : 'text-slate-400 hover:text-slate-500'}" onclick="selectQBCategory('2 Marks')">2 Marks</button>
+                            ${activeQBCategory === '2 Marks' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            updateQBCounters();
+            renderQBQuestions();
+        }
+
+        async function saveInlineQB() {
+            const input = document.getElementById('inlineQBName');
+            const name = input.value.trim();
+
+            if (!name) {
+                input.focus();
+                input.classList.add('animate-shake');
+                setTimeout(() => input.classList.remove('animate-shake'), 500);
+                return;
+            }
+
+            Swal.fire({ title: 'Saving Bank...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+            try {
+                const response = await fetch('Test/saveQuestionBank', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    const newBank = {
+                        id: result.id,
+                        name: result.name,
+                        questions: [],
+                        sections: 0
+                    };
+                    QuestionBanks.push(newBank);
+                    renderQuestionBanks();
+                    syncQBDropdowns();
+                    selectQuestionBank(newBank.id);
+                    Swal.fire({ icon: 'success', title: 'Bank Created!', timer: 1500, showConfirmButton: false });
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                Swal.fire('Error', error.message || 'Failed to save bank', 'error');
+            }
+        }
+
+        function cancelInlineCreate() {
+            if (QuestionBanks.length > 0) {
+                selectQuestionBank(QuestionBanks[0].id);
+            } else {
+                resetToQBEmptyState();
+                restoreQBHeader();
+            }
+        }
+
         function selectQuestionBank(id) {
             activeQB = QuestionBanks.find(b => b.id == id);
             if (!activeQB) return;
-            
-            renderQuestionBanks();
-            
-            const emptyState = document.getElementById('qbEmptyState');
-            const workspace = document.getElementById('qbActiveWorkspace');
-            if (emptyState) emptyState.classList.add('hidden');
-            if (workspace) workspace.classList.remove('hidden');
-            
-            // Restore standard header if it was in create mode
-            restoreQBHeader();
-            selectQBCategory(activeQBCategory); // Apply category
+            activeQB.isDraft = false;
+            updateQBCreateButtonVisibility();
 
-            const nameEl = document.getElementById('activeQBName');
-            if (nameEl) nameEl.textContent = activeQB.name;
+            renderQuestionBanks();
+
+            // Show workspace elements with null checks
+            const emptyState = document.getElementById('qbEmptyState');
+            const contentArea = document.getElementById('qbContentArea');
+            const statsArea = document.getElementById('qbHeaderStats');
+            const secondaryControls = document.getElementById('qbSecondaryControls');
+            const navigationArrows = document.getElementById('qbNavigationArrows');
+            const footerArea = document.getElementById('qbFooter');
+
+            if (emptyState) emptyState.classList.add('hidden');
+            if (contentArea) contentArea.classList.remove('hidden');
+            if (statsArea) statsArea.classList.remove('hidden');
+            if (secondaryControls) secondaryControls.classList.remove('hidden');
+            if (navigationArrows) navigationArrows.classList.remove('hidden');
+            if (footerArea) footerArea.classList.remove('hidden');
+
+            restoreQBHeader();
+            selectQBCategory(activeQBCategory);
             updateQBCounters();
-            
             renderQBQuestions();
         }
 
         function updateQBCounters() {
-            if (activeQB) {
+            if (!activeQB) return;
+            
+            const questionsCountEl = document.getElementById('activeQBQuestionsCount');
+            const sectionsCountEl = document.getElementById('activeQBSectionsCount');
+            
+            if (questionsCountEl) {
                 const qCount = activeQB.questions ? activeQB.questions.length : 0;
-                document.getElementById('activeQBQuestionsCount').textContent = qCount;
-                
-                // Sections are distinct categories within this bank
+                questionsCountEl.textContent = qCount;
+            }
+
+            if (sectionsCountEl) {
                 const sections = activeQB.questions ? new Set(activeQB.questions.map(q => q.type || q.marks_type)).size : 0;
-                document.getElementById('activeQBSectionsCount').textContent = sections;
+                sectionsCountEl.textContent = sections;
             }
         }
 
         function selectQBCategory(cat) {
             activeQBCategory = cat;
-            
-            const btnMCQ = document.getElementById('btnCategoryMCQ');
-            const btn2M = document.getElementById('btnCategory2M');
-            
-            if (cat === 'MCQ') {
-                btnMCQ.className = 'px-6 py-2 rounded-xl bg-red-600 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all';
-                btn2M.className = 'px-6 py-2 rounded-xl bg-slate-50 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100';
-            } else {
-                btn2M.className = 'px-6 py-2 rounded-xl bg-red-600 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all';
-                btnMCQ.className = 'px-6 py-2 rounded-xl bg-slate-50 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100';
-            }
-            
+            renderQuestionBanks(); // Sync sidebar tabs
+            restoreQBHeader();     // Sync header tabs
             renderQBQuestions();
         }
 
+        function navigateQBCategory(dir) {
+            const categories = ['MCQ', '2 Marks'];
+            let idx = categories.indexOf(activeQBCategory);
+            if (idx === -1) idx = 0;
+            idx += dir;
+            if (idx < 0) idx = categories.length - 1;
+            if (idx >= categories.length) idx = 0;
+            selectQBCategory(categories[idx]);
+        }
+
         function restoreQBHeader() {
-            document.getElementById('qbHeaderTitle').innerHTML = `
-                <h3 class="text-2xl font-black text-slate-800" id="activeQBName">---</h3>
-                <div class="flex items-center gap-4 mt-2">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
-                        <i class="bi bi-collection"></i> <span id="activeQBSectionsCount">0</span> Sections
-                    </span>
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
-                        <i class="bi bi-question-circle"></i> <span id="activeQBQuestionsCount">0</span> Questions
-                    </span>
-                </div>
-            `;
-            document.getElementById('qbHeaderActions').innerHTML = `
-                <button id="btnCategoryMCQ" class="px-6 py-2 rounded-xl bg-red-600 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all" onclick="selectQBCategory('MCQ')">MCQ</button>
-                <button id="btnCategory2M" class="px-6 py-2 rounded-xl bg-slate-50 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100" onclick="selectQBCategory('2 Marks')">2 Marks</button>
-            `;
+            if (!activeQB) return;
+            const nameEl = document.getElementById('activeQBName');
+            const subtitleEl = document.getElementById('activeQBSubtitle');
+            if (nameEl) nameEl.textContent = activeQB.name;
+            if (subtitleEl) subtitleEl.textContent = 'Repository Context';
+
+            const tabsContainer = document.getElementById('qbCategoryTabs');
+            if (tabsContainer) {
+                tabsContainer.innerHTML = `
+                    <div class="flex gap-10">
+                        <div class="relative py-3">
+                            <button class="text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeQBCategory === 'MCQ' ? 'text-red-600' : 'text-slate-400 hover:text-slate-500'}" onclick="selectQBCategory('MCQ')">MCQ</button>
+                            ${activeQBCategory === 'MCQ' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
+                        </div>
+                        <div class="relative py-3">
+                            <button class="text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeQBCategory === '2 Marks' ? 'text-red-600' : 'text-slate-400 hover:text-slate-500'}" onclick="selectQBCategory('2 Marks')">2 Marks</button>
+                            ${activeQBCategory === '2 Marks' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            updateQBCounters();
         }
 
         function renderQBQuestions() {
             const content = document.getElementById('qbContentArea');
-            if (!activeQB) return;
+            if (!activeQB || !content) return;
 
-            const filteredQuestions = activeQB.questions.filter(q => q.type === activeQBCategory || (activeQBCategory === '2 Marks' && q.type === 'Short Answer'));
+            const filteredQuestions = activeQB.questions ? activeQB.questions.filter(q => q.type === activeQBCategory || (activeQBCategory === '2 Marks' && q.type === 'Short Answer')) : [];
+
+            // Show secondary controls area with null check
+            const secondaryControls = document.getElementById('qbSecondaryControls');
+            if (secondaryControls) secondaryControls.classList.remove('hidden');
+
+            const headerActions = document.getElementById('qbHeaderActions');
+            if (headerActions) {
+                headerActions.innerHTML = `
+                    <button class="px-7 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm" onclick="downloadQBTemplate()">
+                        <i class="bi bi-file-earmark-arrow-down text-sm"></i> Template
+                    </button>
+                    <input type="file" id="qbDirectFileInput" class="hidden" onchange="handleQBFileUpload(this)">
+                    <button class="px-7 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm" onclick="document.getElementById('qbDirectFileInput')?.click()">
+                        <i class="bi bi-cloud-arrow-up text-sm"></i> Bulk
+                    </button>
+                    <button class="px-7 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all flex items-center gap-2 shadow-lg shadow-red-100" onclick="addQuestionInline()">
+                        <i class="bi bi-plus-lg text-sm"></i> Add Question
+                    </button>
+                `;
+            }
 
             let html = `
-                <div class="flex items-center justify-between mb-8">
-                    <button class="btn-red-rounded px-6 text-xs" onclick="addQuestionInline()">
-                        <i class="bi bi-plus-lg me-2"></i> Add Question
-                    </button>
-                    <div class="flex items-center gap-3">
-                        <input type="file" id="qbDirectFileInput" class="hidden" onchange="handleQBFileUpload(this)">
-                        <button class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2" onclick="document.getElementById('qbDirectFileInput').click()">
-                            <i class="bi bi-cloud-arrow-up"></i> Bulk Upload
-                        </button>
-                        <button class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2" onclick="downloadQBTemplate()">
-                            <i class="bi bi-file-earmark-arrow-down"></i> Template Download
-                        </button>
+                <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden mb-6 shadow-sm">
+                    <div class="grid ${activeQBCategory === 'MCQ' ? 'grid-cols-[60px_60%_1fr]' : 'grid-cols-[60px_1fr]'} bg-slate-50/80 border-b border-slate-100 px-2 py-3">
+                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] text-center">#</div>
+                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Question Content</div>
+                        ${activeQBCategory === 'MCQ' ? '<div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] px-4">Option Details</div>' : ''}
                     </div>
-                </div>
-
-                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6 shadow-sm">
-                    <div class="grid ${activeQBCategory === 'MCQ' ? 'grid-cols-[60px_60%_1fr]' : 'grid-cols-[60px_1fr]'} bg-slate-50/80 border-b border-slate-100 px-2 py-2">
-                        <div class="text-[11px] font-black text-slate-500 uppercase tracking-widest text-center">#</div>
-                        <div class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Question Content</div>
-                        ${activeQBCategory === 'MCQ' ? '<div class="text-[11px] font-black text-slate-500 uppercase tracking-widest px-2">Option Content</div>' : ''}
-                    </div>
-                    <div id="questionsList" class="divide-y divide-slate-50">
+                    <div id="questionsList" class="divide-y divide-slate-100">
                         ${filteredQuestions.map((q, idx) => renderQuestionCard(q, idx)).join('')}
                     </div>
                 </div>
             `;
-            
+
             content.innerHTML = html;
         }
 
+        function saveAllQBDetails() {
+            if (!activeQB) return;
+            const draftNameInput = document.getElementById('inlineQBName');
+            const bankName = (draftNameInput?.value || activeQB.name || '').trim();
+
+            if (!bankName) {
+                Swal.fire('Bank Name Required', 'Please enter a bank name before saving.', 'warning');
+                draftNameInput?.focus();
+                return;
+            }
+
+            activeQB.name = bankName;
+
+            if (activeQB.id) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Saved!',
+                    text: 'Repository changes are already synced.',
+                    timer: 1400,
+                    showConfirmButton: false
+                });
+                renderQuestionBanks();
+                renderQBQuestions();
+                syncQBDropdowns();
+                return;
+            }
+
+            Swal.fire({ title: 'Saving Repository...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            fetch('/Test/saveQuestionBank', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: bankName })
+            })
+            .then(response => response.json())
+            .then(async result => {
+                if (result.status !== 'success') throw new Error(result.message || 'Failed to save bank');
+                activeQB.id = result.id;
+                activeQB.isDraft = false;
+
+                if (Array.isArray(activeQB.questions) && activeQB.questions.length > 0) {
+                    const questionsPayload = activeQB.questions.map(q => ({
+                        question: q.question || '',
+                        type: q.type || 'MCQ',
+                        option_a: q.option_a || '',
+                        option_b: q.option_b || '',
+                        option_c: q.option_c || '',
+                        option_d: q.option_d || '',
+                        correct_answer: q.correct_answer || '',
+                        marks: q.marks || (q.type === 'Short Answer' ? 2 : 1),
+                        section_name: q.category || bankName
+                    }));
+
+                    const qResponse = await fetch('/Test/bulkSaveQBQuestions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            repository_id: activeQB.id,
+                            questions: questionsPayload
+                        })
+                    });
+                    const qResult = await qResponse.json();
+                    if (qResult.status !== 'success') throw new Error(qResult.message || 'Failed to save questions');
+                }
+
+                const existing = QuestionBanks.findIndex(b => String(b.id) === String(activeQB.id));
+                const savedBank = {
+                    id: activeQB.id,
+                    name: activeQB.name,
+                    questions: Array.isArray(activeQB.questions) ? activeQB.questions : []
+                };
+                if (existing === -1) {
+                    QuestionBanks.push(savedBank);
+                } else {
+                    QuestionBanks[existing] = savedBank;
+                }
+
+                renderQuestionBanks();
+                syncQBDropdowns();
+                selectQuestionBank(activeQB.id);
+                Swal.fire({ icon: 'success', title: 'Repository Saved!', timer: 1500, showConfirmButton: false });
+            })
+            .catch(error => {
+                Swal.fire('Error', error.message || 'Failed to save repository', 'error');
+            });
+        }
+
         function renderQuestionCard(q, idx) {
+            if (!q) return '';
             const gridClass = activeQBCategory === 'MCQ' ? "grid grid-cols-[60px_60%_1fr] gap-2 items-center" : "grid grid-cols-[60px_1fr] gap-2 items-center";
             if (activeQBCategory === 'MCQ') {
                 return `
-                    <div class="p-2 hover:bg-slate-50/30 transition-all group relative" id="question-card-${q.id || idx}">
+                    <div class="p-1.5 hover:bg-slate-50/30 transition-all group relative" id="question-card-${q.id || idx}">
                         <div class="${gridClass}">
                             <div class="flex flex-col items-center gap-1">
-                                <div class="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center text-[11px] font-black shadow-sm border border-slate-700">${idx + 1}</div>
-                                <span class="px-1.5 py-0.5 rounded-md bg-red-50 text-red-600 text-[8px] font-black uppercase tracking-widest border border-red-100">MCQ</span>
+                                <div class="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-black shadow-sm border border-slate-700">${idx + 1}</div>
+                                <span class="px-1.5 py-0.5 rounded-md bg-red-50 text-red-600 text-[7px] font-black uppercase tracking-widest border border-red-100">MCQ</span>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-sm font-bold text-slate-800 leading-tight truncate">${q.question}</p>
+                                <p class="text-[13px] font-bold text-slate-800 leading-tight truncate">${q.question || ''}</p>
                             </div>
-                            <div class="grid grid-cols-2 gap-1.5 px-1">
+                            <div class="grid grid-cols-2 gap-1 px-1">
                                 ${['A', 'B', 'C', 'D'].map(opt => `
-                                    <div class="flex items-center gap-2 p-1 rounded border ${q.correct_answer === opt ? 'border-green-200 bg-green-50/50' : 'border-slate-100 bg-slate-50/30'}">
-                                        <div class="w-5 h-5 rounded-sm ${q.correct_answer === opt ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-[10px] font-black shrink-0">${opt}</div>
-                                        <span class="text-[10px] font-bold ${q.correct_answer === opt ? 'text-green-800' : 'text-slate-500'} truncate">${q[`option_${opt.toLowerCase()}`]}</span>
+                                    <div class="flex items-center gap-2 p-0.5 px-1.5 rounded border ${q.correct_answer === opt ? 'border-green-200 bg-green-50/50' : 'border-slate-50 bg-slate-50/30'}">
+                                        <div class="w-4 h-4 rounded-sm ${q.correct_answer === opt ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-[9px] font-black shrink-0">${opt}</div>
+                                        <span class="text-[9px] font-bold ${q.correct_answer === opt ? 'text-green-800' : 'text-slate-500'} truncate">${q[`option_${opt.toLowerCase()}`] || ''}</span>
                                     </div>
                                 `).join('')}
                             </div>
                         </div>
                         <!-- Floating Actions on hover -->
-                        <div class="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1">
-                            <button class="w-6 h-6 rounded bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 shadow-sm transition-all" onclick="editQuestionInline('${q.id || idx}')">
-                                <i class="bi bi-pencil-square text-[10px]"></i>
+                        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-white/90 border border-slate-100 rounded-lg px-1.5 py-1 shadow-sm">
+                            <button class="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 shadow-sm transition-all" onclick="editQuestionInline('${q.id || idx}')">
+                                <i class="bi bi-pencil-square text-[11px]"></i>
                             </button>
-                            <button class="w-6 h-6 rounded bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:bg-red-50 hover:text-red-600 shadow-sm transition-all" onclick="deleteQuestion('${q.id || idx}')">
-                                <i class="bi bi-trash3 text-[10px]"></i>
+                            <button class="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-red-50 hover:text-red-600 shadow-sm transition-all" onclick="deleteQuestion('${q.id || idx}')">
+                                <i class="bi bi-trash3 text-[11px]"></i>
                             </button>
                         </div>
                     </div>
                 `;
             } else {
                 return `
-                    <div class="p-2 hover:bg-slate-50/30 transition-all group relative" id="question-card-${q.id || idx}">
+                    <div class="p-1.5 hover:bg-slate-50/30 transition-all group relative" id="question-card-${q.id || idx}">
                         <div class="${gridClass}">
                             <div class="flex flex-col items-center gap-1">
-                                <div class="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center text-[11px] font-black shadow-sm border border-slate-700">${idx + 1}</div>
-                                <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-widest border border-blue-100">2M</span>
+                                <div class="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-black shadow-sm border border-slate-700">${idx + 1}</div>
+                                <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[7px] font-black uppercase tracking-widest border border-blue-100">2M</span>
                             </div>
                             <div class="min-w-0 pr-4">
-                                <p class="text-sm font-bold text-slate-800 leading-tight truncate">${q.question}</p>
+                                <p class="text-[13px] font-bold text-slate-800 leading-tight truncate">${q.question || ''}</p>
                             </div>
                         </div>
-                        <div class="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1">
-                            <button class="w-6 h-6 rounded bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 shadow-sm transition-all" onclick="editQuestionInline('${q.id || idx}')">
-                                <i class="bi bi-pencil-square text-[10px]"></i>
+                        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-white/90 border border-slate-100 rounded-lg px-1.5 py-1 shadow-sm">
+                            <button class="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 shadow-sm transition-all" onclick="editQuestionInline('${q.id || idx}')">
+                                <i class="bi bi-pencil-square text-[11px]"></i>
                             </button>
-                            <button class="w-6 h-6 rounded bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:bg-red-50 hover:text-red-600 shadow-sm transition-all" onclick="deleteQuestion('${q.id || idx}')">
-                                <i class="bi bi-trash3 text-[10px]"></i>
+                            <button class="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-red-50 hover:text-red-600 shadow-sm transition-all" onclick="deleteQuestion('${q.id || idx}')">
+                                <i class="bi bi-trash3 text-[11px]"></i>
                             </button>
                         </div>
                     </div>
@@ -5243,24 +6061,33 @@ if (!empty($Tests)) {
 
         function addQuestionInline() {
             const list = document.getElementById('questionsList');
+            if (!list) return;
+
+            const existingPlaceholder = document.getElementById('inlineFormPlaceholder');
+            if (existingPlaceholder) {
+                const focusTarget = document.getElementById('inlineQContent');
+                if (focusTarget) focusTarget.focus();
+                return;
+            }
+
             const placeholder = document.createElement('div');
             placeholder.id = 'inlineFormPlaceholder';
             list.prepend(placeholder);
-            
+
             let formHtml = '';
             const nextIdx = activeQB.questions.filter(q => q.type === activeQBCategory || (activeQBCategory === '2 Marks' && q.type === 'Short Answer')).length + 1;
             const gridClass = activeQBCategory === 'MCQ' ? "grid grid-cols-[60px_60%_1fr] gap-2 items-center" : "grid grid-cols-[60px_1fr] gap-2 items-center";
 
             if (activeQBCategory === 'MCQ') {
                 formHtml = `
-                    <div class="p-2 bg-white border-b border-red-100 transition-all shadow-inner">
+                    <div class="p-1 bg-white border-b border-red-100 transition-all shadow-inner">
                         <div class="${gridClass}">
                             <div class="flex flex-col items-center gap-1">
-                                <div class="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-[11px] shadow-sm">${nextIdx}</div>
-                                <div class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-widest border border-blue-100">MCQ</div>
+                                <div class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-[10px] shadow-sm">${nextIdx}</div>
+                                <div class="px-1 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[7px] font-black uppercase tracking-widest border border-blue-100">MCQ</div>
                             </div>
                             <div class="p-1">
-                                <textarea id="inlineQContent" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold text-slate-700 focus:bg-white focus:border-red-400 outline-none transition-all resize-none" rows="1" placeholder="Question..." autofocus></textarea>
+                                <textarea id="inlineQContent" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[13px] font-bold text-slate-700 focus:bg-white focus:border-red-400 outline-none transition-all resize-none" rows="1" placeholder="Question..." autofocus></textarea>
                             </div>
                             <div class="grid grid-cols-2 gap-1.5 px-1">
                                 ${['A', 'B', 'C', 'D'].map(opt => `
@@ -5275,32 +6102,32 @@ if (!empty($Tests)) {
                                 <input type="hidden" id="inlineCorrect" value="">
                             </div>
                         </div>
-                        <div class="flex justify-end gap-1 mt-1 pb-1 pr-1">
-                            <button class="px-2 py-1 rounded bg-slate-50 text-slate-400 font-black text-[7px] uppercase tracking-widest hover:bg-slate-100 transition-all" onclick="cancelInlineForm()">Cancel</button>
-                            <button class="px-4 py-1 rounded bg-red-600 text-white font-black text-[7px] uppercase tracking-widest hover:bg-red-700 transition-all" onclick="saveQuestionInline()">Save</button>
+                        <div class="flex justify-end gap-2 mt-2 pb-1 pr-1">
+                            <button class="px-4 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-black text-[9px] uppercase tracking-widest hover:bg-slate-200 transition-all border border-slate-200" onclick="cancelInlineForm()">Cancel</button>
+                            <button class="px-4 py-1.5 rounded-lg bg-red-600 text-white font-black text-[9px] uppercase tracking-widest hover:bg-red-700 transition-all shadow-sm shadow-red-100" onclick="saveQuestionInline()">Save</button>
                         </div>
                     </div>
                 `;
             } else {
                 formHtml = `
-                    <div class="p-2 bg-white border-b border-blue-100 transition-all shadow-inner">
+                    <div class="p-1 bg-white border-b border-blue-100 transition-all shadow-inner">
                         <div class="${gridClass}">
                             <div class="flex flex-col items-center gap-1">
-                                <div class="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-[11px] shadow-sm">${nextIdx}</div>
-                                <div class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-widest border border-blue-100">2M</div>
+                                <div class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-[10px] shadow-sm">${nextIdx}</div>
+                                <div class="px-1 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[7px] font-black uppercase tracking-widest border border-blue-100">2M</div>
                             </div>
                             <div class="p-1">
-                                <textarea id="inlineQContent" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold text-slate-700 focus:bg-white focus:border-blue-400 outline-none transition-all resize-none" rows="1" placeholder="Question..." autofocus></textarea>
+                                <textarea id="inlineQContent" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-400 outline-none transition-all resize-none" rows="1" placeholder="Question..." autofocus></textarea>
                             </div>
                         </div>
-                        <div class="flex justify-end gap-1 mt-1 pb-1 pr-1">
-                            <button class="px-2 py-1 rounded bg-slate-50 text-slate-400 font-black text-[7px] uppercase tracking-widest hover:bg-slate-100 transition-all" onclick="cancelInlineForm()">Cancel</button>
-                            <button class="px-4 py-1 rounded bg-red-600 text-white font-black text-[7px] uppercase tracking-widest hover:bg-red-700 transition-all" onclick="saveQuestionInline()">Save</button>
+                        <div class="flex justify-end gap-2 mt-2 pb-1 pr-1">
+                            <button class="px-4 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-black text-[9px] uppercase tracking-widest hover:bg-slate-200 transition-all border border-slate-200" onclick="cancelInlineForm()">Cancel</button>
+                            <button class="px-4 py-1.5 rounded-lg bg-red-600 text-white font-black text-[9px] uppercase tracking-widest hover:bg-red-700 transition-all shadow-sm shadow-red-100" onclick="saveQuestionInline()">Save</button>
                         </div>
                     </div>
                 `;
             }
-            
+
             placeholder.innerHTML = formHtml;
             placeholder.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
@@ -5321,11 +6148,10 @@ if (!empty($Tests)) {
             if (el) el.remove();
         }
 
-
         async function saveQuestionInline() {
             const content = document.getElementById('inlineQContent').value.trim();
             if (!content) return;
-            
+
             const qData = {
                 repository_id: activeQB.id,
                 question: content,
@@ -5333,7 +6159,7 @@ if (!empty($Tests)) {
                 marks: activeQBCategory === '2 Marks' ? 2 : 1,
                 category: activeQB.name
             };
-            
+
             if (activeQBCategory === 'MCQ') {
                 qData.option_a = document.getElementById('inlineOptA').value;
                 qData.option_b = document.getElementById('inlineOptB').value;
@@ -5344,7 +6170,19 @@ if (!empty($Tests)) {
                 const expEl = document.getElementById('inlineExpected');
                 qData.correct_answer = expEl ? expEl.value : '';
             }
-            
+
+            if (!activeQB.id) {
+                qData.id = `draft_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+                if (!activeQB.questions) activeQB.questions = [];
+                activeQB.questions.push(qData);
+                updateQBCounters();
+                renderQBQuestions();
+                renderQuestionBanks();
+                syncQBDropdowns();
+                Swal.fire({ icon: 'success', title: 'Question Added', text: 'Saved in draft. Click Save to persist.', timer: 1300, showConfirmButton: false });
+                return;
+            }
+
             try {
                 const response = await fetch('Test/saveQBQuestion', {
                     method: 'POST',
@@ -5393,23 +6231,23 @@ if (!empty($Tests)) {
         function editQuestionInline(id) {
             const idx = activeQB.questions.findIndex(q => (q.id || '').toString() === id.toString());
             if (idx === -1) return;
-            
+
             const q = activeQB.questions[idx];
             const card = document.getElementById(`question-card-${id}`);
             const questionIdx = activeQB.questions.filter(qu => qu.type === q.type).indexOf(q) + 1;
             const gridClass = activeQBCategory === 'MCQ' ? "grid grid-cols-[60px_60%_1fr] gap-2 items-center" : "grid grid-cols-[60px_1fr] gap-2 items-center";
-            
+
             let editHtml = '';
             if (q.type === 'MCQ') {
                 editHtml = `
-                    <div class="p-2 bg-blue-50/30 border-y border-blue-100 transition-all shadow-inner">
+                    <div class="p-1 bg-blue-50/30 border-y border-blue-100 transition-all shadow-inner">
                         <div class="${gridClass}">
                             <div class="flex flex-col items-center gap-1">
-                                <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px] font-black shadow-sm border border-blue-500">${questionIdx}</div>
-                                <span class="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-600 text-[8px] font-black uppercase tracking-widest">EDIT</span>
+                                <div class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-black shadow-sm border border-blue-500">${questionIdx}</div>
+                                <span class="px-1 py-0 rounded-md bg-blue-100 text-blue-600 text-[7px] font-black uppercase tracking-widest">EDIT</span>
                             </div>
                             <div class="p-1">
-                                <textarea id="editQContent" class="w-full bg-white border border-blue-200 rounded p-2 text-sm font-bold text-slate-700 outline-none transition-all resize-none" rows="1">${q.question}</textarea>
+                                <textarea id="editQContent" class="w-full bg-white border border-blue-200 rounded p-1.5 text-[13px] font-bold text-slate-700 outline-none transition-all resize-none" rows="1">${q.question}</textarea>
                             </div>
                             <div class="grid grid-cols-2 gap-1 px-1">
                                 ${['A', 'B', 'C', 'D'].map(opt => `
@@ -5449,7 +6287,7 @@ if (!empty($Tests)) {
                     </div>
                 `;
             }
-            
+
             card.innerHTML = editHtml;
         }
 
@@ -5470,12 +6308,12 @@ if (!empty($Tests)) {
         async function updateQuestionInline(id) {
             const idx = activeQB.questions.findIndex(q => (q.id || '').toString() === id.toString());
             if (idx === -1) return;
-            
+
             const q = activeQB.questions[idx];
             const updatedData = {
                 question: document.getElementById('editQContent').value.trim()
             };
-            
+
             if (q.type === 'MCQ') {
                 updatedData.option_a = document.getElementById('editOptA').value;
                 updatedData.option_b = document.getElementById('editOptB').value;
@@ -5490,74 +6328,6 @@ if (!empty($Tests)) {
             try {
                 const response = await fetch(`/Test/updateQBQuestion/${id}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedData)
-                });
-                const result = await response.json();
-                if (result.status === 'success') {
-                    Object.assign(q, updatedData);
-                    renderQBQuestions();
-                    Swal.fire({ icon: 'success', title: 'Updated!', timer: 1000, showConfirmButton: false });
-                }
-            } catch (e) { console.error(e); }
-        }
-
-        function promptCreateQB() {
-            activeQB = null; // Deselect bank
-            renderQuestionBanks();
-            
-            document.getElementById('qbEmptyState').classList.add('hidden');
-            document.getElementById('qbActiveWorkspace').classList.remove('hidden');
-            
-            // Render Inline Create UI in Header
-            document.getElementById('qbHeaderTitle').innerHTML = `
-                <div class="flex flex-col">
-                    <input type="text" id="inlineQBName" class="text-2xl font-black text-slate-800 border-b-2 border-red-500 focus:outline-none bg-transparent placeholder:text-slate-200 py-1" placeholder="Enter Bank Name..." autofocus onkeydown="if(event.key==='Enter')saveInlineQB()">
-                    <div class="flex items-center gap-4 mt-2">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
-                            <i class="bi bi-collection"></i> 0 Sections
-                        </span>
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
-                            <i class="bi bi-question-circle"></i> 0 Questions
-                        </span>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('qbHeaderActions').innerHTML = `
-                <div class="flex items-center gap-3">
-                    <button class="px-6 py-2 rounded-xl bg-slate-100 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all" onclick="cancelInlineCreate()">Cancel</button>
-                    <button class="btn-red-rounded px-8 text-[10px] uppercase tracking-widest font-black" onclick="saveInlineQB()">Save Bank</button>
-                </div>
-            `;
-            
-            document.getElementById('qbContentArea').innerHTML = `
-                <div class="flex flex-col items-center justify-center py-24 text-slate-300">
-                    <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-slate-100">
-                        <i class="bi bi-journal-plus text-3xl opacity-50"></i>
-                    </div>
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Naming your new bank...</p>
-                </div>
-            `;
-        }
-
-        async function saveInlineQB() {
-            const input = document.getElementById('inlineQBName');
-            const name = input.value.trim();
-            
-            if (!name) {
-                input.focus();
-                input.classList.add('animate-shake');
-                setTimeout(() => input.classList.remove('animate-shake'), 500);
-                return;
-            }
-            
-            Swal.fire({ title: 'Saving Bank...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-
-            try {
-                const response = await fetch('Test/saveQuestionBank', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: name })
                 });
 
@@ -5586,8 +6356,7 @@ if (!empty($Tests)) {
             if (QuestionBanks.length > 0) {
                 selectQuestionBank(QuestionBanks[0].id);
             } else {
-                document.getElementById('qbActiveWorkspace').classList.add('hidden');
-                document.getElementById('qbEmptyState').classList.remove('hidden');
+                resetToQBEmptyState();
                 restoreQBHeader();
             }
         }
@@ -5598,7 +6367,7 @@ if (!empty($Tests)) {
             const headers = "section_name,question,type,option_a,option_b,option_c,option_d,correct_answer,marks,expected_answer\n";
             const sample1 = "MCQ,What is 2+2?,MCQ,3,4,5,6,B,1,\n";
             const sample2 = "Aptitude,Explain gravity.,Short Answer,,,,,,2,Force that pulls objects towards each other.\n";
-            
+
             const blob = new Blob([headers + sample1 + sample2], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -5612,7 +6381,7 @@ if (!empty($Tests)) {
             if (!file || !activeQB) return;
 
             const reader = new FileReader();
-            reader.onload = async function(e) {
+            reader.onload = async function (e) {
                 const text = e.target.result;
                 const rows = text.split('\n');
                 let startIndex = 0;
@@ -5643,6 +6412,34 @@ if (!empty($Tests)) {
                 }
 
                 Swal.fire({ title: 'Importing...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+                if (!activeQB.id) {
+                    const localQuestions = questions.map((q, idx) => ({
+                        id: `draft_import_${Date.now()}_${idx}`,
+                        repository_id: null,
+                        question: q.question || '',
+                        type: q.type === 'Short Answer' ? 'Short Answer' : 'MCQ',
+                        option_a: q.option_a || '',
+                        option_b: q.option_b || '',
+                        option_c: q.option_c || '',
+                        option_d: q.option_d || '',
+                        correct_answer: q.correct_answer || q.expected_answer || '',
+                        marks: q.marks || (q.type === 'Short Answer' ? 2 : 1),
+                        category: activeQB.name || 'Draft'
+                    }));
+                    activeQB.questions = [...(activeQB.questions || []), ...localQuestions];
+                    updateQBCounters();
+                    renderQBQuestions();
+                    renderQuestionBanks();
+                    Swal.fire({
+                        title: 'Imported to Draft',
+                        text: `${localQuestions.length} questions added. Click Save to persist.`,
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    return;
+                }
 
                 try {
                     const response = await fetch('Test/bulkSaveQBQuestions', {
@@ -5679,19 +6476,26 @@ if (!empty($Tests)) {
             const filtered = QuestionBanks.filter(b => b.name.toLowerCase().includes(query.toLowerCase()));
             const list = document.getElementById('qbList');
             if (!list) return;
-            list.innerHTML = filtered.map(bank => `
-                <div class="qb-bank-card ${activeQB && activeQB.id === bank.id ? 'active' : ''}" onclick="selectQuestionBank(${bank.id})">
-                    <div class="flex items-center gap-3">
-                        <div class="bank-icon">
-                            <i class="bi bi-journal-text"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="text-xs font-black text-slate-800 truncate mb-0.5">${bank.name}</h4>
-                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${bank.questions.length} Questions</p>
-                        </div>
+            list.innerHTML = filtered.map(bank => {
+                const qCount = Array.isArray(bank.questions) ? bank.questions.length : 0;
+                const sections = Array.isArray(bank.questions) ? new Set(bank.questions.map(q => q.type || q.marks_type)).size : 0;
+                return `
+                <div class="qb-bank-card ${activeQB && activeQB.id === bank.id ? 'active shadow-lg shadow-red-50' : ''}" onclick="selectQuestionBank(${bank.id})">
+                    <div class="bank-icon">
+                        <i class="bi bi-journal-text"></i>
                     </div>
+                    <div class="qb-bank-main">
+                        <h4 class="qb-bank-title">${bank.name}</h4>
+                        <p class="qb-bank-meta">${qCount} Questions • ${sections} Sections</p>
+                    </div>
+                    <!-- Delete Action for Bank -->
+                    <button class="qb-bank-delete"
+                            onclick="event.stopPropagation(); deleteQuestionBank(${bank.id})">
+                        <i class="bi bi-trash3 text-[10px]"></i>
+                    </button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         // --- Tab Management ---
@@ -5717,12 +6521,12 @@ if (!empty($Tests)) {
             const targetTab = document.getElementById('tab-content-' + tabId);
             if (targetTab) {
                 targetTab.classList.remove('hidden');
-                
+
                 // Specific initialization for each tab
                 if (tabId === 'management') {
                     if (typeof initTestsDataTable === 'function') initTestsDataTable();
                 }
-                
+
                 if (tabId === 'results') {
                     if (typeof switchResultView === 'function') {
                         switchResultView('student');
@@ -5912,8 +6716,8 @@ if (!empty($Tests)) {
                         className: 'text-center px-6',
                         render: (data, type, row) => `
                         <div class="flex items-center justify-center gap-2">
-                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-green-50 hover:text-green-600 transition-all" onclick="event.stopPropagation(); toggleViewTest(this)" title="View Details">
-                                <i class="bi bi-eye"></i>
+                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-all" onclick="event.stopPropagation(); switchMainTab('results')" title="Results & Evaluation">
+                                <i class="bi bi-file-earmark-text"></i>
                             </button>
                             <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-all" onclick="event.stopPropagation(); editTest(${JSON.stringify(row).replace(/"/g, '&quot;')})" title="Edit">
                                 <i class="bi bi-pencil"></i>
@@ -6006,13 +6810,13 @@ if (!empty($Tests)) {
         function initBatchDataTable(testId, packs) {
             $(`#BatchTable_${testId}`).DataTable({
                 data: packs,
-                rowCallback: function(row, data) {
+                rowCallback: function (row, data) {
                     if (data.status === 'published') {
                         $(row).addClass('is-published');
                     } else {
                         $(row).removeClass('is-published');
                     }
-                    
+
                     if (data._isEditing) {
                         $(row).addClass('is-editing');
                     } else {
@@ -6057,10 +6861,10 @@ if (!empty($Tests)) {
                             const val = data || 'all';
                             const totalCount = App.employees ? App.employees.length : 0;
                             const specificCount = (val && val !== 'all') ? val.split(',').length : 0;
-                            
+
                             let display = isAll ? `All Candidates (${totalCount})` : `Specific Candidates (${specificCount})`;
                             const isPublished = row.status === 'published';
-                            
+
                             return `
                                 <div class="candidate-selector-wrapper">
                                     <div class="readonly-view px-3 py-2 text-xs font-bold text-slate-600">
@@ -6157,6 +6961,7 @@ if (!empty($Tests)) {
                                     <i class="bi bi-eye"></i>
                                 </button>
                             </div>`
+
                         }
                     }
                 ],
@@ -6176,11 +6981,11 @@ if (!empty($Tests)) {
             if (startTime && endTime) {
                 const start = new Date(`2000-01-01T${startTime}`);
                 let end = new Date(`2000-01-01T${endTime}`);
-                
+
                 if (end < start) {
                     end = new Date(`2000-01-02T${endTime}`);
                 }
-                
+
                 const diff = (end - start) / (1000 * 60);
                 tr.find('[data-field="duration"]').val(Math.max(0, Math.floor(diff)));
             }
@@ -6225,7 +7030,7 @@ if (!empty($Tests)) {
                             timer: 1500,
                             showConfirmButton: false
                         });
-                        
+
                         const table = $(`#BatchTable_${testId}`).DataTable();
                         const tr = $(btn).closest('tr');
                         const row = table.row(tr);
@@ -6262,9 +7067,9 @@ if (!empty($Tests)) {
                 end_time: '11:00',
                 duration: 60
             };
-            
+
             table.row.add(newRowData).draw(false);
-            
+
             setTimeout(() => {
                 const trNode = $(`#BatchTable_${testId} tbody tr`).last();
                 trNode[0]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -6280,7 +7085,7 @@ if (!empty($Tests)) {
             const hiddenInput = wrapper.find('input[data-field="candidates"]');
             const displaySpan = wrapper.find('.readonly-view span');
             const totalCount = App.employees ? App.employees.length : 0;
-            
+
             if (select.value === 'all') {
                 pickerBtn.addClass('hidden');
                 hiddenInput.val('all');
@@ -6299,13 +7104,13 @@ if (!empty($Tests)) {
             const wrapper = $(btn).closest('.candidate-selector-wrapper');
             const hiddenInput = wrapper.find('input[data-field="candidates"]');
             const currentVal = hiddenInput.val();
-            
+
             // Re-use existing candidate picker modal if possible
             // We'll need a way to pass the selected IDs back.
             // For now, let's use a simple prompt or a specialized modal call.
-            
+
             const TestId = $(btn).closest('table').attr('id').replace('BatchTable_', '');
-            
+
             // Store current context
             window.activeBatchPicker = {
                 input: hiddenInput,
@@ -6316,27 +7121,27 @@ if (!empty($Tests)) {
             // Assuming openCandidatePicker is globally available
             // and we can hook into its 'Save' button.
             openCandidatePicker(TestId, currentVal === 'all' ? '' : currentVal);
-            
+
             // Override the global App.saveSelectedCandidates if it exists, or hook into the modal
             const originalSave = App.saveSelectedCandidates;
-            App.saveSelectedCandidates = function() {
+            App.saveSelectedCandidates = function () {
                 const selected = App.selectedCandidates[TestId] || [];
                 const val = selected.join(',');
-                
+
                 if (window.activeBatchPicker) {
                     const totalCount = App.employees ? App.employees.length : 0;
                     const display = val ? `Specific Candidates (${selected.length})` : `All Candidates (${totalCount})`;
-                    
+
                     window.activeBatchPicker.input.val(val);
                     window.activeBatchPicker.wrapper.find('.readonly-view span').text(display);
-                    
+
                     if (!val) {
                         window.activeBatchPicker.wrapper.find('select').val('all');
                         window.activeBatchPicker.wrapper.find('.specific-picker-btn').addClass('hidden');
                         window.activeBatchPicker.input.val('all');
                     }
                 }
-                
+
                 // Call original and then restore it
                 if (originalSave) originalSave.apply(App, arguments);
                 App.saveSelectedCandidates = originalSave;
@@ -6349,9 +7154,9 @@ if (!empty($Tests)) {
             const table = tr.closest('table').DataTable();
             const row = table.row(tr);
             const data = row.data();
-            
+
             // Close other editing rows if any
-            table.rows().every(function() {
+            table.rows().every(function () {
                 const d = this.data();
                 if (d._isEditing && d.id !== data.id) {
                     d._isEditing = false;
@@ -6361,7 +7166,7 @@ if (!empty($Tests)) {
 
             data._isEditing = !data._isEditing;
             row.data(data).draw(false);
-            
+
             if (data._isEditing) {
                 setTimeout(() => {
                     $(row.node()).find('input').first().focus();
@@ -6415,7 +7220,7 @@ if (!empty($Tests)) {
                         showConfirmButton: false,
                         timer: 2000
                     });
-                    
+
                     // Update the row data with the new ID and exit edit mode
                     const table = $(`#BatchTable_${testId}`).DataTable();
                     const row = table.row(tr);
@@ -6434,7 +7239,7 @@ if (!empty($Tests)) {
             }
         }
 
-        let currentTestIdForPack = null;
+        var currentTestIdForPack = null;
         function toggleInlinePackForm(id) {
             currentTestIdForPack = id;
 
@@ -6581,6 +7386,7 @@ if (!empty($Tests)) {
 
         function selectTemplate(templateId, clearQuestions = false) {
             document.getElementById('baseTemplateSelect').value = templateId;
+            isInlineTemplateEditMode = false;
 
             // Update UI Highlights
             document.querySelectorAll('.template-card').forEach(card => {
@@ -6598,6 +7404,13 @@ if (!empty($Tests)) {
 
             // Update Center Column Details
             updateTemplateDetails(templateId, clearQuestions);
+            updateQuickModeFooterVisibility();
+
+            // If in template mode, switch back to batch view to show the details
+            const builderView = document.getElementById('templateBuilderInlineView');
+            if (builderView && !builderView.classList.contains('hidden')) {
+                toggleWizardView('batch');
+            }
 
             // Find template data and update duration
             const t = App.templates.find(item => item.id == templateId);
@@ -6716,6 +7529,11 @@ if (!empty($Tests)) {
                 duration: document.getElementById('pack_duration').value
             });
 
+            const modalEl = document.getElementById('createPackModal');
+            const isQuickMode = modalEl && modalEl.classList.contains('quick-mode');
+            const qbSelect = document.getElementById('quick_qb_select');
+            const qbId = qbSelect ? qbSelect.value : '';
+
             if (!validatePackWizard()) {
                 const name = document.getElementById('pack_wizard_name').value.trim();
                 const template = document.getElementById('baseTemplateSelect').value;
@@ -6724,11 +7542,12 @@ if (!empty($Tests)) {
                 if (!name) missing.push("Batch Name");
                 if (!template) missing.push("Template Selection");
                 if (!duration || parseInt(duration) <= 0) missing.push("Valid Duration");
+                if (isQuickMode && !qbId) missing.push("Question Bank");
 
                 Swal.fire({
                     title: 'Incomplete Form',
-                    html: `Please check the following required fields:<br><br><ul class="text-left text-xs text-red-600 font-bold list-disc pl-5">` + 
-                          missing.map(m => `<li>${m}</li>`).join('') + `</ul>`,
+                    html: `Please check the following required fields:<br><br><ul class="text-left text-xs text-red-600 font-bold list-disc pl-5">` +
+                        missing.map(m => `<li>${m}</li>`).join('') + `</ul>`,
                     icon: 'warning'
                 });
                 return;
@@ -6744,28 +7563,9 @@ if (!empty($Tests)) {
             const endTime = document.getElementById('pack_scheduled_date').value + ' ' + document.getElementById('pack_end_time').value;
             const candidates = App.selectedCandidates[testId] || [];
 
-            // Randomized Question Selection Fallback: 
-            // If in Quick Mode and no questions picked yet, pick them now
-            const modalEl = document.getElementById('createPackModal');
-            if (modalEl && modalEl.classList.contains('quick-mode') && App.manualQuestions.length === 0) {
-                const qbId = document.getElementById('quick_qb_select').value;
-                if (qbId) {
-                    const paper = App.generatePaperFromBank(qbId, templateId);
-                    if (paper) {
-                        if (paper.warnings.length > 0) {
-                            const confirm = await Swal.fire({
-                                title: 'Insufficient Questions',
-                                html: paper.warnings.join('<br>'),
-                                icon: 'warning',
-                                showCancelButton: true,
-                                confirmButtonText: 'Proceed Anyway',
-                                cancelButtonText: 'Wait, let me check'
-                            });
-                            if (!confirm.isConfirmed) return;
-                        }
-                        App.manualQuestions = paper.questions;
-                    }
-                }
+            if (isQuickMode) {
+                const paper = await generateQuestionsForQuickMode(templateId, qbId);
+                if (!paper) return;
             }
 
             Swal.fire({
@@ -6798,6 +7598,8 @@ if (!empty($Tests)) {
                 formData.append('allow_backtracking', document.getElementById('pack_allow_backtracking').checked ? 1 : 0);
                 formData.append('candidates', candidates.join(','));
                 formData.append('manual_questions', JSON.stringify(App.manualQuestions));
+                formData.append('selected_qb_id', qbId || '');
+                formData.append('sync_template_questions', isQuickMode ? '1' : '0');
 
                 // Log the exact payload for debugging as requested
                 console.group("🚀 Final Save Payload");
@@ -6813,12 +7615,27 @@ if (!empty($Tests)) {
 
                 const result = await response.json();
                 if (result.status === 'success') {
-                    Swal.fire({ 
-                        title: 'Success!', 
-                        text: 'Test batch and assignments saved successfully.', 
-                        icon: 'success', 
-                        timer: 2000, 
-                        showConfirmButton: false 
+                    if (templateId) {
+                        const templateIndex = (App.templates || []).findIndex(item => item.id == templateId);
+                        if (templateIndex !== -1) {
+                            const updatedTemplate = {
+                                ...App.templates[templateIndex],
+                                ...(result.template || {}),
+                                questions: normalizeQuestionList((result.template && result.template.questions) || App.manualQuestions)
+                            };
+                            if (result.template && result.template.sections) {
+                                updatedTemplate.sections = result.template.sections;
+                            }
+                            App.templates[templateIndex] = updatedTemplate;
+                        }
+                    }
+
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Test batch and assignments saved successfully.',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
                     }).then(() => {
                         if (typeof renderTable === 'function') renderTable();
                         closeModal('createPackModal');
@@ -6831,6 +7648,9 @@ if (!empty($Tests)) {
                 Swal.fire('Error', e.message || 'Failed to save Batch.', 'error');
             }
         }
+
+        var currentEditingTemplateIdInline = null;
+        var isInlineTemplateEditMode = false;
 
         function toggleWizardView(view) {
             const configView = document.getElementById('batchWizardConfigView');
@@ -6850,6 +7670,10 @@ if (!empty($Tests)) {
                 }
             };
 
+            const backBtn = document.getElementById('wizard_global_back_btn');
+            const createBtn = document.getElementById('wizard_global_create_btn');
+            const divider = document.getElementById('wizard_header_divider');
+
             // Hide everything by default
             if (configView) configView.classList.add('hidden');
             if (builderView) builderView.classList.add('hidden');
@@ -6860,64 +7684,189 @@ if (!empty($Tests)) {
 
             if (view === 'template') {
                 if (builderView) builderView.classList.remove('hidden');
+                if (backBtn) backBtn.classList.remove('hidden');
+                if (createBtn) createBtn.classList.add('hidden');
+                if (divider) divider.classList.add('hidden');
+
                 if (mainColumn) {
                     mainColumn.classList.remove('hidden');
                     mainColumn.scrollTop = 0;
                 }
-                
-                if (sidebar) sidebar.classList.add('opacity-50', 'pointer-events-none');
+
+                if (sidebar) sidebar.classList.remove('opacity-50', 'pointer-events-none');
+                forceDisplay(header, 'flex');
             } else if (view === 'batch') {
                 if (configView) configView.classList.remove('hidden');
                 if (footer) footer.classList.remove('hidden');
+                if (backBtn) backBtn.classList.add('hidden');
+                if (createBtn) createBtn.classList.remove('hidden');
+                if (divider) divider.classList.remove('hidden');
+
                 forceDisplay(header, 'flex');
                 forceDisplay(footer, 'flex');
                 if (sidebar) sidebar.classList.remove('opacity-50', 'pointer-events-none');
             } else if (view === 'paper') {
                 if (paperView) paperView.classList.remove('hidden');
+                if (backBtn) backBtn.classList.remove('hidden');
+                if (createBtn) createBtn.classList.add('hidden');
+                if (divider) divider.classList.add('hidden');
+
                 forceDisplay(header, 'flex');
                 if (sidebar) sidebar.classList.remove('opacity-50', 'pointer-events-none');
+            }
+            updateQuickModeFooterVisibility();
+        }
+
+        function updateQuickModeFooterVisibility() {
+            const footer = document.getElementById('quick-mode-footer');
+            if (!footer) return;
+
+            const builderView = document.getElementById('templateBuilderInlineView');
+            const isBuilderVisible = builderView && !builderView.classList.contains('hidden');
+            if (isBuilderVisible) {
+                footer.classList.add('hidden');
+                return;
+            }
+
+            const selectedTemplateId = document.getElementById('baseTemplateSelect')?.value || '';
+            footer.classList.toggle('hidden', !!selectedTemplateId);
+        }
+
+        function ensureBuilderQuestionScrollWorks() {
+            // This ensures the main column scrolls while the questions container remains auto-height
+            const mainColumn = document.getElementById('wizardMainColumn');
+            if (mainColumn) {
+                mainColumn.style.overflowY = 'auto';
+                mainColumn.style.height = '100%';
+            }
+
+            const container = document.getElementById('builder_questions_container_inline');
+            if (container) {
+                container.style.height = 'auto';
+                container.style.maxHeight = 'none';
+                container.style.overflow = 'visible';
+                container.tabIndex = 0;
+            }
+
+            const qSection = document.getElementById('builder_questions_section_inline');
+            if (qSection) {
+                qSection.style.maxHeight = 'none';
+                qSection.style.overflow = 'visible';
+            }
+        }
+
+        function handleWizardBack() {
+            const builderView = document.getElementById('templateBuilderInlineView');
+            const paperView = document.getElementById('quick-generated-paper-section');
+            
+            if (builderView && !builderView.classList.contains('hidden')) {
+                toggleWizardView('batch');
+            } else if (paperView && !paperView.classList.contains('hidden')) {
+                closeQuickPreview();
+            }
+        }
+
+        function closeQuickSetup() {
+            const modalEl = document.getElementById('createPackModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) {
+                    modal.hide();
+                } else {
+                    // Fallback for jQuery/Bootstrap 4 if needed
+                    $(modalEl).modal('hide');
+                }
             }
         }
 
         function openTemplateBuilderInline() {
             console.log("Opening Template Builder Inline...");
+            currentEditingTemplateIdInline = null; // New Template
+            isInlineTemplateEditMode = false;
+            updateBuilderTemplateFooterVisibility();
+            ensureBuilderQuestionScrollWorks();
+            
             // 1. Reset the UI components
             const container = document.getElementById('builder_sections_container_inline');
             if (container) {
-                // Restore the empty state HTML which might have been cleared previously
                 container.innerHTML = `
-                    <div class="empty-state py-12 text-center bg-slate-50/50" id="builder_empty_state_inline">
-                        <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 text-slate-200">
-                            <i class="bi bi-stack text-3xl"></i>
+                    <div class="empty-state py-24 text-center flex flex-col items-center justify-center h-full" id="builder_empty_state_inline">
+                        <div class="w-24 h-24 bg-slate-50 rounded-[32px] shadow-inner flex items-center justify-center mb-6 text-slate-200">
+                            <i class="bi bi-stack text-5xl"></i>
                         </div>
-                        <h5 class="text-[13px] font-bold text-slate-600 mb-1">No Sections Added</h5>
-                        <p class="text-[10px] text-slate-400">Add a section blueprint above to start building</p>
+                        <h5 class="text-[16px] font-black text-slate-700 mb-2">Structure is Empty</h5>
+                        <p class="text-[12px] text-slate-400 font-medium max-w-[220px] mx-auto">Select a section blueprint above to define your paper structure</p>
                     </div>
                 `;
             }
-            
+
             const header = document.getElementById('inline_builder_header');
-            if (header) {
-                header.style.display = 'none';
-            }
-            
+            if (header) header.style.display = 'none';
+
             // 2. Reset totals
-            const totalMarksEl = document.getElementById('builder_total_marks_inline');
-            if (totalMarksEl) totalMarksEl.innerText = '0 Marks';
-            const sectionCountEl = document.getElementById('builder_section_count_inline');
-            if (sectionCountEl) sectionCountEl.innerText = '0 Sections';
-            
+            // (Removed as per user request to hide stats cards)
+
             // 3. Reset inputs
             const nameInput = document.getElementById('builder_storage_name_inline');
             if (nameInput) nameInput.value = '';
-            
+
             // 4. Clear state
             if (typeof App !== 'undefined') {
                 App.manualQuestions = [];
             }
-            
-            // 5. Toggle view - Force immediate update
+
+            // 5. Hide Questions Section
+            const qSection = document.getElementById('builder_questions_section_inline');
+            if (qSection) qSection.classList.add('hidden');
+
+            // 6. Hide Question Bank Selector
+            const qbSection = document.getElementById('quick-qb-selector-section');
+            if (qbSection) qbSection.classList.add('hidden');
+
+            // 7. Toggle View
             toggleWizardView('template');
+        }
+
+        function loadTemplateToBuilderInline(id, editable = false) {
+            currentEditingTemplateIdInline = id;
+            isInlineTemplateEditMode = !!editable;
+            updateBuilderTemplateFooterVisibility();
+            ensureBuilderQuestionScrollWorks();
+            const template = App.templates.find(t => t.id == id);
+            if (!template) return;
+
+            // 1. Set Name
+            document.getElementById('builder_storage_name_inline').value = template.name;
+            
+            // 2. Clear Container
+            const container = document.getElementById('builder_sections_container_inline');
+            container.innerHTML = '';
+            document.getElementById('inline_builder_header').style.display = 'grid';
+
+            // 3. Load Sections
+            const structure = typeof template.sections === 'string' ? JSON.parse(template.sections) : template.sections;
+            App.manualQuestions = hydrateTemplateQuestions(template.id, template.questions || []);
+
+            if (structure && structure.length > 0) {
+                structure.forEach(s => {
+                    addSelectedSectionInline(s.marks_type || s.type, s.section_name || s.name, s.num_questions || s.count, s.marks_per_question || s.marks);
+                });
+            }
+
+            // 4. Toggle view
+            toggleWizardView('template');
+            
+            // 5. Update stats
+            updateBuilderStatsInline();
+            const qbSection = document.getElementById('quick-qb-selector-section');
+            if (qbSection) qbSection.classList.add('hidden');
+        }
+
+        function updateBuilderTemplateFooterVisibility() {
+            const footer = document.getElementById('builder_template_footer');
+            if (!footer) return;
+            const shouldShow = !currentEditingTemplateIdInline || isInlineTemplateEditMode;
+            footer.classList.toggle('hidden', !shouldShow);
         }
 
         function addSelectedSectionInline(type, name = null, count = 10, marks = null) {
@@ -6936,25 +7885,25 @@ if (!empty($Tests)) {
             const displayMarks = marks !== null ? marks : (type === '2 Marks' ? 2 : 1);
 
             row.innerHTML = `
-            <div class="col-span-6 py-3 px-4 flex items-center gap-3">
-                <div class="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
+            <div class="col-span-6 py-3 pl-14 flex items-center gap-3">
+                <div class="w-6 h-6 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
                     <i class="bi bi-grip-vertical"></i>
                 </div>
                 <div>
-                    <input type="text" class="bg-transparent border-0 font-bold text-slate-800 p-0 focus:ring-0 text-[12px] w-full" value="${displayName}">
-                    <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">${type} Component</p>
+                    <input type="text" class="bg-transparent border-0 font-bold text-slate-800 p-0 focus:ring-0 text-[11px] w-full" value="${displayName}">
+                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">${type} Component</p>
                 </div>
             </div>
-            <div class="col-span-2 py-3 px-3 text-center">
-                <input type="number" class="w-16 mx-auto bg-slate-50 border border-slate-100 rounded-lg py-1 px-2 font-bold text-slate-800 text-[12px] text-center focus:ring-2 focus:ring-red-100 sec-count-inline" value="${count}" oninput="updateBuilderStatsInline()">
+            <div class="col-span-2 py-2 px-2 text-center">
+                <input type="number" class="w-14 mx-auto bg-slate-50 border border-slate-100 rounded-lg py-1 px-1 font-bold text-slate-800 text-[11px] text-center focus:ring-2 focus:ring-red-100 sec-count-inline" value="${count}" oninput="updateBuilderStatsInline()">
             </div>
-            <div class="col-span-2 py-3 px-3 text-center">
-                <input type="number" class="w-16 mx-auto bg-slate-50 border border-slate-100 rounded-lg py-1 px-2 font-bold text-slate-800 text-[12px] text-center focus:ring-2 focus:ring-red-100 sec-marks-inline" value="${displayMarks}" oninput="updateBuilderStatsInline()">
+            <div class="col-span-2 py-2 px-2 text-center">
+                <input type="number" class="w-14 mx-auto bg-slate-50 border border-slate-100 rounded-lg py-1 px-1 font-bold text-slate-800 text-[11px] text-center focus:ring-2 focus:ring-red-100 sec-marks-inline" value="${displayMarks}" oninput="updateBuilderStatsInline()">
             </div>
-            <div class="col-span-2 py-3 px-4 text-right">
-                <button class="w-7 h-7 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center mx-auto" 
+            <div class="col-span-2 py-2 px-3 text-right">
+                <button class="w-6 h-6 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center mx-auto" 
                         onclick="this.closest('.grid').remove(); updateBuilderStatsInline(); if(document.querySelectorAll('.sec-count-inline').length === 0) { document.getElementById('builder_empty_state_inline').style.display='block'; document.getElementById('inline_builder_header').style.display='none'; }">
-                    <i class="bi bi-trash-fill text-[10px]"></i>
+                    <i class="bi bi-trash-fill text-[9px]"></i>
                 </button>
             </div>
         `;
@@ -6965,23 +7914,55 @@ if (!empty($Tests)) {
         function updateBuilderStatsInline() {
             const sections = document.querySelectorAll('#builder_sections_container_inline > div:not(.empty-state)');
             let totalMarks = 0;
+            let totalQuestions = 0;
             let totalSections = sections.length;
-            sections.forEach(s => {
-                const count = parseInt(s.querySelector('.sec-count-inline').value) || 0;
-                const marks = parseInt(s.querySelector('.sec-marks-inline').value) || 0;
-                totalMarks += (count * marks);
-            });
-            document.getElementById('builder_total_marks_inline').textContent = totalMarks + ' Marks';
-            document.getElementById('builder_section_count_inline').textContent = totalSections + ' Sections';
 
+            sections.forEach(s => {
+                const countInput = s.querySelector('.sec-count-inline');
+                const marksInput = s.querySelector('.sec-marks-inline');
+                
+                if (countInput && marksInput) {
+                    const count = parseInt(countInput.value) || parseInt(countInput.textContent) || 0;
+                    const marks = parseInt(marksInput.value) || parseInt(marksInput.textContent) || 0;
+                    totalQuestions += count;
+                    totalMarks += (count * marks);
+                }
+            });
+
+            // Update Header Stats (Older UI)
+            const oldMarks = document.getElementById('builder_total_marks_inline');
+            const oldSections = document.getElementById('builder_section_count_inline');
+            if (oldMarks) oldMarks.textContent = totalMarks + ' Marks';
+            if (oldSections) oldSections.textContent = totalSections + ' Sections';
+
+            // Update New High-Density Dashboard
+            const qDisplay = document.getElementById('total_questions_display');
+            const mDisplay = document.getElementById('total_marks_display');
+            if (qDisplay) qDisplay.textContent = totalQuestions;
+            if (mDisplay) mDisplay.textContent = totalMarks;
+
+            // Question Content Management
             const qSection = document.getElementById('builder_questions_section_inline');
             if (qSection) {
                 if (totalSections > 0) {
                     qSection.classList.remove('hidden');
                     const dataSections = Array.from(sections).map(s => ({
-                        name: s.querySelector('input[type="text"]').value,
-                        count: parseInt(s.querySelector('.sec-count-inline').value) || 0,
-                        marks: parseInt(s.querySelector('.sec-marks-inline').value) || 0,
+                        name: (
+                            s.querySelector('.sec-name-hidden-inline')?.value ||
+                            s.querySelector('input[type="text"]')?.value ||
+                            s.querySelector('.sec-display-name')?.textContent ||
+                            'Section'
+                        ),
+                        count: parseInt(
+                            s.querySelector('.sec-count-inline')?.value ||
+                            s.querySelector('.sec-display-count')?.textContent ||
+                            '0'
+                        ) || 0,
+                        marks: parseInt(
+                            s.querySelector('.sec-marks-inline')?.value ||
+                            s.querySelector('.sec-display-marks')?.textContent ||
+                            '0'
+                        ) || 0,
                         type: s.dataset.type
                     }));
                     App.renderBuilderManualSections(dataSections);
@@ -6989,10 +7970,29 @@ if (!empty($Tests)) {
                     qSection.classList.add('hidden');
                 }
             }
+
+            // Question Bank Selection (Quick Mode)
+            const qbSection = document.getElementById('quick-qb-selector-section');
+            if (qbSection) {
+                const isCreateTemplateMode = !currentEditingTemplateIdInline;
+                if (totalSections > 0 && isCreateTemplateMode) {
+                    qbSection.classList.remove('hidden');
+                    // Ensure QB select is populated
+                    const qbSelect = document.getElementById('quick_qb_select');
+                    if (qbSelect && qbSelect.children.length <= 1) {
+                        qbSelect.innerHTML = '<option value="" disabled selected>-- Select a Question Bank --</option>' +
+                            QuestionBanks.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+                    }
+                } else {
+                    qbSection.classList.add('hidden');
+                }
+            }
         }
 
         App.renderBuilderManualSections = (sections) => {
-            const container = document.getElementById('builder_manual_sections_container_inline');
+            const container =
+                document.getElementById('builder_manual_sections_container_inline') ||
+                document.getElementById('builder_questions_container_inline');
             if (!container) return;
 
             container.innerHTML = sections.map((s, idx) => {
@@ -7001,10 +8001,10 @@ if (!empty($Tests)) {
                 const marks = s.marks || 0;
 
                 return `
-                <div class="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm mb-3 animate-fadeIn">
-                    <div class="p-4 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+                <div class="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm mb-2 animate-fadeIn">
+                    <div class="p-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 bg-red-600 text-white rounded-xl flex items-center justify-center text-[10px] font-black shadow-lg shadow-red-100">
+                            <div class="w-8 h-8 bg-red-600 text-white rounded-xl flex items-center justify-center text-[9px] font-black shadow-lg shadow-red-100">
                                 ${name.substring(0, 3).toUpperCase()}
                             </div>
                             <div>
@@ -7034,25 +8034,28 @@ if (!empty($Tests)) {
                 </div>
             `;
             }).join('');
+
+            // Populate each section with already saved/generated questions.
+            sections.forEach((_, idx) => App.refreshSectionQuestions(idx));
         };
 
         App.handleBuilderBulkUpload = (input) => {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
             const reader = new FileReader();
-            
+
             Swal.fire({ title: 'Processing Upload...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-            
+
             reader.onload = (e) => {
                 try {
                     const text = e.target.result;
                     const lines = text.split('\n');
                     const questions = [];
-                    
+
                     lines.forEach((line, idx) => {
                         // Skip empty, comments, and header
                         if (!line.trim() || line.startsWith('#') || idx === 0) return;
-                        
+
                         // Simple CSV parse (handling quotes)
                         const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
                         if (parts && parts.length >= 8) {
@@ -7070,20 +8073,20 @@ if (!empty($Tests)) {
                             });
                         }
                     });
-                    
+
                     if (questions.length === 0) {
                         Swal.fire('Empty File', 'No valid questions found in the CSV. Please check the template format.', 'warning');
                         return;
                     }
-                    
+
                     App.manualQuestions = questions;
-                    Swal.fire({ 
-                        title: 'Questions Uploaded', 
-                        text: `${questions.length} questions integrated into the template.`, 
-                        icon: 'success', 
-                        timer: 2000 
+                    Swal.fire({
+                        title: 'Questions Uploaded',
+                        text: `${questions.length} questions integrated into the template.`,
+                        icon: 'success',
+                        timer: 2000
                     });
-                    
+
                     if (typeof updateManualQCount === 'function') updateManualQCount();
                 } catch (err) {
                     console.error("CSV Parse Error:", err);
@@ -7097,23 +8100,50 @@ if (!empty($Tests)) {
         async function saveTemplateFromWizard() {
             const name = document.getElementById('builder_storage_name_inline').value.trim();
             if (!name) { Swal.fire('Required', 'Please enter a Template Name', 'warning'); return; }
+            const isEditMode = !!currentEditingTemplateIdInline;
 
             const sections = [];
-            document.querySelectorAll('#builder_sections_container_inline > div:not(.empty-state)').forEach(card => {
+            document.querySelectorAll('.section-builder-row-inline:not(.is-editing)').forEach(row => {
                 sections.push({
-                    name: card.querySelector('input[type="text"]').value,
-                    type: card.dataset.type,
-                    count: parseInt(card.querySelector('.sec-count-inline').value) || 0,
-                    marks: parseInt(card.querySelector('.sec-marks-inline').value) || 0
+                    name: (
+                        row.querySelector('.sec-name-hidden-inline')?.value ||
+                        row.querySelector('.sec-display-name')?.textContent ||
+                        'Section'
+                    ),
+                    type: row.dataset.type,
+                    count: parseInt(
+                        row.querySelector('.sec-count-inline')?.value ||
+                        row.querySelector('.sec-display-count')?.textContent ||
+                        '0'
+                    ) || 0,
+                    marks: parseInt(
+                        row.querySelector('.sec-marks-inline')?.value ||
+                        row.querySelector('.sec-display-marks')?.textContent ||
+                        '0'
+                    ) || 0
                 });
             });
 
-            if (sections.length === 0) { Swal.fire('Required', 'Please add at least one section', 'warning'); return; }
+            if (sections.length === 0) { 
+                Swal.fire('Required', 'Please add and SAVE at least one section to your template structure', 'warning'); 
+                return; 
+            }
+
+            const quickQbId = document.getElementById('quick_qb_select')?.value || '';
+            const inlineQbId = document.getElementById('builder_qb_select_inline')?.value || '';
+            const sourceQbId = App.quickModePaperSource?.qbId ? String(App.quickModePaperSource.qbId) : '';
+            const qbId = inlineQbId || quickQbId || sourceQbId;
+            const hasGeneratedQuestions = Array.isArray(App.manualQuestions) && App.manualQuestions.length > 0;
+            if (!currentEditingTemplateIdInline && !qbId && !hasGeneratedQuestions) {
+                Swal.fire('Required', 'Please select a Question Bank for this template', 'warning');
+                return;
+            }
 
             Swal.fire({ title: 'Saving Template...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
             try {
                 const data = {
+                    id: currentEditingTemplateIdInline,
                     name: name,
                     category: document.getElementById('builder_category_inline').value,
                     duration: document.getElementById('builder_duration_inline').value || 60,
@@ -7131,44 +8161,58 @@ if (!empty($Tests)) {
 
                 const result = await response.json();
                 if (result.status === 'success') {
-                    // Add to sidebar templates and select it
+                    // Add/update template in app state and discovery list
                     const newTemplate = result.template;
 
                     // Add to global state
                     if (!App.templates) App.templates = [];
                     // Ensure sections and questions are attached for immediate UI update
                     newTemplate.sections = data.sections;
-                    newTemplate.questions = data.questions;
-                    App.templates.push(newTemplate);
+                    newTemplate.questions = normalizeQuestionList(data.questions || []);
 
-                    // Add to local list
-                    const discoveryList = document.getElementById('templateDiscoveryList');
-                    const newCard = document.createElement('div');
-                    newCard.className = 'p-2.5 rounded-xl border border-slate-50 bg-white hover:border-red-200 cursor-pointer transition-all group relative template-card';
-                    newCard.id = `temp_card_${newTemplate.id}`;
-                    newCard.onclick = () => selectTemplate(newTemplate.id);
+                    const existingIndex = App.templates.findIndex(t => String(t.id) === String(newTemplate.id));
+                    if (existingIndex !== -1) {
+                        App.templates[existingIndex] = { ...App.templates[existingIndex], ...newTemplate };
+                    } else {
+                        App.templates.push(newTemplate);
+                    }
 
                     // Calculate marks for sidebar label
                     let tm = 0;
                     data.sections.forEach(s => tm += (parseInt(s.count || 0) * parseInt(s.marks || 0)));
-
-                    newCard.innerHTML = `
-                    <div class="flex items-start gap-2.5">
-                        <div class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-red-600 transition-colors flex-shrink-0">
-                            <i class="bi bi-file-earmark-text text-base"></i>
-                        </div>
-                        <div class="overflow-hidden">
-                            <h5 class="text-[12px] font-bold text-slate-800 mb-0 leading-tight truncate">${newTemplate.name}</h5>
-                            <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">${newTemplate.category || 'General'} • ${tm} Marks • ${data.sections.length} Sec</span>
-                        </div>
-                        <div class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity check-badge">
-                             <div class="w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[8px]">
-                                <i class="bi bi-check-lg"></i>
-                             </div>
-                        </div>
-                    </div>
-                `;
-                    discoveryList.prepend(newCard);
+                    const cardId = `temp_card_${newTemplate.id}`;
+                    const existingCard = document.getElementById(cardId);
+                    if (existingCard) {
+                        const titleEl = existingCard.querySelector('h5');
+                        const metaEl = existingCard.querySelector('span');
+                        if (titleEl) titleEl.textContent = newTemplate.name;
+                        if (metaEl) metaEl.textContent = `${newTemplate.category || 'General'} • ${tm} Marks • ${data.sections.length} Sec`;
+                    } else {
+                        const discoveryList = document.getElementById('templateDiscoveryList');
+                        if (discoveryList) {
+                            const newCard = document.createElement('div');
+                            newCard.className = 'p-2.5 rounded-xl border border-slate-50 bg-white hover:border-red-200 cursor-pointer transition-all group relative template-card';
+                            newCard.id = cardId;
+                            newCard.onclick = () => selectTemplate(newTemplate.id);
+                            newCard.innerHTML = `
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-red-600 transition-colors flex-shrink-0">
+                                    <i class="bi bi-file-earmark-text text-base"></i>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <h5 class="text-[12px] font-bold text-slate-800 mb-0 leading-tight truncate">${newTemplate.name}</h5>
+                                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">${newTemplate.category || 'General'} • ${tm} Marks • ${data.sections.length} Sec</span>
+                                </div>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity check-badge">
+                                     <div class="w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[8px]">
+                                        <i class="bi bi-check-lg"></i>
+                                     </div>
+                                </div>
+                            </div>
+                        `;
+                            discoveryList.prepend(newCard);
+                        }
+                    }
 
                     // Add to hidden select
                     const select = document.getElementById('baseTemplateSelect');
@@ -7179,11 +8223,28 @@ if (!empty($Tests)) {
 
                     // Select it
                     selectTemplate(newTemplate.id);
+                    
+                    // Refresh Sidebar UI completely to ensure consistency
+                    if (typeof filterSidebar === 'function') {
+                        filterSidebar('all', document.querySelector('.discovery-filter-btn') || null); // Refresh the list
+                    } else if (typeof loadSidebarTemplates === 'function') {
+                        loadSidebarTemplates();
+                    }
+                    
+                    Swal.fire({ 
+                        icon: 'success', 
+                        title: isEditMode ? 'Template Updated!' : 'Template Saved!', 
+                        text: isEditMode ? 'Template changes have been saved.' : 'Template has been created and is ready to use.',
+                        timer: 2000, 
+                        showConfirmButton: false 
+                    });
 
-                    // Switch back
+                    // Optional: Scroll to the new card
+                    const newEl = document.getElementById(`temp_card_${newTemplate.id}`);
+                    if (newEl) newEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Switch back after a small delay
                     toggleWizardView('batch');
-
-                    Swal.fire({ icon: 'success', title: 'Template Saved!', timer: 1500, showConfirmButton: false });
                 } else {
                     throw new Error(result.message);
                 }
@@ -7191,6 +8252,169 @@ if (!empty($Tests)) {
                 Swal.fire('Error', e.message || 'Failed to save template', 'error');
             }
         }
+
+        // Handle Question Bank Selection in Builder
+        App.handleQBSelectionInline = (qbId) => {
+            const btnEl = document.getElementById('qb_action_buttons');
+            const statusEl = document.getElementById('qb_mapping_status');
+            
+            if (qbId) {
+                if (btnEl) btnEl.classList.remove('hidden');
+                // Hide mapping status until QP Generation is clicked
+                if (statusEl) statusEl.classList.add('hidden');
+            } else {
+                if (btnEl) btnEl.classList.add('hidden');
+                if (statusEl) statusEl.classList.add('hidden');
+            }
+        };
+
+        function handleQuickQuestionBankChange(qbId) {
+            const btnEl = document.getElementById('quick_qb_action_buttons');
+            if (qbId) {
+                if (btnEl) btnEl.classList.remove('hidden');
+            } else {
+                if (btnEl) btnEl.classList.add('hidden');
+            }
+            App.quickModePaperSource = null;
+        }
+
+        // --- INLINE SECTION BUILDER LOGIC ---
+        function addNewSectionRowInline() {
+            const container = document.getElementById('builder_sections_container_inline');
+            const emptyState = document.getElementById('builder_empty_state_inline');
+            if (emptyState) emptyState.classList.add('hidden');
+            document.getElementById('inline_builder_header').style.display = 'grid';
+
+            const rowId = 'row_' + Date.now();
+            const row = document.createElement('div');
+            row.className = 'grid grid-cols-12 gap-0 items-center py-2.5 group section-builder-row-inline is-editing';
+            row.id = rowId;
+            row.dataset.type = 'MCQ'; // Default
+            
+            row.innerHTML = `
+                <div class="col-span-4 pl-14 pr-4">
+                    <div class="edit-mode">
+                        <select class="w-full bg-slate-50 border border-slate-100 rounded-lg h-9 px-3 text-[12px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 focus:border-red-400 sec-type-select-inline" onchange="this.closest('.section-builder-row-inline').dataset.type = this.value">
+                            <option value="MCQ">MCQ Section</option>
+                            <option value="2 Marks">2 Marks Section</option>
+                        </select>
+                        <input type="hidden" class="sec-name-hidden-inline" value="MCQ Section">
+                    </div>
+                    <div class="view-mode hidden">
+                        <h5 class="text-[12px] font-black text-slate-800 mb-0 sec-display-name">MCQ Section</h5>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 sec-display-type">MCQ Component</p>
+                    </div>
+                </div>
+                <div class="col-span-2 px-2 flex justify-center">
+                    <div class="edit-mode w-16">
+                        <input type="number" class="w-full bg-slate-50 border border-slate-100 rounded-lg h-9 px-2 text-[12px] font-bold text-slate-700 text-center sec-count-inline" value="10" min="1">
+                    </div>
+                    <div class="view-mode hidden text-[12px] font-black text-slate-700 sec-display-count">10</div>
+                </div>
+                <div class="col-span-2 px-2 flex justify-center">
+                    <div class="edit-mode w-16">
+                        <input type="number" class="w-full bg-slate-50 border border-slate-100 rounded-lg h-9 px-2 text-[12px] font-bold text-slate-700 text-center sec-marks-inline" value="1" min="1">
+                    </div>
+                    <div class="view-mode hidden text-[12px] font-black text-slate-700 sec-display-marks">1</div>
+                </div>
+                <div class="col-span-4 px-4 flex items-center justify-end gap-3">
+                    <div class="edit-mode flex gap-2">
+                        <button onclick="saveInlineSectionRow('${rowId}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-emerald-700 transition-all">Save</button>
+                        <button onclick="cancelInlineSectionRow('${rowId}')" class="px-3 py-1.5 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">Cancel</button>
+                    </div>
+                    <div class="view-mode hidden flex gap-3">
+                        <button onclick="editInlineSectionRow('${rowId}')" class="text-blue-600 hover:text-blue-700 transition-all"><i class="bi bi-pencil-square text-base"></i></button>
+                        <button onclick="deleteInlineSectionRow('${rowId}')" class="text-red-600 hover:text-red-700 transition-all"><i class="bi bi-trash text-base"></i></button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(row);
+        }
+
+        function saveInlineSectionRow(rowId) {
+            const row = document.getElementById(rowId);
+            const typeSelect = row.querySelector('.sec-type-select-inline');
+            const countInput = row.querySelector('.sec-count-inline');
+            const marksInput = row.querySelector('.sec-marks-inline');
+            const nameHidden = row.querySelector('.sec-name-hidden-inline');
+
+            const type = typeSelect.value;
+            const count = countInput.value;
+            const marks = marksInput.value;
+            const name = type + " Section";
+
+            // Update hidden name
+            nameHidden.value = name;
+            row.dataset.type = type;
+
+            // Update display labels
+            row.querySelector('.sec-display-name').textContent = name;
+            row.querySelector('.sec-display-type').textContent = type + " Component";
+            row.querySelector('.sec-display-count').textContent = count;
+            row.querySelector('.sec-display-marks').textContent = marks;
+
+            // Toggle modes
+            row.classList.remove('is-editing');
+            row.querySelectorAll('.edit-mode').forEach(el => el.classList.add('hidden'));
+            row.querySelectorAll('.view-mode').forEach(el => el.classList.remove('hidden'));
+
+            // Update stats
+            updateBuilderStatsInline();
+        }
+
+        function cancelInlineSectionRow(rowId) {
+            const row = document.getElementById(rowId);
+            // If it's a new row (no name yet), remove it
+            if (row.querySelector('.sec-display-name').textContent === 'MCQ Section' && !row.classList.contains('was-saved')) {
+                row.remove();
+                // Check if empty
+                if (document.querySelectorAll('.section-builder-row-inline').length === 0) {
+                    document.getElementById('builder_empty_state_inline').classList.remove('hidden');
+                    document.getElementById('inline_builder_header').style.display = 'none';
+                }
+            } else {
+                // Revert to view mode
+                row.classList.remove('is-editing');
+                row.querySelectorAll('.edit-mode').forEach(el => el.classList.add('hidden'));
+                row.querySelectorAll('.view-mode').forEach(el => el.classList.remove('hidden'));
+            }
+        }
+
+        function editInlineSectionRow(rowId) {
+            const row = document.getElementById(rowId);
+            row.classList.add('is-editing', 'was-saved');
+            row.querySelectorAll('.edit-mode').forEach(el => el.classList.remove('hidden'));
+            row.querySelectorAll('.view-mode').forEach(el => el.classList.add('hidden'));
+        }
+
+        function deleteInlineSectionRow(rowId) {
+            document.getElementById(rowId).remove();
+            if (document.querySelectorAll('.section-builder-row-inline').length === 0) {
+                document.getElementById('builder_empty_state_inline').classList.remove('hidden');
+                document.getElementById('inline_builder_header').style.display = 'none';
+            }
+            updateBuilderStatsInline();
+        }
+
+        App.downloadBuilderTemplate = () => {
+            let csv = "Section,Question,Option A,Option B,Option C,Option D,Correct Answer (A/B/C/D),Marks\n";
+            const sections = document.querySelectorAll('#builder_sections_container_inline > div:not(.empty-state)');
+            sections.forEach(s => {
+                const name = s.querySelector('input[type="text"]').value;
+                const marks = s.querySelector('.sec-marks-inline').value;
+                csv += `"${name.replace(/"/g, '""')}",Example Question,Opt 1,Opt 2,Opt 3,Opt 4,A,${marks}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'template_structure.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
 
         function switchQuestionMode(mode, btn) {
             // Toggle Buttons
@@ -7213,24 +8437,25 @@ if (!empty($Tests)) {
             const placeholder = document.getElementById('template_details_placeholder');
             const activeView = document.getElementById('template_details_active');
             const deleteBtn = document.getElementById('active_template_delete_btn');
+            const questionPreview = document.getElementById('active_template_questions');
 
             if (!template) {
                 placeholder.classList.remove('hidden');
                 activeView.classList.add('hidden');
                 if (deleteBtn) deleteBtn.classList.add('hidden');
+                if (questionPreview) questionPreview.innerHTML = '';
+                updateQuickModeFooterVisibility();
                 return;
             }
 
             placeholder.classList.add('hidden');
             activeView.classList.remove('hidden');
             if (deleteBtn) deleteBtn.classList.remove('hidden');
+            updateQuickModeFooterVisibility();
 
             document.getElementById('active_template_name').value = template.name;
 
-            let sections = template.sections || [];
-            if (typeof sections === 'string') {
-                try { sections = JSON.parse(sections); } catch (e) { sections = []; }
-            }
+            const sections = getTemplateSections(template);
 
             let totalMarks = 0;
             sections.forEach(s => {
@@ -7248,9 +8473,11 @@ if (!empty($Tests)) {
             // Reset or Load manual questions
             if (clearQuestions) {
                 App.manualQuestions = [];
+                App.quickModePaperSource = null;
                 console.log("Template cloned: Questions bank cleared.");
             } else {
-                App.manualQuestions = template.questions || [];
+                App.manualQuestions = hydrateTemplateQuestions(template.id, template.questions || []);
+                App.quickModePaperSource = null;
             }
 
             // Update Question Entry Area
@@ -7312,20 +8539,16 @@ if (!empty($Tests)) {
             // Update Manual Entry View
             App.renderManualSections(sections);
 
-            // Quick Mode logic: Show QB selector
+            // Quick Mode: Show QB selector
             const modalEl = document.getElementById('createPackModal');
             if (modalEl && modalEl.classList.contains('quick-mode')) {
                 const qbSection = document.getElementById('quick-qb-selector-section');
                 if (qbSection) {
-                    qbSection.classList.remove('hidden');
-                    // Populate QB select
-                    const qbSelect = document.getElementById('quick_qb_select');
-                    if (qbSelect) {
-                        qbSelect.innerHTML = '<option value="" disabled selected>-- Select a Question Bank --</option>' + 
-                            QuestionBanks.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-                    }
+                    qbSection.classList.add('hidden');
                 }
             }
+
+            renderActiveTemplateQuestions(template, sections, App.manualQuestions);
         }
 
         function openManualQuestionModal() {
@@ -7382,7 +8605,10 @@ if (!empty($Tests)) {
             const name = document.getElementById('pack_wizard_name');
             const template = document.getElementById('baseTemplateSelect');
             const duration = document.getElementById('pack_duration');
-            
+            const modalEl = document.getElementById('createPackModal');
+            const isQuickMode = modalEl && modalEl.classList.contains('quick-mode');
+            const qbSelect = document.getElementById('quick_qb_select');
+
             // Check candidates for the CURRENT active test
             const testId = currentTestIdForPack;
             const candidates = App.selectedCandidates[testId] || [];
@@ -7400,37 +8626,46 @@ if (!empty($Tests)) {
             console.groupEnd();
 
             // 1. Name Validation
-            if (!name || !name.value.trim()) { 
-                showError('pack_wizard_name', true); 
-                if(qName) qName.classList.add('is-invalid', 'border-red-500');
-                isValid = false; 
+            if (!name || !name.value.trim()) {
+                showError('pack_wizard_name', true);
+                if (qName) qName.classList.add('is-invalid', 'border-red-500');
+                isValid = false;
                 console.warn("❌ Validation Fail: Batch Name is empty");
-            } else { 
-                showError('pack_wizard_name', false); 
-                if(qName) qName.classList.remove('is-invalid', 'border-red-500');
+            } else {
+                showError('pack_wizard_name', false);
+                if (qName) qName.classList.remove('is-invalid', 'border-red-500');
             }
 
             // 2. Template Validation
-            if (!template || !template.value || template.value === "") { 
-                showError('baseTemplateSelect', true); 
-                isValid = false; 
+            if (!template || !template.value || template.value === "") {
+                showError('baseTemplateSelect', true);
+                isValid = false;
                 console.warn("❌ Validation Fail: No template selected");
-            } else { 
-                showError('baseTemplateSelect', false); 
-            }
-            
-            // 3. Duration Validation
-            if (!duration || !duration.value || parseInt(duration.value) <= 0) { 
-                showError('pack_duration', true); 
-                if(qDuration) qDuration.classList.add('is-invalid', 'border-red-500');
-                isValid = false; 
-                console.warn("❌ Validation Fail: Invalid duration");
-            } else { 
-                showError('pack_duration', false); 
-                if(qDuration) qDuration.classList.remove('is-invalid', 'border-red-500');
+            } else {
+                showError('baseTemplateSelect', false);
             }
 
-            // 4. Candidate Validation - REMOVED (Optional)
+            // 3. Duration Validation
+            if (!duration || !duration.value || parseInt(duration.value) <= 0) {
+                showError('pack_duration', true);
+                if (qDuration) qDuration.classList.add('is-invalid', 'border-red-500');
+                isValid = false;
+                console.warn("❌ Validation Fail: Invalid duration");
+            } else {
+                showError('pack_duration', false);
+                if (qDuration) qDuration.classList.remove('is-invalid', 'border-red-500');
+            }
+
+            // 4. Question Bank Validation - Required in Quick Mode
+            if (isQuickMode && (!qbSelect || !qbSelect.value)) {
+                if (qbSelect) qbSelect.classList.add('border-red-500', 'ring-2', 'ring-red-100');
+                isValid = false;
+                console.warn("Validation Fail: No Question Bank selected in Quick Mode");
+            } else if (qbSelect) {
+                qbSelect.classList.remove('border-red-500', 'ring-2', 'ring-red-100');
+            }
+
+            // 5. Candidate Validation - REMOVED (Optional)
             /*
             if (candidates.length === 0) {
                 showError('wizardCandidateCountLabel', true);
@@ -7524,7 +8759,7 @@ if (!empty($Tests)) {
 
             startExecution: async (testId, packId) => {
                 const test = App.Tests.find(t => t.id == testId);
-                
+
                 Swal.fire({
                     title: 'Preparing Test...',
                     text: 'Fetching questions and establishing secure connection.',
@@ -7539,9 +8774,9 @@ if (!empty($Tests)) {
                     if (data.status !== 'success') throw new Error(data.message || 'Failed to fetch questions');
 
                     // Use real questions: fallback from packQuestions to templateQuestions
-                    let questions = data.packQuestions && data.packQuestions.length > 0 
-                                    ? data.packQuestions 
-                                    : data.templateQuestions;
+                    let questions = data.packQuestions && data.packQuestions.length > 0
+                        ? data.packQuestions
+                        : data.templateQuestions;
 
                     if (!questions || questions.length === 0) {
                         throw new Error('No questions found for this test. Please contact admin.');
@@ -8122,11 +9357,11 @@ if (!empty($Tests)) {
 
                         // Fallback: Use pack-specific questions if they exist, otherwise use template-based questions
                         let questions = packQuestions && packQuestions.length > 0 ? packQuestions : templateQuestions;
-                        
+
                         // Apply Question Shuffling if enabled
                         const shouldShuffleQuestions = (pack.shuffle_questions == 1 || test.shuffle_questions == 1);
                         const shouldShuffleOptions = (pack.shuffle_options == 1 || test.shuffle_options == 1);
-                        
+
                         if (shouldShuffleQuestions) {
                             questions = App.shuffleArray(questions);
                         }
@@ -8136,7 +9371,7 @@ if (!empty($Tests)) {
                         // Group questions by section structure
                         sections.forEach((s, sIdx) => {
                             const targetType = App.normalizeType(s.marks_type || s.type || 'MCQ');
-                            
+
                             // Filter questions for this section
                             const sectionQuestions = questions.filter(q => App.normalizeType(q.type) === targetType);
 
@@ -8157,7 +9392,7 @@ if (!empty($Tests)) {
 
                                 sectionQuestions.forEach((q, qIdx) => {
                                     const isMCQ = App.normalizeType(q.type) === 'mcq';
-                                    
+
                                     // Handle Option Shuffling
                                     let optionsToRender = [];
                                     if (isMCQ) {
@@ -8340,165 +9575,149 @@ if (!empty($Tests)) {
     <!-- MODAL: QUICK BATCH CREATION (Full Screen Template) -->
     <div class="modal fade quick-mode" id="createPackModal" tabindex="-1">
         <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content border-0">
-                <div
-                    class="modal-header border-0 px-8 py-4 bg-white sticky-top flex items-center justify-between shadow-sm">
-                    <div class="flex items-center gap-4">
-                        <button type="button"
-                            class="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-colors"
-                            data-bs-dismiss="modal">
-                            <i class="bi bi-arrow-left text-xl"></i>
-                        </button>
-                        <div>
-                            <h3 class="text-xl font-extrabold text-slate-800 mb-0">Create Test from Template</h3>
-                            <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-0">Select a
-                                template and configure your test</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-body p-0 bg-[#f8fafc] overflow-hidden flex flex-col flex-1">
+                <div class="modal-content border-0 h-full flex flex-col overflow-hidden relative">
                     <!-- Quick Mode Header -->
-                    <div id="quick-mode-header" class="px-8 py-4 bg-white border-b sticky top-0 z-50 flex items-center justify-between shadow-sm">
+                    <div id="quick-mode-header"
+                        class="px-8 py-3 bg-white border-b sticky top-0 z-50 flex items-center justify-between shadow-sm flex-shrink-0">
                         <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shadow-sm">
-                                <i class="bi bi-lightning-charge-fill text-xl"></i>
+                            <div class="w-9 h-9 bg-red-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-red-100">
+                                <i class="bi bi-lightning-charge-fill text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="text-base font-black text-slate-800 mb-0">Quick Test Setup</h3>
-                                <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider mb-0">Select a template to configure your test structure</p>
+                                <h3 class="text-base font-black text-slate-800 leading-tight">Quick Test Setup</h3>
+                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+                                    Initialize evaluation in seconds</p>
                             </div>
                         </div>
-                        <button type="button" class="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-colors" data-bs-dismiss="modal">
-                            <i class="bi bi-x-lg text-lg"></i>
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <!-- Navigation Controls -->
+                            
+                            <button id="wizard_global_create_btn" class="px-5 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center gap-2" onclick="openTemplateBuilderInline()">
+                                <i class="bi bi-plus-lg"></i> Create New Template
+                            </button>
+
+                            <div class="w-px h-6 bg-slate-100 mx-1" id="wizard_header_divider"></div>
+
+                            <button class="px-6 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+                                onclick="closeQuickSetup()">Go Back</button>
+                        </div>
                     </div>
 
-                    <div class="flex flex-1 overflow-hidden" style="min-height: 0;">
-                        <!-- 1. LEFT SIDEBAR: Discovery -->
-                        <div class="w-[360px] bg-white border-e flex flex-col overflow-hidden" id="wizardDiscoverySidebar">
-                            <div class="flex-1 overflow-y-auto">
-                                <div class="p-6 pb-0">
+                    <div class="modal-body p-0 bg-[#f8fafc] overflow-hidden flex flex-col flex-1 min-h-0">
+                        <div class="flex flex-1 overflow-hidden min-h-0 h-full">
+                            <!-- 1. LEFT SIDEBAR: Discovery -->
+                            <div class="w-[360px] bg-white border-e flex flex-col overflow-hidden"
+                                id="wizardDiscoverySidebar">
+                                <div class="flex-1 overflow-y-auto">
+                                    <div class="p-4 pb-0">
                                     <div class="flex items-center gap-2.5 mb-5">
                                         <i class="bi bi-stack text-red-600 text-lg"></i>
                                         <div>
                                             <h4 class="text-[13px] font-black text-slate-800 mb-0">Template Builder</h4>
-                                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Manage test
+                                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                                                Manage test
                                                 structures</p>
                                         </div>
                                     </div>
 
-                            <div class="mb-6">
-                                <h5 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">
-                                    Discovery</h5>
-                                <div class="flex gap-1.5 mb-3">
-                                    <button
-                                        class="px-2.5 py-1.5 rounded-lg bg-red-600 text-white text-[10px] font-bold shadow-md shadow-red-100">All</button>
-                                    <button
-                                        class="px-2.5 py-1.5 rounded-lg bg-slate-50 text-slate-500 text-[10px] font-bold hover:bg-slate-100">Performance</button>
-                                    <button
-                                        class="px-2.5 py-1.5 rounded-lg bg-slate-50 text-slate-500 text-[10px] font-bold hover:bg-slate-100">Compliance</button>
-                                </div>
-                                <div class="relative">
-                                    <input type="text"
-                                        class="w-full bg-slate-50 border-0 rounded-xl px-4 py-2.5 text-[11px] font-medium focus:ring-2 focus:ring-red-100 transition-all"
-                                        placeholder="Search templates...">
-                                    <i
-                                        class="bi bi-search absolute right-4 top-1/2 -translate-y-1/2 text-slate-300"></i>
-                                </div>
-                            </div>
-
-                            <div class="flex-1 space-y-2 mb-6" id="templateDiscoveryList">
-                                <?php foreach ($templates as $t): ?>
-                                <div class="p-2.5 rounded-xl border border-slate-50 bg-white hover:border-red-200 cursor-pointer transition-all group relative template-card"
-                                    onclick="selectTemplate('<?= $t['id'] ?>')" id="temp_card_<?= $t['id'] ?>">
-                                    <div class="flex items-start gap-2.5">
-                                        <div
-                                            class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-red-600 transition-colors flex-shrink-0">
-                                            <i class="bi bi-file-earmark-text text-base"></i>
-                                        </div>
-                                        <div class="overflow-hidden">
-                                            <h5
-                                                class="text-[12px] font-bold text-slate-800 mb-0 leading-tight truncate">
-                                                <?= esc($t['name']) ?></h5>
-                                            <?php
-                                            $secs = is_array($t['sections']) ? $t['sections'] : (json_decode($t['sections'], true) ?: []);
-                                            $tm = 0;
-                                            foreach ($secs as $s) {
-                                                $tm += (($s['num_questions'] ?? $s['count'] ?? 0) * ($s['marks_per_question'] ?? $s['marks'] ?? 0));
-                                            }
-                                            ?>
-                                            <span
-                                                class="text-[9px] text-slate-400 font-bold uppercase tracking-wider"><?= esc($t['category'] ?? 'General') ?>
-                                                • <?= $tm ?> Marks • <?= count($secs) ?> Sec</span>
-                                        </div>
-
-                                        <!-- Actions overlay -->
-                                        <div class="template-card-actions">
-                                            <button class="action-icon-btn btn-clone"
-                                                onclick="cloneTemplate(<?= $t['id'] ?>, event)" title="Clone Template">
-                                                <i class="bi bi-copy"></i>
-                                            </button>
-                                            <button class="action-icon-btn btn-edit"
-                                                onclick="editTemplate(<?= $t['id'] ?>, event)" title="Edit Template">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
-                                            <button class="action-icon-btn btn-delete"
-                                                onclick="deleteTemplate(<?= $t['id'] ?>, event)"
-                                                title="Delete Template">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-
-                                        <div
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity check-badge">
-                                            <div
-                                                class="w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[8px]">
-                                                <i class="bi bi-check-lg"></i>
-                                            </div>
+                                    <div class="mb-4">
+                                        <h5 class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                                            Discovery</h5>
+                                         <div class="relative">
+                                            <input type="text"
+                                                class="w-full bg-slate-50 border-0 rounded-xl px-4 py-2.5 text-[11px] font-medium focus:ring-2 focus:ring-red-100 transition-all"
+                                                placeholder="Search templates...">
+                                            <i
+                                                class="bi bi-search absolute right-4 top-1/2 -translate-y-1/2 text-slate-300"></i>
                                         </div>
                                     </div>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
+
+                                    <div class="flex-1 space-y-2 mb-6" id="templateDiscoveryList">
+                                        <?php foreach ($templates as $t): ?>
+                                        <div class="p-2.5 rounded-xl border border-slate-50 bg-white hover:border-red-200 cursor-pointer transition-all group relative template-card"
+                                            onclick="selectTemplate('<?= $t['id'] ?>')" id="temp_card_<?= $t['id'] ?>">
+                                            <div class="flex items-start gap-2.5">
+                                                <div
+                                                    class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-red-600 transition-colors flex-shrink-0">
+                                                    <i class="bi bi-file-earmark-text text-base"></i>
+                                                </div>
+                                                <div class="overflow-hidden">
+                                                    <h5
+                                                        class="text-[12px] font-bold text-slate-800 mb-0 leading-tight truncate">
+                                                        <?= esc($t['name']) ?>
+                                                    </h5>
+                                                    <?php
+                                                    $secs = is_array($t['sections']) ? $t['sections'] : (json_decode($t['sections'], true) ?: []);
+                                                    $tm = 0;
+                                                    foreach ($secs as $s) {
+                                                        $tm += (($s['num_questions'] ?? $s['count'] ?? 0) * ($s['marks_per_question'] ?? $s['marks'] ?? 0));
+                                                    }
+                                                    ?>
+                                                    <span
+                                                        class="text-[9px] text-slate-400 font-bold uppercase tracking-wider"><?= esc($t['category'] ?? 'General') ?>
+                                                        • <?= $tm ?> Marks • <?= count($secs) ?> Sec</span>
+                                                </div>
+
+                                                <!-- Actions overlay -->
+                                                <div class="template-card-actions">
+                                                    <button class="action-icon-btn btn-clone"
+                                                        onclick="cloneTemplate(<?= $t['id'] ?>, event)"
+                                                        title="Clone Template">
+                                                        <i class="bi bi-copy"></i>
+                                                    </button>
+                                                    <button class="action-icon-btn btn-edit"
+                                                        onclick="editTemplate(<?= $t['id'] ?>, event)"
+                                                        title="Edit Template">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+                                                    <button class="action-icon-btn btn-delete"
+                                                        onclick="deleteTemplate(<?= $t['id'] ?>, event)"
+                                                        title="Delete Template">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+
+                                                <div
+                                                    class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity check-badge">
+                                                    <div
+                                                        class="w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[8px]">
+                                                        <i class="bi bi-check-lg"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    </div>
 
                                 </div>
                             </div>
 
-                            <!-- Sticky Sidebar Footer -->
-                            <div class="p-6 border-t border-slate-50 bg-white shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
-                                <button
-                                    type="button"
-                                    class="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.15em] hover:bg-red-700 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-red-100 flex items-center justify-center gap-2"
-                                    onclick="openTemplateBuilderInline()">
-                                    <i class="bi bi-plus-lg text-lg"></i> Create New Template
-                                </button>
-                            </div>
+                            <!-- Sidebar Footer Removed -->
                         </div>
 
                         <!-- 2. MAIN CONTENT -->
-                        <div class="flex-1 overflow-y-auto px-8 py-10" id="wizardMainColumn">
+                        <div class="flex-1 overflow-y-auto px-[5%] py-8 min-h-0 h-full" id="wizardMainColumn">
                             <!-- Quick Mode Template Selector (Removed from here) -->
 
                             <!-- BATCH CONFIG VIEW -->
-                            <div class="w-full space-y-4 px-6 max-w-6xl mx-auto" id="batchWizardConfigView">
+                            <div class="w-full space-y-6" id="batchWizardConfigView">
                                 <!-- TOP ROW: Template (70%) & Target Audience (30%) -->
                                 <div class="grid grid-cols-10 gap-4 items-start">
                                     <!-- 1. TEMPLATE DETAILS SECTION (70%) -->
-                                    <div class="col-span-7 card border-0 shadow-sm rounded-2xl overflow-hidden bg-white"
+                                    <div class="col-span-7 card border border-slate-200 shadow-sm rounded-2xl overflow-hidden bg-white"
                                         id="wizard_template_section">
-                                        <div class="p-4">
+                                        <div class="p-5">
                                             <div class="flex items-center justify-between mb-4">
                                                 <div class="flex items-center gap-3">
                                                     <div
-                                                        class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shadow-sm">
-                                                        <i class="bi bi-layout-text-window-reverse text-xl"></i>
+                                                        class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center shadow-sm">
+                                                        <i class="bi bi-layout-text-window-reverse text-lg"></i>
                                                     </div>
                                                     <div>
                                                         <h4
-                                                            class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">
+                                                            class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0">
                                                             Template & Structure</h4>
-                                                        <p class="text-[10px] text-slate-400 font-medium mb-0">Current
+                                                        <p class="text-[9px] text-slate-400 font-medium mb-0">Current
                                                             question paper framework</p>
                                                     </div>
                                                 </div>
@@ -8517,10 +9736,10 @@ if (!empty($Tests)) {
                                             </div>
 
                                             <div id="template_details_placeholder"
-                                                class="py-10 text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
+                                                class="py-6 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/40">
                                                 <div
-                                                    class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300 shadow-sm">
-                                                    <i class="bi bi-info-circle text-xl"></i>
+                                                    class="w-10 h-10 bg-white rounded-full flex items-center justify-center mx-auto mb-2 text-slate-300 shadow-sm">
+                                                    <i class="bi bi-info-circle text-lg"></i>
                                                 </div>
                                                 <h5 class="text-[12px] font-bold text-slate-500 mb-1">No Template
                                                     Selected</h5>
@@ -8529,47 +9748,77 @@ if (!empty($Tests)) {
                                             </div>
 
                                             <div id="template_details_active" class="hidden animate-fadeIn">
-                                                <div class="flex flex-col gap-6">
+                                                <div class="flex flex-col gap-4">
                                                     <!-- Row 1: Template Name (Readonly) & Marks/Sections -->
-                                                    <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+                                                    <div
+                                                        class="flex flex-col lg:flex-row items-center justify-between gap-4">
                                                         <div class="flex-1 w-full">
                                                             <div class="flex items-center gap-2 mb-2">
                                                                 <div class="w-1 h-4 bg-slate-300 rounded-full"></div>
-                                                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Template</label>
+                                                                <label
+                                                                    class="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Active
+                                                                    Template</label>
                                                             </div>
-                                                            <input id="active_template_name" class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-black h-11 px-4 text-slate-700 focus:ring-0 transition-all opacity-80" readonly value="--" />
+                                                            <input id="active_template_name"
+                                                                class="w-full bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-black h-10 px-4 text-slate-700 focus:ring-0 transition-all opacity-95"
+                                                                readonly value="--" />
                                                         </div>
 
-                                                        <div class="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100 h-11 self-end mb-0.5">
+                                                        <div
+                                                            class="flex items-center gap-4 bg-slate-50 p-2 rounded-xl border border-slate-200 h-10 self-end mb-0.5">
                                                             <div class="px-3">
-                                                                <span class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Total Marks</span>
-                                                                <input id="active_template_marks_input" class="bg-transparent border-0 p-0 text-[12px] font-black text-slate-800 leading-none w-16 focus:ring-0" readonly value="0 Marks">
+                                                                <span
+                                                                    class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Total
+                                                                    Marks</span>
+                                                                <input id="active_template_marks_input"
+                                                                    class="bg-transparent border-0 p-0 text-[12px] font-black text-slate-800 leading-none w-16 focus:ring-0"
+                                                                    readonly value="0 Marks">
                                                             </div>
                                                             <div class="w-px h-6 bg-slate-200"></div>
                                                             <div class="px-3">
-                                                                <span class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Structure</span>
-                                                                <input id="active_template_sections_input" class="bg-transparent border-0 p-0 text-[12px] font-black text-slate-800 leading-none w-20 focus:ring-0" readonly value="0 Sections">
+                                                                <span
+                                                                    class="block text-[8px] font-bold text-slate-400 uppercase leading-none mb-1">Structure</span>
+                                                                <input id="active_template_sections_input"
+                                                                    class="bg-transparent border-0 p-0 text-[12px] font-black text-slate-800 leading-none w-20 focus:ring-0"
+                                                                    readonly value="0 Sections">
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div id="active_template_tags" class="mt-4 space-y-2"></div>
-                                            
+                                            <div id="active_template_questions" class="mt-4 space-y-3"></div>
+
                                             <!-- Quick Mode: Question Bank Selector -->
-                                            <div id="quick-qb-selector-section" class="mt-8 pt-8 border-t border-slate-100 hidden">
-                                                <div class="flex items-center gap-4 mb-4">
-                                                    <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
-                                                        <i class="bi bi-database-fill text-xl"></i>
+                                            <div id="quick-qb-selector-section"
+                                                class="mt-4 pt-4 border-t border-slate-100 hidden">
+                                                <div class="flex items-center gap-4 mb-3">
+                                                    <div
+                                                        class="w-7 h-7 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+                                                        <i class="bi bi-database-fill text-lg"></i>
                                                     </div>
                                                     <div>
-                                                        <h4 class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-0">Select Question Bank</h4>
-                                                        <p class="text-[9px] text-slate-400 font-bold uppercase mb-0">Choose the repository to fetch questions from</p>
+                                                        <h4
+                                                            class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0">
+                                                            Select Question Bank</h4>
+                                                        <p class="text-[8px] text-slate-400 font-bold uppercase mb-0">
+                                                            Choose repository</p>
                                                     </div>
                                                 </div>
-                                                <select id="quick_qb_select" class="w-full bg-slate-50 border border-slate-100 rounded-xl h-11 px-4 text-[13px] font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 transition-all">
+                                                <select id="quick_qb_select"
+                                                    onchange="handleQuickQuestionBankChange(this.value)"
+                                                    class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[11px] font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 transition-all">
                                                     <option value="" disabled selected>-- Select a Question Bank --</option>
                                                 </select>
+
+                                                <div id="quick_qb_action_buttons" class="mt-4 flex items-center gap-3 hidden">
+                                                    <button onclick="generateQuickQuestionPaper(true)" class="px-5 py-2 bg-indigo-600 text-white font-black rounded-xl text-[9px] uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all hover:bg-indigo-700 flex items-center gap-2">
+                                                        <i class="bi bi-gear-wide-connected"></i> QP Generation
+                                                    </button>
+                                                    <button onclick="savePackFromWizard()" class="px-5 py-2 bg-red-600 text-white font-black rounded-xl text-[9px] uppercase tracking-widest shadow-lg shadow-red-100 transition-all hover:bg-red-700 flex items-center gap-2">
+                                                        <i class="bi bi-check-lg"></i> Save Template
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -8583,21 +9832,25 @@ if (!empty($Tests)) {
                                                 <div>
                                                     <div class="flex items-center gap-2 mb-2">
                                                         <div class="w-1 h-4 bg-red-500 rounded-full"></div>
-                                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Batch Name <span class="text-red-500">*</span></label>
+                                                        <label
+                                                            class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Batch
+                                                            Name <span class="text-red-500">*</span></label>
                                                     </div>
-                                                    <input id="quick_batch_name" 
+                                                    <input id="quick_batch_name"
                                                         oninput="document.getElementById('pack_wizard_name').value = this.value; updateSummary();"
-                                                        class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 text-slate-700 focus:ring-4 focus:ring-red-50 transition-all shadow-sm" 
+                                                        class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[11px] font-bold h-10 px-4 text-slate-700 focus:ring-4 focus:ring-red-50 transition-all shadow-sm"
                                                         placeholder="Enter batch name..." />
                                                 </div>
                                                 <div>
                                                     <div class="flex items-center gap-2 mb-2">
                                                         <div class="w-1 h-4 bg-red-500 rounded-full"></div>
-                                                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration (Mins) <span class="text-red-500">*</span></label>
+                                                        <label
+                                                            class="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Duration
+                                                            (Mins) <span class="text-red-500">*</span></label>
                                                     </div>
                                                     <input type="number" id="quick_batch_duration" value="60"
                                                         oninput="document.getElementById('pack_duration').value = this.value; updateSummary();"
-                                                        class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 text-slate-700 focus:ring-4 focus:ring-red-50 transition-all shadow-sm" />
+                                                        class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[11px] font-bold h-10 px-4 text-slate-700 focus:ring-4 focus:ring-red-50 transition-all shadow-sm" />
                                                 </div>
                                             </div>
                                             <div class="border-t border-slate-100 pt-6 hidden">
@@ -8621,62 +9874,53 @@ if (!empty($Tests)) {
                                                     </button>
                                                 </div>
 
-                                            <div id="wizard_candidate_summary"
-                                                class="bg-slate-50 rounded-xl p-3 border border-slate-100 flex-1 hidden">
-                                                <div
-                                                    class="flex flex-col items-center justify-center h-full text-center py-2">
-                                                    <div class="flex items-center justify-center gap-3 mb-2">
-                                                        <div
-                                                            class="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-slate-300 shadow-sm">
-                                                            <i class="bi bi-people text-xl"></i>
+                                                <div id="wizard_candidate_summary"
+                                                    class="bg-slate-50 rounded-xl p-3 border border-slate-100 flex-1 hidden">
+                                                    <div
+                                                        class="flex flex-col items-center justify-center h-full text-center py-2">
+                                                        <div class="flex items-center justify-center gap-3 mb-2">
+                                                            <div
+                                                                class="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-slate-300 shadow-sm">
+                                                                <i class="bi bi-people text-xl"></i>
+                                                            </div>
+                                                            <div class="text-left">
+                                                                <h5 class="text-[12px] font-black text-slate-800 mb-0"
+                                                                    id="wizard_selected_count">0 Selected</h5>
+                                                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1"
+                                                                    id="wizard_selected_role">NO ROLE</p>
+                                                            </div>
                                                         </div>
-                                                        <div class="text-left">
-                                                            <h5 class="text-[12px] font-black text-slate-800 mb-0"
-                                                                id="wizard_selected_count">0 Selected</h5>
-                                                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1"
-                                                                id="wizard_selected_role">NO ROLE</p>
+                                                        <div id="wizard_candidate_avatars"
+                                                            class="flex -space-x-2 justify-center">
+                                                            <!-- Avatars here -->
                                                         </div>
-                                                    </div>
-                                                    <div id="wizard_candidate_avatars"
-                                                        class="flex -space-x-2 justify-center">
-                                                        <!-- Avatars here -->
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
                                 </div> <!-- End batchWizardConfigView -->
 
                                 <!-- Quick Mode: Generated Question Paper (Grouped) -->
                                 <div id="quick-generated-paper-section" class="space-y-6 hidden">
-                                    <div class="flex items-center justify-between px-2 mb-6">
-                                        <div class="flex items-center gap-4">
-                                            <button class="w-10 h-10 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center hover:bg-slate-200 transition-all shadow-sm" onclick="closeQuickPreview()" title="Back to Config">
-                                                <i class="bi bi-arrow-left text-xl"></i>
-                                            </button>
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
-                                                    <i class="bi bi-file-earmark-ruled-fill text-xl"></i>
-                                                </div>
-                                                <div>
-                                                    <h4 class="text-[13px] font-black text-slate-800 uppercase tracking-widest mb-0">Generated Question Paper</h4>
-                                                    <p class="text-[10px] text-slate-400 font-medium mb-0">Review the selected questions before saving</p>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <!-- Header moved to main header -->
                                         <div class="flex items-center gap-3">
-                                            <button class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2" onclick="generateQuickQuestionPaper(true)">
+                                            <button
+                                                class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
+                                                onclick="generateQuickQuestionPaper(true)">
                                                 <i class="bi bi-shuffle"></i> Re-shuffle
                                             </button>
-                                            <button class="px-8 py-2.5 bg-red-600 text-white font-black rounded-xl text-[10px] uppercase tracking-[0.15em] shadow-[0_8px_15px_-3px_rgba(220,34,48,0.25)] transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2" onclick="savePackFromWizard()">
-                                                <i class="bi bi-check-lg"></i> Save Batch
+                                            <button
+                                                class="px-8 py-2.5 bg-red-600 text-white font-black rounded-xl text-[10px] uppercase tracking-[0.15em] shadow-[0_8px_15px_-3px_rgba(220,34,48,0.25)] transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
+                                                onclick="savePackFromWizard()">
+                                                <i class="bi bi-check-lg"></i> Save Template
                                             </button>
                                         </div>
                                     </div>
-                                    <div id="quick_generated_questions_container" class="space-y-8 bg-slate-50/30 rounded-3xl p-6">
+                                    <div id="quick_generated_questions_container"
+                                        class="space-y-8 bg-slate-50/30 rounded-3xl p-6">
                                         <!-- Populated via JS -->
-                                    </div>               
+                                    </div>
                                 </div>
 
 
@@ -8714,100 +9958,171 @@ if (!empty($Tests)) {
                             </div>
 
                             <!-- TEMPLATE BUILDER VIEW (Inline) -->
-                            <div class="w-full space-y-8 hidden animate-fadeIn" id="templateBuilderInlineView">
-                                <div class="flex items-center gap-6 mb-8">
-                                    <button
-                                        class="w-10 h-10 bg-white border border-slate-100 text-slate-400 hover:text-red-600 hover:border-red-100 rounded-xl flex items-center justify-center transition-all shadow-sm"
-                                        onclick="toggleWizardView('batch')">
-                                        <i class="bi bi-arrow-left text-xl"></i>
-                                    </button>
-                                    <div>
-                                        <h3 class="text-2xl font-black text-slate-800 mb-0">Create New Template</h3>
-                                        <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                                            Designing question paper structure</p>
-                                    </div>
-                                </div>
+                            <div class="w-full space-y-4 hidden animate-fadeIn px-[5%] mt-[3%]" id="templateBuilderInlineView">
+                                <!-- Header moved to main header -->
 
                                 <div class="space-y-6">
-                                    <!-- Template Header Card -->
-                                    <section class="card border-0 shadow-sm rounded-[24px] p-6 bg-white max-w-5xl mx-auto">
-                                        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-                                            <div class="flex-1 w-full">
-                                                <div class="flex items-center gap-2 mb-3">
-                                                    <div class="w-1 h-4 bg-red-600 rounded-full"></div>
-                                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Template Name</label>
-                                                </div>
-                                                <input id="builder_storage_name_inline"
-                                                    class="w-full bg-slate-50/50 border border-slate-100 rounded-2xl text-[14px] font-bold h-14 px-6 focus:ring-4 focus:ring-red-50 focus:border-red-200 transition-all text-slate-700"
-                                                    placeholder="e.g. CI4 Internal Assessment" />
-                                            </div>
-
-                                            <div class="flex items-center gap-6 bg-white p-3 px-6 rounded-[20px] border border-slate-100 shadow-sm h-14">
-                                                <div class="text-center">
-                                                    <span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Marks</span>
-                                                    <span class="text-[14px] font-black text-slate-800" id="builder_total_marks_inline">0 Marks</span>
-                                                </div>
-                                                <div class="w-px h-8 bg-slate-100"></div>
-                                                <div class="text-center">
-                                                    <span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Structure</span>
-                                                    <span class="text-[14px] font-black text-slate-800" id="builder_section_count_inline">0 Sections</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <input type="hidden" id="builder_category_inline" value="General">
-                                        <input type="hidden" id="builder_duration_inline" value="60">
-                                        <input type="hidden" id="builder_pass_mark_inline" value="60">
-                                        <input type="hidden" id="builder_attempts_inline" value="2">
-                                    </section>
-
-                                    <!-- Add Section Bar -->
-                                    <section class="card border-0 shadow-sm rounded-[24px] p-4 bg-white max-w-5xl mx-auto">
-                                        <div class="flex items-center gap-6">
-                                            <div class="px-6 border-e border-slate-100">
-                                                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Add Section</span>
-                                            </div>
-                                            <div class="flex flex-wrap gap-3">
-                                                <button onclick="addSelectedSectionInline('MCQ')"
-                                                    class="flex items-center gap-3 px-6 py-2.5 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all text-[12px] font-black border border-blue-100 shadow-sm">
-                                                    <i class="bi bi-patch-question text-lg"></i> MCQ Section
-                                                </button>
-                                                <button onclick="addSelectedSectionInline('2 Marks')"
-                                                    class="flex items-center gap-3 px-6 py-2.5 bg-purple-50 text-purple-600 rounded-2xl hover:bg-purple-600 hover:text-white transition-all text-[12px] font-black border border-purple-100 shadow-sm">
-                                                    <i class="bi bi-pencil-square text-lg"></i> 2 Marks Section
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </section>
-
-                                    <!-- Sections Container -->
-                                    <section class="max-w-5xl mx-auto">
-                                        <div class="bg-white border border-slate-100 rounded-[32px] overflow-hidden shadow-sm min-h-[300px] flex flex-col">
-                                            <div class="grid grid-cols-12 gap-0 bg-slate-50/80 border-b border-slate-100" id="inline_builder_header" style="display: none;">
-                                                <div class="col-span-6 py-3 px-8 text-[9px] font-black text-slate-400 uppercase tracking-widest">Section Name / Type</div>
-                                                <div class="col-span-2 py-3 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Questions</div>
-                                                <div class="col-span-2 py-3 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Marks Each</div>
-                                                <div class="col-span-2 py-3 px-4"></div>
-                                            </div>
-                                            <div id="builder_sections_container_inline" class="divide-y divide-slate-50 flex-1">
-                                                <div class="empty-state py-24 text-center flex flex-col items-center justify-center h-full" id="builder_empty_state_inline">
-                                                    <div class="w-20 h-20 bg-slate-50 rounded-[24px] shadow-inner flex items-center justify-center mb-6 text-slate-200">
-                                                        <i class="bi bi-stack text-4xl"></i>
+                                <!-- Unified Builder Container -->
+                                <div class="card border-0 shadow-sm rounded-3xl bg-white overflow-visible border border-slate-100">
+                                                         <div class="p-8 space-y-8">
+                                        <!-- Top Configuration Row -->
+                                        <div class="flex items-start justify-between gap-10">
+                                            <!-- Left: Structure Action Zone -->
+                                            <div class="flex items-end gap-6">
+                                                <!-- 1. Template Identity -->
+                                                <div class="w-[300px]">
+                                                    <div class="flex items-center gap-3 mb-3">
+                                                        <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center shadow-sm border border-red-100">
+                                                            <i class="bi bi-card-text text-sm"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0">Template Identity</h4>
+                                                            <p class="text-[9px] text-slate-400 font-bold uppercase mb-0">Define evaluation name</p>
+                                                        </div>
                                                     </div>
-                                                    <h5 class="text-[15px] font-black text-slate-700 mb-2">No Sections Added</h5>
-                                                    <p class="text-[12px] text-slate-400 font-medium max-w-[200px] mx-auto">Add a section blueprint above to start building</p>
+                                                    <input id="builder_storage_name_inline"
+                                                        class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 focus:ring-2 focus:ring-red-100 focus:border-red-400 transition-all text-slate-700 shadow-inner placeholder:text-slate-300"
+                                                        placeholder="e.g. Technical Skills 2024" />
+                                                </div>
+
+                                                <!-- 2. Add Section Button -->
+                                                <div class="">
+                                                    <button onclick="addNewSectionRowInline()" class="btn-red px-5 py-2.5 shadow-lg shadow-red-100 flex items-center gap-2 h-11 rounded-xl whitespace-nowrap">
+                                                        <i class="bi bi-plus-circle-fill text-base"></i>
+                                                        <span class="text-[11px] font-black uppercase tracking-widest">Add Section</span>
+                                                    </button>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </section>
 
-                                    <!-- Action Button -->
-                                    <div class="max-w-5xl mx-auto py-8 flex justify-end">
+                                            <!-- Center: Live Template Stats (Fills the Gap) -->
+                                            <div class="flex-1 flex justify-center pt-2">
+                                                <div class="flex items-center gap-8 px-8 py-3 bg-slate-50/50 rounded-2xl border border-slate-100/50">
+                                                    <div class="text-center">
+                                                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Questions</p>
+                                                        <p class="text-xl font-black text-slate-700" id="total_questions_display">0</p>
+                                                    </div>
+                                                    <div class="w-px h-8 bg-slate-200"></div>
+                                                    <div class="text-center">
+                                                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Marks</p>
+                                                        <p class="text-xl font-black text-red-600" id="total_marks_display">0</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Right: Question Bank Selection -->
+                                            <div id="builder_qb_selector_inline" class="w-[300px]">
+                                                <div class="flex items-center gap-3 mb-3">
+                                                    <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shadow-sm border border-indigo-100">
+                                                        <i class="bi bi-database-fill text-sm"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0">Select Question Bank</h4>
+                                                        <p class="text-[9px] text-slate-400 font-bold uppercase mb-0">Choose repository</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="relative group">
+                                                    <select id="builder_qb_select_inline" onchange="App.handleQBSelectionInline(this.value)"
+                                                        class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-200 transition-all text-slate-700 shadow-inner appearance-none cursor-pointer">
+                                                        <option value="" selected disabled>-- Select a Question Bank --</option>
+                                                        <?php if(!empty($questionBank)): ?>
+                                                            <?php foreach ($questionBank as $bank): ?>
+                                                                <option value="<?= $bank['id'] ?>"><?= esc($bank['name']) ?></option>
+                                                            <?php endforeach; ?>
+                                                        <?php endif; ?>
+                                                    </select>
+                                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-indigo-600 transition-colors">
+                                                        <i class="bi bi-chevron-down text-xs"></i>
+                                                    </div>
+                                                </div>
+
+                                                <div id="qb_mapping_status" class="mt-2 hidden">
+                                                    <div class="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100">
+                                                        <i class="bi bi-check-circle-fill text-[9px]"></i>
+                                                        <span class="text-[9px] font-black uppercase tracking-widest" id="qb_mapping_text">Bank mapped</span>
+                                                    </div>
+                                                </div>
+
+
+                                            </div>
+
+                                            <input type="hidden" id="builder_category_inline" value="General">
+                                            <input type="hidden" id="builder_duration_inline" value="60">
+                                            <input type="hidden" id="builder_pass_mark_inline" value="60">
+                                            <input type="hidden" id="builder_attempts_inline" value="2">
+                                        </div>                 <hr class="border-slate-100">
+
+                                        <!-- 2. Blueprint Section -->
+                                        <section class="w-full">
+                                            <div class="flex items-center gap-3 mb-4">
+                                                <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center shadow-sm border border-red-100">
+                                                    <i class="bi bi-grid-1x2-fill text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0">Blueprint</h4>
+                                                    <p class="text-[9px] text-slate-400 font-bold uppercase mb-0">Structure definition</p>
+                                                </div>
+                                            </div>
+
+                                            <div class="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
+                                                <div class="grid grid-cols-12 gap-0 bg-slate-50/50 border-b border-slate-100"
+                                                    id="inline_builder_header" style="display: none;">
+                                                    <div class="col-span-4 py-2.5 pl-14 text-[8px] font-black text-slate-400 uppercase tracking-widest">Section / Type</div>
+                                                    <div class="col-span-2 py-2.5 px-2 text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Questions</div>
+                                                    <div class="col-span-2 py-2.5 px-2 text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Marks Each</div>
+                                                    <div class="col-span-4 py-2.5 px-3"></div>
+                                                </div>
+                                                <div id="builder_sections_container_inline" class="divide-y divide-slate-100 flex-1">
+                                                    <div class="empty-state py-16 text-center flex flex-col items-center justify-center h-full" id="builder_empty_state_inline">
+                                                        <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 text-slate-200 border border-slate-100">
+                                                            <i class="bi bi-stack text-3xl"></i>
+                                                        </div>
+                                                        <h5 class="text-[13px] font-black text-slate-700 mb-1">Structure is Empty</h5>
+                                                        <p class="text-[10px] text-slate-400 font-medium max-w-[200px] mx-auto">Select a section blueprint above to define your paper structure</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- QP Generation Actions -->
+                                            <div id="qb_action_buttons" class="mt-8 flex items-center justify-end gap-4 hidden animate-fadeIn">
+                                                <button onclick="generateQuickQuestionPaper(true)" class="px-8 py-3.5 bg-indigo-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 flex items-center gap-3">
+                                                    <i class="bi bi-gear-wide-connected text-lg"></i> 
+                                                    <span>QP Generation</span>
+                                                </button>
+                                                <button onclick="generateQuickQuestionPaper(true)" class="px-8 py-3.5 bg-[#dc2230] text-white font-black rounded-2xl text-[11px] uppercase tracking-widest shadow-xl shadow-red-100 transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-95 flex items-center gap-3">
+                                                    <i class="bi bi-shuffle text-lg"></i>
+                                                    <span>Re-shuffle</span>
+                                                </button>
+                                            </div>
+                                        </section>
+
+                                        <!-- 3. Questions Preview Section (Builder Mode Only) -->
+                                        <section id="builder_questions_section_inline" class="w-full hidden border-t border-slate-50 pt-8 mt-4 animate-fadeIn">
+                                            <div class="flex items-center gap-3 mb-6">
+                                                <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shadow-sm border border-indigo-100">
+                                                    <i class="bi bi-file-earmark-text-fill text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0">Generated Paper Content</h4>
+                                                    <p class="text-[9px] text-slate-400 font-bold uppercase mb-0">Review auto-selected questions from bank</p>
+                                                </div>
+                                            </div>
+
+                                            <div id="builder_questions_container_inline" class="space-y-6">
+                                                <!-- Questions will be dynamically injected here -->
+                                            </div>
+                                        </section>
+                                    </div>
+
+                                    <!-- Action Footer -->
+                                    <div id="builder_template_footer" class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
                                         <button
-                                            class="px-10 py-4 bg-[#dc2230] text-white font-black rounded-2xl text-[13px] uppercase tracking-[0.15em] shadow-xl shadow-red-100 transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-95 flex items-center gap-3"
+                                            class="px-8 py-3 bg-[#dc2230] text-white font-black rounded-xl text-[12px] uppercase tracking-[0.15em] shadow-xl shadow-red-100 transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-95 flex items-center gap-3"
                                             onclick="saveTemplateFromWizard()">
-                                            <i class="bi bi-check-lg text-xl"></i> SAVE & USE TEMPLATE
+                                            <i class="bi bi-check-lg text-xl"></i> Save Template
                                         </button>
                                     </div>
+                                </div>
                                 </div>
                             </div>
                         </div>
@@ -9035,24 +10350,30 @@ if (!empty($Tests)) {
                         </div>
                     </div>
 
+                        </div> <!-- End main content container (line 8900) -->
+                    </div> <!-- End modal-body -->
+
                     <!-- Quick Mode Footer (Professional Control Bar) -->
-                    <div id="quick-mode-footer" class="w-full h-20 px-8 bg-slate-50/90 backdrop-blur-md border-t border-slate-200/60 flex items-center justify-between z-[100] flex-shrink-0">
-                        <button class="text-slate-400 hover:text-red-500 font-bold text-[11px] uppercase tracking-[0.1em] transition-all flex items-center gap-2 px-2" data-bs-dismiss="modal">
-                            <i class="bi bi-x-circle-fill"></i> Cancel Setup
+                    <div id="quick-mode-footer"
+                        class="w-full h-16 px-8 bg-slate-50/90 backdrop-blur-md border-t border-slate-200/60 flex items-center justify-between z-[100] flex-shrink-0">
+                        <button
+                            class="text-slate-400 hover:text-red-500 font-bold text-[11px] uppercase tracking-[0.1em] transition-all flex items-center gap-2 px-2"
+                            data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle-fill"></i> Cancel
                         </button>
-                        
+
                         <div class="flex items-center gap-3">
-                            <button id="quick-preview-btn" class="h-11 px-6 bg-white border border-slate-200 text-slate-700 font-extrabold rounded-xl text-[11px] uppercase tracking-[0.05em] shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 flex items-center gap-2" onclick="generateQuickQuestionPaper(false)">
-                                <i class="bi bi-eye"></i> View Paper
-                            </button>
-                            
-                            <button class="h-11 px-10 bg-red-600 text-white font-extrabold rounded-xl text-[11px] uppercase tracking-[0.05em] shadow-[0_4px_12px_-2px_rgba(220,34,48,0.25)] transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2" onclick="savePackFromWizard()">
-                                <i class="bi bi-check-lg text-sm"></i> Save Batch
+
+
+                            <button
+                                class="h-10 px-10 bg-red-600 text-white font-extrabold rounded-xl text-[11px] uppercase tracking-[0.05em] shadow-[0_4px_12px_-2px_rgba(220,34,48,0.25)] transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
+                                onclick="savePackFromWizard()">
+                                <i class="bi bi-check-lg text-sm"></i> Save Template
                             </button>
                         </div>
                     </div>
 
-                </div>
+                </div> <!-- End modal-content -->
             </div>
         </div>
     </div>
@@ -9292,14 +10613,14 @@ if (!empty($Tests)) {
 
             list.innerHTML = templates.map(t => `
             <div class="template-item-card group relative" onclick="loadTemplateToBuilder(${t.id}, this)" data-category="${t.category}" id="builder_temp_${t.id}">
-                <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-red-500 transition-colors">
+                <div class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 group-hover:text-red-500 transition-colors">
                     <i class="bi bi-file-earmark-text"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <h6 class="text-xs font-bold text-slate-800 mb-0 truncate">${t.name}</h6>
+                    <h6 class="text-[13px] font-bold text-slate-800 mb-0 truncate">${t.name}</h6>
                     <div class="flex items-center gap-2 mt-1">
-                        <span class="text-[9px] font-black text-red-500 uppercase tracking-widest">${t.category || 'General'}</span>
-                        <span class="text-[9px] font-bold text-slate-400">• ${t.total_marks || 0} Marks</span>
+                        <span class="text-[10px] font-black text-red-500 uppercase tracking-widest">${t.category || 'General'}</span>
+                        <span class="text-[10px] font-bold text-slate-500">• ${t.total_marks || 0} Marks</span>
                     </div>
                 </div>
                 
@@ -9321,7 +10642,7 @@ if (!empty($Tests)) {
 
         function filterSidebar(category, btn) {
             document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-            btn.classList.add('active');
+            if (btn) btn.classList.add('active');
 
             const cards = document.querySelectorAll('.template-item-card');
             cards.forEach(card => {
@@ -9437,7 +10758,7 @@ if (!empty($Tests)) {
                 const structure = typeof template.sections === 'string' ? JSON.parse(template.sections) : template.sections;
 
                 // Load Questions
-                App.manualQuestions = isClone ? [] : (template.questions || []);
+                App.manualQuestions = isClone ? [] : hydrateTemplateQuestions(template.id, template.questions || []);
 
                 if (structure && structure.length > 0) {
                     structure.forEach((s, idx) => {
@@ -9593,7 +10914,9 @@ if (!empty($Tests)) {
             document.getElementById('pack_shuffle').checked = true;
             document.getElementById('pack_proctored').checked = true;
             document.getElementById('pack_lockdown').checked = true;
-            
+            App.manualQuestions = [];
+            App.quickModePaperSource = null;
+
             // Initialize candidate storage for this test if it doesn't exist
             if (!App.selectedCandidates[currentTestIdForPack]) {
                 App.selectedCandidates[currentTestIdForPack] = [];
@@ -9634,19 +10957,19 @@ if (!empty($Tests)) {
         function openQuickTemplateModal() {
             const modalEl = document.getElementById('createPackModal');
             if (!modalEl) return;
-            
+
             // Ensure we start in config view, not preview
             closeQuickPreview();
-            
+
             // Set Quick Mode
             modalEl.classList.add('quick-mode');
-            
+
             // Hide generated sections initially (redundant with closeQuickPreview but safe)
             const qbSection = document.getElementById('quick-qb-selector-section');
             const paperSection = document.getElementById('quick-generated-paper-section');
             if (qbSection) qbSection.classList.add('hidden');
             if (paperSection) paperSection.classList.add('hidden');
-            
+
             // Sync Question Banks dropdown
             if (typeof syncQBDropdowns === 'function') {
                 syncQBDropdowns();
@@ -9657,6 +10980,9 @@ if (!empty($Tests)) {
             if (qBatchName) qBatchName.value = '';
             const qBatchDuration = document.getElementById('quick_batch_duration');
             if (qBatchDuration) qBatchDuration.value = '60';
+            const baseTemplateSelect = document.getElementById('baseTemplateSelect');
+            if (baseTemplateSelect) baseTemplateSelect.value = '';
+            updateQuickModeFooterVisibility();
 
             // If no test is currently active for pack, default to the first one available
             if (!currentTestIdForPack) {
@@ -9667,10 +10993,13 @@ if (!empty($Tests)) {
                     currentTestIdForPack = 'temp_' + Date.now();
                 }
             }
-            
+
             // Open standard wizard logic but with specific reset
             openPackWizard(currentTestIdForPack);
-            
+
+            // AUTO-OPEN CREATE TEMPLATE SECTION
+            openTemplateBuilderInline();
+
             // Additional Quick Mode resets
             const qSelector = document.querySelector('#quick-template-selector select');
             if (qSelector) qSelector.selectedIndex = 0;
@@ -9687,70 +11016,116 @@ if (!empty($Tests)) {
             const configView = document.getElementById('batchWizardConfigView');
             const paperSection = document.getElementById('quick-generated-paper-section');
             const footer = document.getElementById('quick-mode-footer');
-            
+
             if (configView) configView.classList.remove('hidden');
             if (paperSection) paperSection.classList.add('hidden');
             if (footer) footer.classList.remove('hidden');
         }
 
+
         function generateQuickQuestionPaper(forceGenerate = false) {
-            const qbId = document.getElementById('quick_qb_select').value;
-            const templateId = document.getElementById('baseTemplateSelect').value;
-            if (!templateId) { Swal.fire('Wait!', 'Please select a template first from the sidebar.', 'info'); return; }
+            const qbSelectInline = document.getElementById('builder_qb_select_inline');
+            const qbSelectQuick = document.getElementById('quick_qb_select');
             
-            // If we are forcing generation, we NEED a bank
-            if (forceGenerate && !qbId) { Swal.fire('Select Bank', 'Please choose a Question Bank to fetch questions from for re-shuffling.', 'info'); return; }
+            const qbId = (qbSelectInline && qbSelectInline.value) || (qbSelectQuick && qbSelectQuick.value);
+            
+            // Determine if we are in builder mode
+            const builderView = document.getElementById('templateBuilderInlineView');
+            const isBuilderMode = builderView && !builderView.classList.contains('hidden');
+            
+            const templateId = isBuilderMode ? (currentEditingTemplateIdInline || 'new_temp') : (document.getElementById('baseTemplateSelect').value || 'new_temp');
+            
+            if (!qbId) { Swal.fire('Wait!', 'Please select a Question Bank first.', 'info'); return; }
+
+            // Always force reshuffle for "QP Generate" button
+            if (forceGenerate) {
+                App.quickModePaperSource = null;
+            }
 
             const configView = document.getElementById('batchWizardConfigView');
             const paperSection = document.getElementById('quick-generated-paper-section');
             const footer = document.getElementById('quick-mode-footer');
-            
-            // Toggle visibility
-            if (configView) configView.classList.add('hidden');
-            if (paperSection) paperSection.classList.remove('hidden');
-            if (footer) footer.classList.add('hidden');
 
-            const container = document.getElementById('quick_generated_questions_container');
+            // Toggle visibility
+            if (!isBuilderMode) {
+                if (configView) configView.classList.add('hidden');
+                if (paperSection) paperSection.classList.remove('hidden');
+            } else {
+                const builderPreview = document.getElementById('builder_questions_section_inline');
+                if (builderPreview) builderPreview.classList.remove('hidden');
+            }
+
+            const container = isBuilderMode ? 
+                document.getElementById('builder_questions_container_inline') : 
+                document.getElementById('quick_generated_questions_container');
             container.innerHTML = '<div class="text-center py-24"><div class="spinner-border text-red-600 mb-4" style="width: 3rem; height: 3rem;"></div><p class="text-[12px] font-black uppercase tracking-widest text-slate-400">Assembling Question Paper...</p></div>';
 
             setTimeout(async () => {
                 try {
                     let paper = null;
                     
-                    console.log("Quick Preview Triggered", { forceGenerate, qbId, templateId, manualCount: App.manualQuestions.length });
-
-                    // Logic: Use existing manual/uploaded questions if they exist and we aren't forcing a re-shuffle
-                    if (!forceGenerate && App.manualQuestions && App.manualQuestions.length > 0) {
-                        console.log("Rendering paper from existing manual/uploaded questions...");
-                        paper = App.getGroupedPaper(App.manualQuestions, templateId);
-                    } else if (qbId) {
-                        console.log("Generating paper from selected Question Bank...");
-                        paper = App.generatePaperFromBank(qbId, templateId);
-                        if (paper) {
-                            App.manualQuestions = paper.questions || []; // Update state with generated questions
-                            console.log("Updated App.manualQuestions with", App.manualQuestions.length, "questions from bank");
+                    if (isBuilderMode) {
+                        // In builder mode, we pull sections from the DOM
+                        const sections = [];
+                        document.querySelectorAll('.section-builder-row-inline:not(.is-editing)').forEach(row => {
+                            sections.push({
+                                name: row.querySelector('.sec-name-hidden-inline').value,
+                                type: row.dataset.type,
+                                count: parseInt(row.querySelector('.sec-count-inline').value) || 0,
+                                marks: parseInt(row.querySelector('.sec-marks-inline').value) || 0
+                            });
+                        });
+                        
+                        if (sections.length === 0) {
+                            throw new Error("Please add and SAVE at least one section to your blueprint first.");
                         }
+                        
+                        paper = await App.generatePaperFromBank(qbId, { sections });
+                        if (paper && paper.questions) {
+                            App.manualQuestions = paper.questions;
+                            // Update mapping status in builder
+                            const statusEl = document.getElementById('qb_mapping_status');
+                            const textEl = document.getElementById('qb_mapping_text');
+                            if (statusEl) statusEl.classList.remove('hidden');
+                            if (textEl) textEl.textContent = `${App.manualQuestions.length} Questions Mapped from Bank`;
+                        }
+                        if (!paper) {
+                            closeQuickPreview();
+                            return;
+                        }
+                        console.log("Updated App.manualQuestions with", App.manualQuestions.length, "questions from bank");
+                    } else if (qbId) {
+                        // Standard Quick Mode from base template
+                        paper = await generateQuestionsForQuickMode(templateId, qbId);
+                        if (!paper) {
+                            closeQuickPreview();
+                            return;
+                        }
+                        console.log("Updated App.manualQuestions with", App.manualQuestions.length, "questions from bank");
+                    } else if (!forceGenerate && App.manualQuestions && App.manualQuestions.length > 0) {
+                        console.log("Rendering paper from saved template/manual questions...");
+                        paper = App.getGroupedPaper(App.manualQuestions, templateId);
                     } else {
                         // No manual questions and no bank selected
                         console.warn("No questions available and no bank selected");
-                         container.innerHTML = `
+                        container.innerHTML = `
                             <div class="text-center py-20 bg-white border border-slate-100 rounded-3xl shadow-sm">
                                 <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300">
                                     <i class="bi bi-database-exclamation text-3xl"></i>
                                 </div>
                                 <h5 class="text-sm font-black text-slate-800 uppercase tracking-widest mb-1">No Questions Found</h5>
                                 <p class="text-[11px] text-slate-400 font-medium mb-6">Please upload questions to the template or select a Question Bank to generate them.</p>
-                                <button class="px-6 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-indigo-100" onclick="closeQuickPreview()">
+                                <button class="px-6 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-indigo-100" onclick="document.getElementById('batchWizardConfigView').classList.remove('hidden'); document.getElementById('quick-generated-paper-section').classList.add('hidden');">
                                     Back to Config
                                 </button>
                             </div>`;
-                         return;
+                        return;
                     }
 
                     if (!paper) {
-                         console.error("Paper generation returned null");
-                         container.innerHTML = '<div class="text-center py-12 text-red-500 font-bold">Failed to process paper structure. Template data is missing.</div>';
-                         return;
+                        console.error("Paper generation returned null");
+                        container.innerHTML = '<div class="text-center py-12 text-red-500 font-bold">Failed to process paper structure. Template data is missing.</div>';
+                        return;
                     }
 
                     if (paper.warnings && paper.warnings.length > 0) {
@@ -9833,10 +11208,11 @@ if (!empty($Tests)) {
                     }
 
                     container.innerHTML = groupedHtml;
-                    
+
                     // Scroll to paper section
                     setTimeout(() => {
-                        paperSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        const targetScroll = isBuilderMode ? document.getElementById('builder_questions_section_inline') : paperSection;
+                        if (targetScroll) targetScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }, 100);
                 } catch (error) {
                     console.error("Preview Generation Error:", error);
@@ -10750,8 +12126,7 @@ if (!empty($Tests)) {
             // Open builder and load data
             if (document.getElementById('createPackModal').classList.contains('show')) {
                 // Inline Wizard Edit
-                toggleWizardView('template');
-                loadTemplateToBuilder(id, null, false);
+                loadTemplateToBuilderInline(id, true);
             } else {
                 // Sidebar Builder Edit
                 openTemplateBuilder();
