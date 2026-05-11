@@ -26,4 +26,6 @@ $routes->get('Test/downloadTemplateByTemplateId/(:num)', 'TestController::downlo
 $routes->post('Test/bulkSaveQBQuestions', 'TestController::bulkSaveQBQuestions');
 $routes->post('Test/deleteQuestionBank/(:num)', 'TestController::deleteQuestionBank/$1');
 $routes->get('Test/getTests', 'TestController::getTests');
+$routes->post('Test/uploadIntroVideos/(:num)', 'TestController::uploadIntroVideos/$1');
 $routes->post('Test/publishTestPack', 'TestController::publishTestPack');
+$routes->post('Test/publishPackResults', 'TestController::publishPackResults');

@@ -1,4 +1,25 @@
 <?php
+
+/**
+ * Safe JSON for embedding in <script>. Prevents invalid output when json_encode() fails
+ * (INF/NAN) or non‑UTF8 bytes break encoding — which would leave `Tests: ,` or truncate scripts and cause SyntaxError / empty tables.
+ */
+if (! function_exists('workflow_view_json')) {
+    function workflow_view_json($data): string
+    {
+        $flags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT;
+        if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
+            $flags |= JSON_INVALID_UTF8_SUBSTITUTE;
+        }
+        if (defined('JSON_PARTIAL_OUTPUT_ON_ERROR')) {
+            $flags |= JSON_PARTIAL_OUTPUT_ON_ERROR;
+        }
+        $json = json_encode($data, $flags);
+
+        return $json === false ? '[]' : $json;
+    }
+}
+
 // Calculate all packs for use in tables and JS
 $allPacks = [];
 if (!empty($Tests)) {
@@ -13,14 +34,16 @@ if (!empty($Tests)) {
 }
 ?>
 
+<script>window.__APP_BASE__ = <?= workflow_view_json(rtrim(base_url(), '/')) ?>;</script>
+
 <!-- Flash Message Handler -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         <?php if (session()->getFlashdata('success')): ?>
-            Swal.fire({ title: 'Success', text: '<?= session()->getFlashdata('success') ?>', icon: 'success', timer: 3000 });
+            Swal.fire({ title: 'Success', text: <?= workflow_view_json(session()->getFlashdata('success')) ?>, icon: 'success', timer: 3000 });
         <?php endif; ?>
         <?php if (session()->getFlashdata('error')): ?>
-            Swal.fire({ title: 'Upload Failed', text: '<?= session()->getFlashdata('error') ?>', icon: 'error' });
+            Swal.fire({ title: 'Upload Failed', text: <?= workflow_view_json(session()->getFlashdata('error')) ?>, icon: 'error' });
         <?php endif; ?>
     });
 </script>
@@ -208,6 +231,29 @@ if (!empty($Tests)) {
             height: 56px;
         }
 
+        /* Test Headers row hover state: shaded bg + outlined row */
+        #TestsDataTable tbody tr td {
+            transition: background-color 0.18s ease, border-color 0.18s ease;
+        }
+
+        #TestsDataTable tbody tr:hover td {
+            background-color: #f8fafc !important;
+            border-top: 1px solid #dbe3ee !important;
+            border-bottom: 1px solid #dbe3ee !important;
+        }
+
+        #TestsDataTable tbody tr:hover td:first-child {
+            border-left: 1px solid #dbe3ee !important;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+
+        #TestsDataTable tbody tr:hover td:last-child {
+            border-right: 1px solid #dbe3ee !important;
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
         .inline-select-container {
             position: relative;
         }
@@ -310,6 +356,93 @@ if (!empty($Tests)) {
 
         .batch-action-btn i {
             line-height: 0;
+        }
+
+        .batch-candidate-inline {
+            position: relative;
+            min-width: 0;
+            width: 100%;
+            z-index: 120;
+        }
+
+        .batch-candidate-trigger {
+            width: 100%;
+            height: 38px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #fff;
+            color: #334155;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 0 10px;
+            transition: all 0.2s ease;
+        }
+
+        .batch-candidate-trigger:focus,
+        .batch-candidate-trigger:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+        }
+
+        .batch-candidate-dropdown {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 6px);
+            z-index: 1500;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+            padding: 10px;
+        }
+
+        .child-table-container,
+        .child-table-container .table-responsive,
+        .child-table-container table,
+        .child-table-container tbody,
+        .child-table-container tr,
+        .child-table-container td,
+        .candidate-selector-wrapper {
+            overflow: visible !important;
+        }
+
+        .batch-candidate-list {
+            max-height: 190px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            margin-top: 6px;
+            padding-right: 2px;
+        }
+
+        .batch-candidate-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 8px;
+            padding: 5px 6px;
+            cursor: pointer;
+        }
+
+        .batch-candidate-item:hover {
+            background: #f8fafc;
+        }
+
+        .batch-candidate-item .name {
+            font-size: 11px;
+            font-weight: 700;
+            color: #334155;
+            line-height: 1.2;
+        }
+
+        .batch-candidate-item .meta {
+            font-size: 10px;
+            color: #94a3b8;
+            line-height: 1.2;
         }
 
         #TestsDataTable tr.dt-hasChild {
@@ -505,10 +638,28 @@ if (!empty($Tests)) {
             padding: 0 !important;
             overflow-y: auto !important;
             min-height: 0 !important;
-            height: calc(100vh - 128px) !important;
-            max-height: calc(100vh - 128px) !important;
+            height: 100% !important;
+            max-height: 100% !important;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
+        }
+
+        /* In template edit/create view, rely on one scroll parent (modal-body). */
+        #createPackModal.quick-mode.template-scroll-mode .modal-body {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+
+        #createPackModal.quick-mode.template-scroll-mode .modal-body>.flex.flex-1 {
+            overflow: visible !important;
+            min-height: auto !important;
+            height: auto !important;
+        }
+
+        #createPackModal.quick-mode.template-scroll-mode #wizardMainColumn {
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
         }
 
         #createPackModal.quick-mode #wizard_template_section {
@@ -778,6 +929,78 @@ if (!empty($Tests)) {
 
         .custom-modal-backdrop.open {
             display: flex;
+        }
+
+        /* Create/Edit Test: inline slide-down (not a fullscreen backdrop) */
+        #TestModal.test-form-inline-panel {
+            position: relative;
+            inset: auto;
+            width: 100%;
+            background: transparent;
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.42s cubic-bezier(0.4, 0, 0.2, 1), margin 0.42s ease;
+            z-index: 1;
+            padding: 0;
+            overflow: visible;
+            margin: 0;
+        }
+
+        #TestModal.test-form-inline-panel.open {
+            grid-template-rows: 1fr;
+            margin-bottom: 2rem;
+        }
+
+        #TestModal.test-form-inline-panel:not(.open) .test-form-slide-inner {
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        #TestModal.test-form-inline-panel.open .test-form-slide-inner {
+            overflow: visible;
+        }
+
+        #TestModal.test-form-inline-panel .test-create-sheet {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            padding: 1.5rem 1.75rem;
+            border-radius: 16px;
+            background: #fff;
+            transform: translateY(-10px);
+            opacity: 0;
+            transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 12px 32px -18px rgba(15, 23, 42, 0.12);
+        }
+
+        @media (min-width: 640px) {
+            #TestModal.test-form-inline-panel .test-create-sheet {
+                padding: 2rem 2.25rem;
+            }
+        }
+
+        #TestModal.test-form-inline-panel.open .test-create-sheet {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Exam configuration toggle cards inside test form */
+        .test-exam-config-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            border-radius: 14px;
+            border: 1px solid #f1f5f9;
+            background: rgba(248, 250, 252, 0.85);
+            min-height: 5.125rem;
+        }
+
+        .test-exam-config-card .form-switch .form-check-input {
+            cursor: pointer;
+            width: 2.5rem;
+            height: 1.35rem;
         }
 
         .custom-modal {
@@ -1205,8 +1428,9 @@ if (!empty($Tests)) {
 
         .multiselect-btn {
             width: 100%;
-            height: 44px;
-            padding: 0 1rem;
+            height: 2.75rem;
+            min-height: 2.75rem;
+            padding: 0 0.75rem;
             background: #fff;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
@@ -1214,6 +1438,7 @@ if (!empty($Tests)) {
             align-items: center;
             justify-content: space-between;
             font-size: 0.875rem;
+            line-height: 1.25;
             color: #475569;
             cursor: pointer;
             text-align: left;
@@ -1239,7 +1464,7 @@ if (!empty($Tests)) {
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             max-height: 200px;
             overflow-y: auto;
-            padding: 8px;
+            padding: 4px;
         }
 
         .multiselect-options.show {
@@ -1249,13 +1474,14 @@ if (!empty($Tests)) {
         .ms-option {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 10px 12px;
-            border-radius: 8px;
+            gap: 8px;
+            padding: 5px 8px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
+            line-height: 1.2;
             color: #475569;
-            margin-bottom: 2px;
+            margin-bottom: 0;
             transition: all 0.2s;
         }
 
@@ -1265,10 +1491,11 @@ if (!empty($Tests)) {
         }
 
         .ms-option input {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             cursor: pointer;
             accent-color: #dc2230;
+            flex-shrink: 0;
         }
 
         /* Validation Styles */
@@ -3883,16 +4110,30 @@ if (!empty($Tests)) {
                     </li>
                     <li>
                         <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 transition-all flex items-center gap-3"
-                            href="javascript:void(0)" onclick="switchMainTab('management')">
+                            href="javascript:void(0)" onclick="window.switchMainTab('management')">
                             <i class="bi bi-speedometer2 text-lg"></i>
                             Admin Dashboard
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all flex items-center gap-3"
-                            href="javascript:void(0)" onclick="switchMainTab('execution')">
+                            href="javascript:void(0)" onclick="window.switchMainTab('execution')">
                             <i class="bi bi-mortarboard text-lg"></i>
                             Student Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center gap-3"
+                            href="javascript:void(0)" onclick="window.switchMainTab('results'); switchResultView('student');">
+                            <i class="bi bi-bar-chart-line text-lg"></i>
+                            Test Score
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-violet-50 hover:text-violet-600 transition-all flex items-center gap-3"
+                            href="javascript:void(0)" onclick="window.switchMainTab('results'); switchResultView('evaluator');">
+                            <i class="bi bi-clipboard-check text-lg"></i>
+                            Evaluator View
                         </a>
                     </li>
                     <li>
@@ -3926,15 +4167,212 @@ if (!empty($Tests)) {
                 </div>
                 <div class="flex gap-3">
 
-                    <button class="btn-red-rounded px-6" onclick="openCreateTest()">
-                        <i class="bi bi-plus-lg me-2"></i> New Test Name
+                    <button class="btn-red-rounded px-6 inline-flex items-center gap-2" onclick="openCreateTest()">
+                        <span class="text-xs font-bold leading-none shrink-0 tabular-nums">1)</span>
+                        New Test Name
                     </button>
-                    <button class="btn-red-rounded px-6" onclick="openQuestionBankModal()">
-                        <i class="bi bi-journal-bookmark me-2"></i> Question Bank
+                    <button class="btn-red-rounded px-6 inline-flex items-center gap-2" onclick="window.openQuestionBankModal()">
+                        <span class="text-xs font-bold leading-none shrink-0 tabular-nums">2)</span>
+                        Question Bank
                     </button>
-                    <button class="btn-red-rounded px-6" onclick="openQuickTemplateModal()">
-                        <i class="bi bi-file-earmark-plus me-2"></i> Create Template
+                    <button class="btn-red-rounded px-6 inline-flex items-center gap-2" onclick="openQuickTemplateModal()">
+                        <span class="text-xs font-bold leading-none shrink-0 tabular-nums">3)</span>
+                        Create Template
                     </button>
+                </div>
+            </div>
+
+            <!-- Create / Edit Test: full-width slide-down sheet (same field IDs / JS hooks) -->
+            <div id="TestModal" class="test-form-inline-panel" role="region" aria-label="Create or edit test">
+                <div class="test-form-slide-inner">
+                    <div class="test-create-sheet">
+                        <div class="flex justify-between items-start gap-4 mb-8">
+                            <div>
+                                <h3 class="text-xl font-extrabold text-slate-800 tracking-tight">Create New Test</h3>
+                                <p id="test_form_subtitle" class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1.5 mb-0">Configure your assessment basic details</p>
+                            </div>
+                            <button type="button" class="text-slate-400 hover:text-red-500 transition-colors shrink-0 p-1" onclick="closeModal('TestModal')" aria-label="Close">
+                                <i class="bi bi-x-lg text-xl"></i>
+                            </button>
+                        </div>
+
+                        <input type="hidden" id="ass_code" value="" />
+
+                        <!-- Row 1: compact balanced horizontal layout -->
+                        <div id="test_form_row1" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 mb-6 items-end">
+                            <div class="form-group min-w-0">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test
+                                    Name <span class="text-red-500">*</span></label>
+                                <input id="ass_name" class="input h-11 w-full bg-slate-50 border-slate-100 rounded-xl px-3 text-sm"
+                                    placeholder="e.g., Technical Proficiency Test" />
+                                <span class="error-msg hidden" id="err_ass_name">Test name is required</span>
+                            </div>
+                            <div class="form-group min-w-0">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test
+                                    Category <span class="text-red-500">*</span></label>
+                                <select id="ass_category" class="select h-11 w-full bg-slate-50 border-slate-100 rounded-xl px-3 text-sm"
+                                    onchange="toggleEnovaFields(this.value)">
+                                    <option value="Enova">Enova</option>
+                                    <option value="HR Recruitment-Fresher">HR Recruitment-Fresher</option>
+                                </select>
+                                <span class="error-msg hidden" id="err_ass_category">Please select a category</span>
+                            </div>
+                            <div id="enova_extra_fields" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:col-span-2 xl:col-span-2 xl:grid-cols-2 min-w-0">
+                                <div class="form-group min-w-0">
+                                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test
+                                        Type <span class="text-red-500">*</span></label>
+                                    <select id="ass_type" class="select h-11 w-full bg-slate-50 border-slate-100 rounded-xl px-3 text-sm">
+                                        <option value="">Select type...</option>
+                                        <option>Technical</option>
+                                        <option>Compliance</option>
+                                        <option>Behavioral</option>
+                                    </select>
+                                    <span class="error-msg hidden" id="err_ass_type">Test type is required</span>
+                                </div>
+                                <div class="form-group min-w-0">
+                                    <label
+                                        class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Assign
+                                        To <span class="text-red-500">*</span></label>
+                                    <div class="custom-multiselect" id="ass_assigned_container">
+                                        <button type="button"
+                                            class="multiselect-btn h-11 min-h-[2.75rem] max-h-[2.75rem] bg-slate-50 border-slate-100 rounded-xl px-3 text-sm w-full leading-tight"
+                                            id="multiselect_btn" onclick="toggleMultiselect()">
+                                            <span id="multiselect_label">-- Select Roles --</span>
+                                            <i class="bi bi-chevron-down text-xs opacity-60"></i>
+                                        </button>
+                                        <div class="multiselect-options" id="multiselect_options">
+                                            <label
+                                                class="ms-option font-bold text-slate-800 border-b border-slate-100 rounded-none mb-0 pb-1.5">
+                                                <input type="checkbox" id="select_all_roles" onchange="selectAllRoles(this)"> Select
+                                                All
+                                            </label>
+                                            <label class="ms-option"><input type="checkbox" value="Developers"
+                                                    onchange="updateMultiselectLabel()"> Developers</label>
+                                            <label class="ms-option"><input type="checkbox" value="Designers"
+                                                    onchange="updateMultiselectLabel()"> Designers</label>
+                                            <label class="ms-option"><input type="checkbox" value="Testers"
+                                                    onchange="updateMultiselectLabel()"> Testers</label>
+                                            <label class="ms-option"><input type="checkbox" value="HR"
+                                                    onchange="updateMultiselectLabel()"> HR</label>
+                                            <label class="ms-option"><input type="checkbox" value="Client Advocate"
+                                                    onchange="updateMultiselectLabel()"> Client Advocate</label>
+                                        </div>
+                                    </div>
+                                    <select id="ass_assigned" class="hidden" multiple>
+                                        <option value="Developers">Developers</option>
+                                        <option value="Designers">Designers</option>
+                                        <option value="Testers">Testers</option>
+                                        <option value="HR">HR</option>
+                                        <option value="Client Advocate">Client Advocate</option>
+                                    </select>
+                                    <span class="error-msg hidden" id="err_ass_assigned">Please assign to at least one role</span>
+                                </div>
+                            </div>
+                            <div class="form-group min-w-0">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Add
+                                    Video <span class="text-red-500">*</span></label>
+                                <select id="ass_add_video" class="select h-11 w-full bg-slate-50 border-slate-100 rounded-xl px-3 text-sm"
+                                    onchange="syncIntroVideoUploadColumn()">
+                                    <option value="No">No</option>
+                                    <option value="Yes">Yes</option>
+                                </select>
+                                <span class="error-msg hidden" id="err_ass_add_video">Please choose an option</span>
+                            </div>
+                            <div id="ass_intro_upload_col" class="hidden form-group min-w-0">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Upload
+                                    Videos <span class="text-red-500">*</span></label>
+                                <div class="h-11 w-full flex items-center gap-2 px-2 rounded-xl border border-slate-100 bg-slate-50">
+                                    <input type="file" id="ass_intro_video_input" accept="video/*" multiple class="hidden"
+                                        onchange="onAssIntroVideoFilesChange(this)" />
+                                    <button type="button"
+                                        id="ass_intro_video_browse_btn"
+                                        class="px-2 py-1 rounded-lg border border-slate-200 bg-white text-[9px] font-black uppercase tracking-wider text-slate-600 hover:border-red-200 hover:text-red-600 shrink-0 leading-none"
+                                        onclick="document.getElementById('ass_intro_video_input').click()">
+                                        Browse
+                                    </button>
+                                    <span id="ass_intro_video_count" class="text-[10px] font-bold text-slate-500 whitespace-nowrap">0 / 5</span>
+                                </div>
+                                <span class="error-msg hidden" id="err_ass_intro_videos">Add at least one video or set Add Video to No</span>
+                            </div>
+                            <input id="ass_pass_mark" type="hidden" value="60" />
+                        </div>
+
+                        <!-- Row 2: Instruction (left) + Exam configurations 2×2 (right), equal column height -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 items-stretch">
+                            <div class="flex flex-col gap-1.5 min-h-0 h-full">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0">Instruction
+                                    <span class="text-red-500">*</span></label>
+                                <textarea id="ass_desc" class="input bg-slate-50 border-slate-100 rounded-xl p-4 text-sm w-full flex-1 min-h-[12rem] lg:min-h-0 resize-none"
+                                    rows="7" placeholder="Briefly provide instructions..."></textarea>
+                                <span class="error-msg hidden" id="err_ass_desc">Instruction is required</span>
+                            </div>
+                            <div class="flex flex-col gap-1.5 min-h-0 h-full">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0">Exam
+                                    configurations</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 auto-rows-fr min-h-[12rem] lg:min-h-0">
+                                    <div class="test-exam-config-card">
+                                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-red-500 shrink-0 shadow-sm">
+                                            <i class="bi bi-shield-check text-lg"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-[10px] font-black text-slate-800 uppercase tracking-wide">Proctored Exam</div>
+                                            <p class="text-[10px] text-slate-500 font-medium mb-0 leading-snug">AI &amp; camera monitoring</p>
+                                        </div>
+                                        <div class="form-check form-switch mb-0 ps-0">
+                                            <input class="form-check-input ms-0" type="checkbox" id="test_form_proctored" checked role="switch">
+                                        </div>
+                                    </div>
+                                    <div class="test-exam-config-card">
+                                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-600 shrink-0 shadow-sm">
+                                            <i class="bi bi-lock-fill text-lg"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-[10px] font-black text-slate-800 uppercase tracking-wide">Browser Lockdown</div>
+                                            <p class="text-[10px] text-slate-500 font-medium mb-0 leading-snug">Restrict tab switches</p>
+                                        </div>
+                                        <div class="form-check form-switch mb-0 ps-0">
+                                            <input class="form-check-input ms-0" type="checkbox" id="test_form_lockdown" role="switch">
+                                        </div>
+                                    </div>
+                                    <div class="test-exam-config-card">
+                                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-600 shrink-0 shadow-sm">
+                                            <i class="bi bi-eye-fill text-lg"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-[10px] font-black text-slate-800 uppercase tracking-wide">Show Results</div>
+                                            <p class="text-[10px] text-slate-500 font-medium mb-0 leading-snug">Instant score display</p>
+                                        </div>
+                                        <div class="form-check form-switch mb-0 ps-0">
+                                            <input class="form-check-input ms-0" type="checkbox" id="test_form_show_results" role="switch">
+                                        </div>
+                                    </div>
+                                    <div class="test-exam-config-card">
+                                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-600 shrink-0 shadow-sm">
+                                            <i class="bi bi-skip-backward-fill text-lg"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-[10px] font-black text-slate-800 uppercase tracking-wide">Allow Backtrack</div>
+                                            <p class="text-[10px] text-slate-500 font-medium mb-0 leading-snug">Navigate between questions</p>
+                                        </div>
+                                        <div class="form-check form-switch mb-0 ps-0">
+                                            <input class="form-check-input ms-0" type="checkbox" id="test_form_backtrack" role="switch">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-100">
+                            <button type="button"
+                                class="px-8 py-3 bg-slate-50 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all text-sm w-full sm:w-auto"
+                                onclick="closeModal('TestModal')">Cancel</button>
+                            <button type="button"
+                                class="px-8 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-100 w-full sm:w-auto"
+                                onclick="createTest()">
+                                Create Test <i class="bi bi-rocket-takeoff"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -3980,7 +4418,7 @@ if (!empty($Tests)) {
                                     Type</th>
                                 <th
                                     class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
-                                    Assign To</th>
+                                    Assigned Roles</th>
                                 <th
                                     class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
                                     Batches</th>
@@ -4003,36 +4441,49 @@ if (!empty($Tests)) {
 
 
         <main id="tab-content-results" class="hidden px-8 py-6">
-            <div class="flex items-center justify-between mb-8">
+            <div class="flex items-start justify-between gap-4 mb-8">
                 <div>
                     <button
                         class="mb-4 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg font-bold text-xs flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm"
-                        onclick="switchMainTab('management')">
+                        onclick="window.backFromResultsPage()">
                         <i class="bi bi-arrow-left"></i> Back to Inventory
                     </button>
                     <h3 class="text-2xl font-bold">Results & Evaluation</h3>
                     <p class="text-sm text-gray-500">Review candidate performance and grade subjective answers.</p>
                 </div>
-                <div class="flex p-1 bg-gray-100 rounded-xl">
-                    <button class="tab tab-active" id="btn-view-student" onclick="switchResultView('student')"
-                        style="min-width: 140px;">Student View</button>
-                    <button class="tab tab-idle" id="btn-view-evaluator" onclick="switchResultView('evaluator')"
-                        style="min-width: 140px;">Evaluator View</button>
+                <div id="resultsOverviewCards" class="w-full xl:w-[36%]">
+                    <h5 class="text-[10px] font-black text-[#1e293b] mb-2">Evaluation Overview</h5>
+                    <div class="grid grid-cols-4 gap-2">
+                        <div class="bg-[#f8fbff] border border-[#dbeafe] rounded-lg p-2 border-t-[3px] border-t-[#3b82f6] min-h-[62px] flex flex-col justify-between">
+                            <p class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">Total Score</p>
+                            <p id="resSummaryTotalScore" class="text-[16px] font-black text-[#0f172a] leading-none text-center mb-0">0</p>
+                        </div>
+                        <div class="bg-[#f0fdf4] border border-[#dcfce7] rounded-lg p-2 border-t-[3px] border-t-[#16a34a] min-h-[62px] flex flex-col justify-between">
+                            <p class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">Overall Pass %</p>
+                            <p id="resSummaryPassPct" class="text-[16px] font-black text-[#16a34a] leading-none text-center mb-0">0%</p>
+                        </div>
+                        <div class="bg-[#fef2f2] border border-[#fee2e2] rounded-lg p-2 border-t-[3px] border-t-[#dc2626] min-h-[62px] flex flex-col justify-between">
+                            <p class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">Fail Count</p>
+                            <p id="resSummaryFailCount" class="text-[16px] font-black text-[#dc2626] leading-none text-center mb-0">0</p>
+                        </div>
+                        <div class="bg-[#faf5ff] border border-[#f3e8ff] rounded-lg p-2 border-t-[3px] border-t-[#7c3aed] min-h-[62px] flex flex-col justify-between">
+                            <p class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">Pending Count</p>
+                            <p id="resSummaryPendingCount" class="text-[16px] font-black text-[#475569] leading-none text-center mb-0">0</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Student View Container -->
             <div id="result-student-view" class="space-y-4">
-                <div class="card p-4 border border-[#e2e8f0] shadow-sm rounded-[12px] bg-white">
+                <div class="card p-4 border border-[#e2e8f0] shadow-sm rounded-[12px] bg-white hidden">
                     <div class="flex flex-wrap items-center justify-between gap-6">
                         <div class="flex-1 min-w-[320px]">
                             <label
                                 class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest mb-1 block">Candidate
                                 Performance Dashboard</label>
-                            <div class="text-[15px] font-bold text-[#1e293b]">Overall Ranking — React Recruitment Drive
-                            </div>
-                            <div class="text-[11px] text-[#94a3b8] font-medium mt-0.5">Batch: Recruitment Drive April
-                                2024</div>
+                            <div class="text-[15px] font-bold text-[#1e293b]" id="results_dashboard_title"></div>
+                            <div class="text-[11px] text-[#94a3b8] font-medium mt-0.5" id="results_dashboard_subtitle">No completed submissions yet</div>
                         </div>
 
                         <div class="flex items-center gap-8 border-l border-[#f1f5f9] pl-8">
@@ -4062,12 +4513,45 @@ if (!empty($Tests)) {
                 </div>
 
                 <div class="card border border-[#e2e8f0] shadow-sm rounded-[12px] overflow-hidden bg-white">
-                    <div class="px-5 py-3 border-b border-[#f1f5f9] bg-[#f8fafc]/50 flex justify-between items-center">
+                    <div class="px-5 py-3 border-b border-[#f1f5f9] bg-[#f8fafc]/50 flex items-center justify-between gap-3 flex-wrap">
                         <h4 class="text-[12px] font-bold text-[#1e293b] mb-0 uppercase tracking-wide">Candidate Ranking
                             & Leaderboard</h4>
                         <span
                             class="text-[10px] font-bold text-[#94a3b8] bg-white border border-[#e2e8f0] px-2 py-0.5 rounded"
-                            id="breakdown-cat-count">15 Candidates</span>
+                            id="breakdown-cat-count">0 Candidates</span>
+                    </div>
+                    <div class="px-5 py-3 border-b border-[#f1f5f9] bg-white">
+                        <div class="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-3 items-center">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                                <select id="resultsTypeFilter" onchange="App.loadCandidateResult()"
+                                    class="h-9 text-[11px] font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3 rounded-lg">
+                                    <option value="">All Test Types</option>
+                                </select>
+                                <select id="resultsTestFilter" onchange="App.loadCandidateResult()"
+                                    class="h-9 text-[11px] font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3 rounded-lg">
+                                    <option value="">All Test Names</option>
+                                </select>
+                                <select id="resultsGroupFilter" onchange="App.loadCandidateResult()"
+                                    class="h-9 text-[11px] font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3 rounded-lg">
+                                    <option value="">All Groups</option>
+                                </select>
+                                <select id="resultsDateFilter" onchange="App.loadCandidateResult()"
+                                    class="h-9 text-[11px] font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3 rounded-lg">
+                                    <option value="">All Dates</option>
+                                </select>
+                                <select id="resultsSortFilter" onchange="App.loadCandidateResult()"
+                                    class="h-9 text-[11px] font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3 rounded-lg">
+                                    <option value="high">Sort By</option>
+                                    <option value="low">Lowest to Highest</option>
+                                </select>
+                            </div>
+                            <div class="relative min-w-[220px]">
+                                <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-[11px]"></i>
+                                <input id="resultsCandidateSearch" type="text" placeholder="Search candidate..."
+                                    oninput="App.loadCandidateResult()"
+                                    class="w-full h-9 text-[11px] font-semibold text-[#334155] bg-white border border-[#e2e8f0] rounded-lg pl-9 pr-3 outline-none focus:border-[#dc2230] transition-all">
+                            </div>
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table class="w-full text-left border-collapse">
@@ -4075,22 +4559,28 @@ if (!empty($Tests)) {
                                 <tr>
                                     <th
                                         class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">
-                                        Rank</th>
-                                    <th
-                                        class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">
                                         Candidate Name</th>
                                     <th
                                         class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">
-                                        Score</th>
+                                        Test Type</th>
                                     <th
                                         class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">
-                                        Accuracy</th>
+                                        Role</th>
                                     <th
                                         class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">
                                         Status</th>
                                     <th
                                         class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-right">
-                                        Time Utility</th>
+                                        Marks</th>
+                                    <th
+                                        class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-right">
+                                        Overall %</th>
+                                    <th
+                                        class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">
+                                        Pass / Fail</th>
+                                    <th
+                                        class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">
+                                        Evaluate</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-[#f1f5f9]" id="topicBreakdownTable">
@@ -4098,104 +4588,17 @@ if (!empty($Tests)) {
                             </tbody>
                         </table>
                     </div>
+                    <div id="resultsLeaderboardPagination" class="px-5 py-3 border-t border-[#f1f5f9] bg-white flex items-center justify-end gap-2"></div>
                 </div>
             </div>
 
             <!-- Evaluator View Container -->
             <div id="result-evaluator-view" class="hidden space-y-4">
-                <!-- Bulk Evaluation Actions -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div
-                        class="card p-4 border border-[#e2e8f0] shadow-sm rounded-[12px] bg-white flex items-center justify-between">
-                        <div>
-                            <h5 class="text-[13px] font-bold text-[#1e293b] mb-1">Bulk Grading Template</h5>
-                            <p class="text-[11px] text-[#94a3b8] mb-0">Download candidate list to enter marks offline.
-                            </p>
-                        </div>
-                        <button class="btn btn-outline-primary-custom btn-sm px-4 rounded-[8px] font-bold text-[11px]"
-                            onclick="App.downloadBulkEvaluationTemplate()">
-                            <i class="bi bi-download me-1"></i> Download CSV
-                        </button>
-                    </div>
-                    <div
-                        class="card p-4 border border-[#e2e8f0] shadow-sm rounded-[12px] bg-white flex items-center justify-between">
-                        <div>
-                            <h5 class="text-[13px] font-bold text-[#1e293b] mb-1">Upload Scored Sheet</h5>
-                            <p class="text-[11px] text-[#94a3b8] mb-0">Sync marks from your completed CSV file.</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <input type="file" id="bulkEvaluationInput" class="hidden"
-                                onchange="App.handleBulkEvaluationUpload(this)">
-                            <button class="btn btn-primary-custom btn-sm px-4 rounded-[8px] font-bold text-[11px]"
-                                onclick="document.getElementById('bulkEvaluationInput').click()">
-                                <i class="bi bi-upload me-1"></i> Upload CSV
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bulk Preview Section (Hidden by default) -->
-                <div id="bulkEvaluationPreview"
-                    class="hidden card border border-[#e2e8f0] shadow-sm rounded-[12px] overflow-hidden bg-white">
-                    <div class="px-5 py-3 border-b border-[#f1f5f9] bg-[#fefce8]/30 flex justify-between items-center">
-                        <h4 class="text-[12px] font-bold text-[#1e293b] mb-0 uppercase tracking-wide">Bulk Evaluation
-                            Preview</h4>
-                        <div class="flex gap-2">
-                            <button class="btn btn-sm btn-light px-3 rounded-[8px] font-bold text-[11px]"
-                                onclick="document.getElementById('bulkEvaluationPreview').classList.add('hidden')">Cancel</button>
-                            <button class="btn btn-sm btn-success px-4 rounded-[8px] font-bold text-[11px]"
-                                onclick="App.submitBulkEvaluation()">Submit Marks</button>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-[#f8fafc] border-b border-[#f1f5f9]">
-                                <tr>
-                                    <th
-                                        class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">
-                                        Candidate ID</th>
-                                    <th
-                                        class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">
-                                        Name</th>
-                                    <th
-                                        class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">
-                                        MCQ Score</th>
-                                    <th
-                                        class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-center">
-                                        Final Total</th>
-                                    <th
-                                        class="px-6 py-2.5 text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest text-right">
-                                        Manual Grading</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-[#f1f5f9]" id="bulkEvaluationTableBody">
-                                <!-- Preview rows injected here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
                 <div class="card border border-[#e2e8f0] shadow-sm rounded-[12px] overflow-hidden bg-white">
                     <div
                         class="px-5 py-2.5 border-b border-[#f1f5f9] bg-[#f8fafc]/50 flex justify-between items-center">
                         <h4 class="text-[12px] font-bold text-[#1e293b] mb-0 tracking-wide uppercase">Subjective
                             Evaluation Required</h4>
-                        <div class="flex items-center gap-3">
-                            <span
-                                class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest leading-none">Evaluator
-                                Focus:</span>
-                            <div class="relative">
-                                <select
-                                    class="appearance-none bg-white border border-[#e2e8f0] rounded-[8px] pl-3 pr-8 py-1.5 text-[11px] font-bold text-[#1e293b] focus:outline-none focus:border-[#dc2230] min-w-[220px] cursor-pointer shadow-sm transition-all"
-                                    onchange="App.renderEvaluatorView(this.value)">
-                                    <option value="1">Arjun Sharma — 2 Pending answers</option>
-                                    <option value="2">Priya Patel — All Graded</option>
-                                </select>
-                                <div
-                                    class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#94a3b8]">
-                                    <i class="bi bi-chevron-down text-[10px]"></i>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     <div id="pendingEvaluationList" class="p-5 space-y-4">
                         <!-- List of questions requiring manual marking -->
@@ -4219,7 +4622,7 @@ if (!empty($Tests)) {
                     <div class="d-flex align-items-center gap-3">
                         <button
                             class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-red-500 transition-all shadow-sm"
-                            onclick="switchMainTab('management')" title="Back to Inventory">
+                            onclick="window.switchMainTab('management')" title="Back to Inventory">
                             <i class="bi bi-arrow-left"></i>
                         </button>
                         <h2 class="section-title mb-0">Scheduled & Live Tests</h2>
@@ -4392,7 +4795,7 @@ if (!empty($Tests)) {
                                     onchange="addSelectedSection(this.value)">
                                     <option value="">Browse section blueprints..</option>
                                     <option value="MCQ">Multiple Choice Questions (MCQ)</option>
-                                    <option value="2 Marks">Short Answer (2 Marks)</option>
+                                    <option value="descriptive">Descriptive question</option>
                                     <option value="Coding">Coding / Practical Section</option>
                                 </select>
                                 <div
@@ -4441,7 +4844,6 @@ if (!empty($Tests)) {
 
 
 
-    <!-- MODAL: NEW Test -->
     <!-- Candidate Picker Modal -->
     <div id="candidatePickerModal" class="custom-modal-backdrop" style="z-index: 10006;"
         onclick="if(event.target===this)closeModal('candidatePickerModal')">
@@ -4479,121 +4881,6 @@ if (!empty($Tests)) {
         </div>
     </div>
 
-    <div id="TestModal" class="custom-modal-backdrop" onclick="if(event.target===this)closeModal('TestModal')">
-        <div class="custom-modal max-w-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <div class="flex items-center gap-4">
-                    <div
-                        class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 shadow-sm border border-red-100">
-                        <i class="bi bi-plus-circle-fill text-2xl"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-extrabold text-slate-800">Create New Test</h3>
-                        <p class="text-sm text-slate-500 font-medium">Create a new evaluation process.</p>
-                    </div>
-                </div>
-                <button class="text-slate-400 hover:text-red-500 transition-colors" onclick="closeModal('TestModal')">
-                    <i class="bi bi-x-lg text-xl"></i>
-                </button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-6 mb-6">
-                <div class="form-group">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test
-                        Name <span class="text-red-500">*</span></label>
-                    <input id="ass_name" class="input h-12 bg-slate-50 border-slate-100 rounded-xl px-4 text-sm"
-                        placeholder="e.g., Technical Proficiency Test" />
-                    <span class="error-msg hidden" id="err_ass_name">Test name is required</span>
-                </div>
-                <div class="form-group">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test
-                        Category <span class="text-red-500">*</span></label>
-                    <select id="ass_category" class="select h-12 bg-slate-50 border-slate-100 rounded-xl px-4 text-sm"
-                        onchange="toggleEnovaFields(this.value)">
-                        <option value="Enova">Enova</option>
-                        <option value="HR Recruitment-Fresher">HR Recruitment-Fresher</option>
-                    </select>
-                    <span class="error-msg hidden" id="err_ass_category">Please select a category</span>
-                </div>
-                <input type="hidden" id="ass_code" value="" />
-            </div>
-
-            <div id="enova_extra_fields">
-                <div class="grid grid-cols-2 gap-6 mb-6">
-                    <div class="form-group">
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test
-                            Type <span class="text-red-500">*</span></label>
-                        <select id="ass_type" class="select h-12 bg-slate-50 border-slate-100 rounded-xl px-4 text-sm">
-                            <option value="">Select type...</option>
-                            <option>Technical</option>
-                            <option>Compliance</option>
-                            <option>Behavioral</option>
-                        </select>
-                        <span class="error-msg hidden" id="err_ass_type">Test type is required</span>
-                    </div>
-                    <div class="form-group">
-                        <label
-                            class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Assign
-                            To <span class="text-red-500">*</span></label>
-                        <div class="custom-multiselect" id="ass_assigned_container">
-                            <button type="button"
-                                class="multiselect-btn h-12 bg-slate-50 border-slate-100 rounded-xl px-4 text-sm"
-                                id="multiselect_btn" onclick="toggleMultiselect()">
-                                <span id="multiselect_label">Select roles...</span>
-                                <i class="bi bi-chevron-down"></i>
-                            </button>
-                            <div class="multiselect-options" id="multiselect_options">
-                                <label
-                                    class="ms-option font-bold text-slate-800 border-b border-slate-100 rounded-none mb-2 pb-3">
-                                    <input type="checkbox" id="select_all_roles" onchange="selectAllRoles(this)"> Select
-                                    All
-                                </label>
-                                <label class="ms-option"><input type="checkbox" value="Developers"
-                                        onchange="updateMultiselectLabel()"> Developers</label>
-                                <label class="ms-option"><input type="checkbox" value="Designers"
-                                        onchange="updateMultiselectLabel()"> Designers</label>
-                                <label class="ms-option"><input type="checkbox" value="Testers"
-                                        onchange="updateMultiselectLabel()"> Testers</label>
-                                <label class="ms-option"><input type="checkbox" value="HR"
-                                        onchange="updateMultiselectLabel()"> HR</label>
-                                <label class="ms-option"><input type="checkbox" value="Client Advocate"
-                                        onchange="updateMultiselectLabel()"> Client Advocate</label>
-                            </div>
-                        </div>
-                        <select id="ass_assigned" class="hidden" multiple>
-                            <option value="Developers">Developers</option>
-                            <option value="Designers">Designers</option>
-                            <option value="Testers">Testers</option>
-                            <option value="HR">HR</option>
-                            <option value="Client Advocate">Client Advocate</option>
-                        </select>
-                        <span class="error-msg hidden" id="err_ass_assigned">Please assign to at least one role</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group mb-8">
-                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Description
-                    <span class="text-red-500">*</span></label>
-                <textarea id="ass_desc" class="input bg-slate-50 border-slate-100 rounded-xl p-4 text-sm" rows="4"
-                    placeholder="Briefly describe the purpose..."></textarea>
-                <span class="error-msg hidden" id="err_ass_desc">Description is required</span>
-            </div>
-
-            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                <button
-                    class="px-8 py-3 bg-slate-50 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all text-sm"
-                    onclick="closeModal('TestModal')">Cancel</button>
-                <button
-                    class="px-8 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all text-sm flex items-center gap-2 shadow-lg shadow-red-100"
-                    onclick="createTest()">
-                    Create Test <i class="bi bi-rocket-takeoff"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-
     <!-- Question Bank Modal (Now Full Screen Template) -->
     <div id="QuestionBankModal" class="custom-modal-backdrop qb-template-mode"
         onclick="if(event.target===this)closeQuestionBankModal()">
@@ -4614,8 +4901,8 @@ if (!empty($Tests)) {
                         onclick="promptCreateQB()">
                         <i class="bi bi-plus-lg text-xs"></i> Create Question Bank
                     </button>
-                    <button class="px-8 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100"
-                        onclick="closeQuestionBankModal()">Go Back</button>
+                    <button class="px-8 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center gap-2"
+                        onclick="closeQuestionBankModal()"><i class="bi bi-arrow-left text-[14px] font-black leading-none"></i>Back</button>
                 </div>
             </div>
 
@@ -4628,8 +4915,8 @@ if (!empty($Tests)) {
                                 <i class="bi bi-stack"></i>
                             </span>
                             <div>
-                                <h4>Repositories</h4>
-                                <p>Repository Library</p>
+                                <h4>Question Bank</h4>
+                                <p>Question Bank</p>
                             </div>
                         </div>
                     <div class="qb-sidebar-search">
@@ -4667,13 +4954,13 @@ if (!empty($Tests)) {
                                 <div id="qbUnifiedHeader" class="flex items-center justify-between">
                                     <div class="flex items-center gap-6">
                                         <!-- Bank Title Block -->
-                                        <div class="flex items-center gap-4 bg-slate-50/50 px-6 py-3.5 rounded-3xl border border-slate-100 min-w-[280px]">
+                                        <div class="flex items-center gap-4 bg-transparent px-6 py-3.5 rounded-3xl min-w-[280px]">
                                             <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-red-600 shadow-sm border border-slate-50">
                                                 <i class="bi bi-journal-text text-xl"></i>
                                             </div>
                                             <div>
                                                 <h3 id="activeQBName" class="text-lg font-black text-slate-800 mb-0 leading-tight">Select a Bank</h3>
-                                                <p id="activeQBSubtitle" class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0">Repository Context</p>
+                                                <p id="activeQBSubtitle" class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0"></p>
                                             </div>
                                         </div>
 
@@ -4696,7 +4983,7 @@ if (!empty($Tests)) {
                                 </div>
 
                                 <!-- Controls Row: Tabs & Bulk Actions -->
-                                <div id="qbSecondaryControls" class="hidden flex items-center justify-between bg-slate-50/30 px-8 py-1 rounded-2xl border border-slate-100 animate-fadeIn">
+                                <div id="qbSecondaryControls" class="hidden flex items-center justify-between bg-transparent px-8 py-1 rounded-2xl animate-fadeIn">
                                     <div id="qbCategoryTabs" class="flex gap-10"></div>
                                     <div id="qbHeaderActions" class="flex items-center gap-3"></div>
                                 </div>
@@ -4806,7 +5093,7 @@ if (!empty($Tests)) {
                         <button id="btn-assign-mcq" class="tab tab-active px-8 py-2.5 rounded-lg"
                             onclick="App.switchAssignTab('assign-mcq')">MCQ</button>
                         <button id="btn-assign-2m" class="tab tab-idle px-8 py-2.5 rounded-lg"
-                            onclick="App.switchAssignTab('assign-2m')">2 MARKS</button>
+                            onclick="App.switchAssignTab('assign-2m')">DESCRIPTIVE QUESTION</button>
                     </div>
 
                     <!-- MCQ panel -->
@@ -4850,6 +5137,14 @@ if (!empty($Tests)) {
                                     ENTRY</h5>
                             </div>
                             <div class="grid gap-5">
+                                <div>
+                                    <label class="form-label text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-2">Pedagogy</label>
+                                    <div class="pedagogy-combo relative w-full" data-pedagogy-base="assign_mcq_pedagogy">
+                                        <input type="hidden" class="pedagogy-combo-hidden" value="">
+                                        <input type="text" class="pedagogy-combo-search form-control h-12 text-sm border-slate-200 rounded-lg shadow-sm w-full" autocomplete="off" spellcheck="false" placeholder="Search or type pedagogy...">
+                                        <div class="pedagogy-combo-panel mt-0.5 max-h-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl hidden"></div>
+                                    </div>
+                                </div>
                                 <textarea id="mcq_content"
                                     class="form-control text-sm focus:ring-2 focus:ring-red-100 p-4 bg-slate-50 border-slate-200"
                                     placeholder="Type your question content here..." rows="4"
@@ -4903,7 +5198,7 @@ if (!empty($Tests)) {
                         </div>
                     </div>
 
-                    <!-- 2 Marks panel -->
+                    <!-- Descriptive question panel -->
                     <div id="assign-2m" class="assign-panel hidden">
                         <!-- Bulk Upload Section -->
                         <div class="card p-6 mb-8 flex items-center justify-between flex-wrap gap-4"
@@ -4914,7 +5209,7 @@ if (!empty($Tests)) {
                                     <i class="bi bi-file-earmark-spreadsheet-fill text-2xl"></i>
                                 </div>
                                 <div>
-                                    <div class="text-base font-extrabold text-slate-800">2 MARKS Bulk Upload</div>
+                                    <div class="text-base font-extrabold text-slate-800">Descriptive question — bulk upload</div>
                                     <div class="text-slate-400 text-[10px] mt-0.5 uppercase font-black tracking-widest">
                                         CSV format required</div>
                                 </div>
@@ -4926,7 +5221,7 @@ if (!empty($Tests)) {
                                 <form action="Test/uploadQuestions" method="POST" enctype="multipart/form-data"
                                     class="flex gap-2 m-0">
                                     <input type="hidden" name="test_pack_id" class="assign_tp_id_input" />
-                                    <input type="hidden" name="type" value="2 Marks" />
+                                    <input type="hidden" name="type" value="descriptive" />
                                     <input type="file" name="file" class="hidden" id="file_2m"
                                         onchange="this.form.submit()" />
                                     <label for="file_2m"
@@ -4941,11 +5236,19 @@ if (!empty($Tests)) {
                             <div class="flex items-center gap-3 mb-6">
                                 <div class="w-1 h-6 bg-red-600 rounded-full"></div>
                                 <h5 class="text-xs font-black text-slate-500 uppercase tracking-widest mb-0">MANUAL
-                                    2-MARK ENTRY</h5>
+                                    DESCRIPTIVE QUESTION ENTRY</h5>
                             </div>
                             <div class="grid gap-5">
+                                <div>
+                                    <label class="form-label text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-2">Pedagogy</label>
+                                    <div class="pedagogy-combo relative w-full" data-pedagogy-base="assign_m2_pedagogy">
+                                        <input type="hidden" class="pedagogy-combo-hidden" value="">
+                                        <input type="text" class="pedagogy-combo-search form-control h-12 text-sm border-slate-200 rounded-lg shadow-sm w-full" autocomplete="off" spellcheck="false" placeholder="Search or type pedagogy...">
+                                        <div class="pedagogy-combo-panel mt-0.5 max-h-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl hidden"></div>
+                                    </div>
+                                </div>
                                 <textarea id="m2_content" class="form-control text-sm p-4 bg-slate-50 border-slate-200"
-                                    placeholder="Type the 2-mark question..." rows="3"
+                                    placeholder="Type the descriptive question..." rows="3"
                                     style="border-radius: 12px;"></textarea>
                                 <textarea id="m2_correct" class="form-control text-sm p-4 bg-slate-50 border-slate-200"
                                     placeholder="Expected answer for evaluation..." rows="3"
@@ -4953,7 +5256,7 @@ if (!empty($Tests)) {
                                 <div class="flex justify-end pt-2">
                                     <button
                                         class="btn btn-primary-custom h-12 px-10 text-[12px] font-extrabold justify-center rounded-lg shadow-md"
-                                        onclick="App.addManualAssignQuestion('2-Mark')">
+                                        onclick="App.addManualAssignQuestion('descriptive')">
                                         <i class="bi bi-plus-circle-fill me-1"></i> Add Question to Pack
                                     </button>
                                 </div>
@@ -5013,7 +5316,7 @@ if (!empty($Tests)) {
                 <div id="execTimer" class="exec-timer-box-custom">
                     <div class="timer-icon-custom"><i class="bi bi-clock"></i></div>
                     <div class="timer-values-custom">
-                        <span id="timerText">58:45</span>
+                        <span id="timerText">--:--</span>
                     </div>
                 </div>
                 <button class="btn btn-submit-test-custom" onclick="App.confirmSubmit()">
@@ -5031,9 +5334,7 @@ if (!empty($Tests)) {
                         <div class="q-card-header-custom">
                             <div class="q-meta-group-custom">
                                 <span class="q-id-pill-custom" id="qIdxBadge">Q10</span>
-                                <span class="q-type-pill-custom" id="qTypeBadge">Multi-select</span>
-                                <span class="q-marks-pill-custom" id="qMarksBadge">3 marks</span>
-                                <span class="q-category-pill-custom" id="qCategoryBadge">Testing</span>
+                                <span class="q-category-pill-custom" id="qPedagogyBadge" title="Pedagogy">—</span>
                             </div>
                             <button class="btn btn-flag-custom" id="flagBtn" onclick="App.toggleFlagCurrent()">
                                 <i class="bi bi-flag"></i> Flag Question
@@ -5053,7 +5354,7 @@ if (!empty($Tests)) {
                     </div>
 
 
-                    <div class="exec-footer-custom">
+                    <div id="execQuestionFooter" class="exec-footer-custom">
                         <button class="btn btn-nav-prev-custom" onclick="App.prevQuestion()">
                             <i class="bi bi-chevron-left me-2"></i> Previous Question
                         </button>
@@ -5064,6 +5365,32 @@ if (!empty($Tests)) {
                         <button class="btn btn-nav-next-custom" id="nextQBtn" onclick="App.nextQuestion()">
                             Next Question <i class="bi bi-chevron-right ms-2"></i>
                         </button>
+                    </div>
+
+                    <div id="finalSubmissionPage" class="d-none mt-4 bg-white border border-slate-200 rounded-2xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-[14px] font-black text-slate-800 mb-0">Final Submission</h4>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Optional Upload</span>
+                        </div>
+                        <p class="text-[12px] text-slate-500 mb-3">You can upload one or multiple files before submitting. This is optional.</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Single File</label>
+                                <input type="file" id="execFinalSingleFileInput" class="form-control text-[12px]" onchange="App.onExecutionAttachmentsChange(this)">
+                            </div>
+                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Bulk Upload</label>
+                                <input type="file" id="execFinalBulkFileInput" multiple class="form-control text-[12px]" onchange="App.onExecutionAttachmentsChange(this)">
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mb-2">Maximum file size: 2 MB each. Any format allowed.</p>
+                        <div id="execFinalAttachmentList" class="space-y-1 mb-4"></div>
+
+                        <div class="flex items-center justify-end gap-2">
+                            <button class="btn btn-light px-4 py-2 text-[11px] font-bold" onclick="App.backToQuestionsFromFinal()">Back</button>
+                            <button class="btn btn-danger px-5 py-2 text-[11px] font-black uppercase tracking-widest" onclick="App.submitTest()">Submit Test</button>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -5118,6 +5445,22 @@ if (!empty($Tests)) {
         </div>
     </div>
 
+    <!-- Orientation videos (outside execution view so intro shows before test UI) -->
+    <div id="execIntroOverlay" class="d-none"
+        style="position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.93);overflow-y:auto;">
+        <div class="container py-4 px-3" style="max-width:920px;">
+            <h2 class="text-white text-center fw-bold mb-2" style="font-size:1.35rem;">Orientation videos</h2>
+            <p class="text-center text-slate-300 small mb-4 mb-md-5">Orientation screen is shown before the test starts. Click the button below when you're ready to begin.</p>
+            <div id="execIntroVideosMount" class="d-flex flex-column gap-4 mb-4"></div>
+            <div class="text-center pb-5">
+                <button type="button" id="execIntroCompleteBtn" class="btn btn-lg btn-light fw-bold px-5 rounded-pill shadow"
+                    style="min-width:260px;" onclick="App.completeIntroGate()">
+                    I've completed watching — Begin test
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Submission Success Overlay -->
     <div id="submissionSuccessOverlay" class="submission-success-overlay d-none">
         <div class="success-card">
@@ -5132,6 +5475,23 @@ if (!empty($Tests)) {
         </div>
     </div>
 
+    <!-- Student: own result summary (Scheduled & Live Tests — View Results) -->
+    <div class="modal fade" id="studentResultSummaryModal" tabindex="-1" aria-labelledby="studentResultSummaryTitleLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <div>
+                        <h5 class="modal-title fw-bold text-slate-800 mb-0" id="studentResultSummaryTitleLabel">Your results</h5>
+                        <p class="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-0 mt-1" id="studentResultSummarySubtitle"></p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 pt-2 pb-4" id="studentResultSummaryBody">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Submit Confirmation Modal -->
     <div id="submitConfirmModal" class="submit-confirm-overlay d-none">
         <div class="confirm-card">
@@ -5140,6 +5500,12 @@ if (!empty($Tests)) {
                 You have answered <span id="confirmAnsweredCount" class="fw-bold">15</span> of
                 <span id="confirmTotalCount" class="fw-bold">15</span> questions.
             </p>
+            <div class="mb-3 text-start">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Attachment (Optional)</label>
+                <input type="file" id="execSubmissionAttachmentInput" class="form-control text-[12px]" onchange="App.onExecutionAttachmentChange(this)">
+                <p class="text-[10px] text-slate-400 mt-1 mb-0">Maximum file size: 2 MB. Any file format is allowed.</p>
+                <p id="execSubmissionAttachmentMeta" class="text-[10px] text-slate-500 mt-1 mb-0"></p>
+            </div>
             <p class="confirm-warning">
                 Once submitted, you cannot make changes. Are you sure you want to submit?
             </p>
@@ -5173,13 +5539,40 @@ if (!empty($Tests)) {
     <script>
         // Global Data
         const App = {
-            Tests: <?= json_encode($Tests ?? []) ?>,
-            templates: <?= json_encode($templates ?? []) ?>,
-            employees: <?= json_encode($employees ?? []) ?>,
-            QuestionBanks: <?= json_encode($questionBank ?? []) ?>,
+            Tests: <?= workflow_view_json($Tests ?? []) ?>,
+            templates: <?= workflow_view_json($templates ?? []) ?>,
+            employees: <?= workflow_view_json($employees ?? []) ?>,
+            QuestionBanks: <?= workflow_view_json($questionBank ?? []) ?>,
             selectedCandidates: {}, // Stores { TestId: [empId1, empId2] }
             manualQuestions: [],
             quickModePaperSource: null,
+            resultsContextTestName: '',
+            activeEvaluatorSubmissionKey: '',
+
+            evaluationState: { submissions: {} },
+
+            loadEvaluationState: function () {
+                try {
+                    const raw = localStorage.getItem('evaluationSubmissions');
+                    if (!raw) return;
+                    const parsed = JSON.parse(raw);
+                    if (parsed && typeof parsed === 'object') {
+                        App.evaluationState.submissions = parsed;
+                    }
+                } catch (e) {
+                    console.warn('Failed to load evaluation state', e);
+                }
+            },
+
+            saveEvaluationState: function () {
+                try {
+                    localStorage.setItem('evaluationSubmissions', JSON.stringify(App.evaluationState.submissions || {}));
+                } catch (e) {
+                    console.warn('Failed to persist evaluation state', e);
+                }
+            },
+
+            loadCandidateResult: function () {},
 
             // Helper for deterministic/random shuffle
             shuffle: function (array) {
@@ -5195,10 +5588,19 @@ if (!empty($Tests)) {
             normalizeType: function (t) {
                 if (!t) return '';
                 t = t.toString().toLowerCase().trim();
-                // Common synonyms for MCQ
                 if (t.includes('mcq') || t.includes('multiple choice') || t.includes('objective') || t === '1') return 'mcq';
-                // Common synonyms for 2-mark/Short Answer
-                if (t.includes('2-mark') || t.includes('2 mark') || t.includes('short answer') || t.includes('descriptive') || t.includes('2mark') || t === '2') return '2-mark';
+                if (
+                    t === 'short'
+                    || t.includes('short answer')
+                    || t.includes('descriptive')
+                    || t.includes('2-mark')
+                    || t.includes('2mark')
+                    || (t.includes('2') && t.includes('mark'))
+                    || /^\u0032\s*marks?$/.test(t.trim())
+                    || /^\u0032\s*$/.test(t.trim())
+                ) {
+                    return 'descriptive';
+                }
                 return t;
             },
 
@@ -5418,6 +5820,320 @@ if (!empty($Tests)) {
                 .replace(/'/g, '&#39;');
         }
 
+        const PedagogyRegistry = {
+            STORAGE_KEY: 'workflow_pedagogy_custom_options_v1',
+            DEFAULT_OPTIONS: [
+                'Logical Thinking',
+                'Problem Solving',
+                'Debugging Skills',
+                'Code Efficiency',
+                'Analytical Thinking',
+                'Programming Fundamentals',
+                'Database Knowledge',
+                'UI/UX Understanding',
+                'Communication Skills',
+                'Aptitude',
+                'Algorithm Design'
+            ],
+            normalize(s) {
+                return String(s ?? '').trim().replace(/\s+/g, ' ');
+            },
+            getCustomList() {
+                try {
+                    const raw = localStorage.getItem(this.STORAGE_KEY);
+                    const arr = raw ? JSON.parse(raw) : [];
+                    return Array.isArray(arr) ? arr.map(x => this.normalize(x)).filter(Boolean) : [];
+                } catch (e) {
+                    return [];
+                }
+            },
+            setCustomList(arr) {
+                const seen = new Set();
+                const out = [];
+                arr.forEach(item => {
+                    const n = this.normalize(item);
+                    if (!n || seen.has(n.toLowerCase())) return;
+                    seen.add(n.toLowerCase());
+                    out.push(n);
+                });
+                localStorage.setItem(this.STORAGE_KEY, JSON.stringify(out));
+            },
+            getAllOptions() {
+                const merged = new Map();
+                [...this.DEFAULT_OPTIONS, ...this.getCustomList()].forEach(raw => {
+                    const n = this.normalize(raw);
+                    if (!n) return;
+                    merged.set(n.toLowerCase(), n);
+                });
+                return Array.from(merged.values()).sort((a, b) => a.localeCompare(b));
+            },
+            matchesExisting(name) {
+                const n = this.normalize(name).toLowerCase();
+                if (!n) return false;
+                return this.getAllOptions().some(o => o.toLowerCase() === n);
+            },
+            addCustom(raw) {
+                const n = this.normalize(raw);
+                if (!n) return { ok: false, reason: 'empty' };
+                if (n.length > 128) return { ok: false, reason: 'long' };
+                if (this.matchesExisting(n)) {
+                    const all = this.getAllOptions();
+                    const found = all.find(o => o.toLowerCase() === n.toLowerCase());
+                    return { ok: false, reason: 'duplicate', value: found || n };
+                }
+                const next = this.getCustomList();
+                next.push(n);
+                this.setCustomList(next);
+                return { ok: true, value: n };
+            }
+        };
+
+        function pedagogyResetPanelStyle(panel) {
+            if (!panel) return;
+            panel.style.position = '';
+            panel.style.left = '';
+            panel.style.top = '';
+            panel.style.right = '';
+            panel.style.width = '';
+            panel.style.maxHeight = '';
+            panel.style.zIndex = '';
+            delete panel.dataset.pedagogyFixed;
+        }
+
+        function pedagogyHidePanel(panel) {
+            if (!panel) return;
+            panel.classList.add('hidden');
+            pedagogyResetPanelStyle(panel);
+        }
+
+        function pedagogyHideAllPedagogyPanels() {
+            document.querySelectorAll('.pedagogy-combo-panel').forEach(pedagogyHidePanel);
+        }
+
+        function pedagogyPositionPanelFixed(root) {
+            const panel = root?.querySelector('.pedagogy-combo-panel');
+            const input = root?.querySelector('.pedagogy-combo-search');
+            if (!panel || !input || panel.classList.contains('hidden')) return;
+            const r = input.getBoundingClientRect();
+            if (r.width < 1 || r.height < 1) return;
+
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const margin = 8;
+            const gap = 4;
+            let left = r.left;
+            let width = r.width;
+            if (left + width > vw - margin) {
+                width = Math.max(120, vw - margin - Math.max(margin, left));
+            }
+            if (left < margin) {
+                const shift = margin - left;
+                left = margin;
+                width = Math.max(120, width - shift);
+                if (left + width > vw - margin) {
+                    width = Math.max(120, vw - margin - left);
+                }
+            }
+
+            const desiredMax = 208;
+            const spaceBelow = vh - r.bottom - margin - gap;
+            const spaceAbove = r.top - margin - gap;
+            let top = r.bottom + gap;
+            let maxH = Math.min(desiredMax, Math.max(72, spaceBelow));
+
+            if (maxH < 120 && spaceAbove > spaceBelow + 40) {
+                maxH = Math.min(desiredMax, Math.max(72, spaceAbove));
+                top = Math.max(margin, r.top - maxH - gap);
+            }
+
+            panel.style.position = 'fixed';
+            panel.style.left = left + 'px';
+            panel.style.top = top + 'px';
+            panel.style.width = width + 'px';
+            panel.style.maxHeight = maxH + 'px';
+            panel.style.right = 'auto';
+            panel.style.zIndex = '20000';
+            panel.dataset.pedagogyFixed = '1';
+        }
+
+        function pedagogyRepositionOpenPanels() {
+            document.querySelectorAll('.pedagogy-combo-panel:not(.hidden)').forEach(panel => {
+                const root = panel.closest('.pedagogy-combo');
+                if (root) pedagogyPositionPanelFixed(root);
+            });
+        }
+
+        function pedagogyComboHtml(baseId, selectedValue, opts = {}) {
+            const sel = PedagogyRegistry.normalize(selectedValue);
+            const manualAttr = opts.manualQuestionId != null && opts.manualQuestionId !== ''
+                ? ` data-pedagogy-manual-id="${escapeHtml(String(opts.manualQuestionId))}"`
+                : '';
+            const searchClass = opts.searchClass
+                ? ` ${opts.searchClass}`
+                : ' w-full bg-slate-50 border border-slate-200 rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-700';
+            const fillCell = opts.fillCell ? ' h-full min-h-0 flex flex-col' : '';
+            const searchShrink = opts.fillCell ? ' shrink-0' : '';
+            return `
+                <div class="pedagogy-combo relative w-full${fillCell}" data-pedagogy-base="${escapeHtml(baseId)}"${manualAttr}>
+                    <input type="hidden" class="pedagogy-combo-hidden" value="${escapeHtml(sel)}">
+                    <input type="text" class="pedagogy-combo-search${searchClass}${searchShrink}" autocomplete="off" spellcheck="false" placeholder="Search or type pedagogy..." value="${escapeHtml(sel)}">
+                    <div class="pedagogy-combo-panel mt-0.5 max-h-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl hidden"></div>
+                </div>`;
+        }
+
+        function pedagogyFindRootByBase(baseId) {
+            return Array.from(document.querySelectorAll('[data-pedagogy-base]')).find(el => el.getAttribute('data-pedagogy-base') === baseId) || null;
+        }
+
+        function getPedagogyComboValue(baseId) {
+            const root = pedagogyFindRootByBase(baseId);
+            if (!root) return '';
+            const hi = root.querySelector('.pedagogy-combo-hidden');
+            const se = root.querySelector('.pedagogy-combo-search');
+            const fromHidden = PedagogyRegistry.normalize(hi ? hi.value : '');
+            const fromSearch = PedagogyRegistry.normalize(se ? se.value : '');
+            return fromHidden || fromSearch;
+        }
+
+        function setPedagogyComboValue(baseId, value) {
+            const root = pedagogyFindRootByBase(baseId);
+            if (!root) return;
+            const n = PedagogyRegistry.normalize(value);
+            const hi = root.querySelector('.pedagogy-combo-hidden');
+            const se = root.querySelector('.pedagogy-combo-search');
+            if (hi) hi.value = n;
+            if (se) se.value = n;
+        }
+
+        function resetPedagogyCombo(baseId) {
+            setPedagogyComboValue(baseId, '');
+            const root = pedagogyFindRootByBase(baseId);
+            pedagogyHidePanel(root?.querySelector('.pedagogy-combo-panel'));
+        }
+
+        function pedagogyRenderPanel(root) {
+            if (!root) return;
+            const panel = root.querySelector('.pedagogy-combo-panel');
+            const input = root.querySelector('.pedagogy-combo-search');
+            if (!panel || !input) return;
+
+            const qRaw = PedagogyRegistry.normalize(input.value).toLowerCase();
+            const all = PedagogyRegistry.getAllOptions();
+            const filtered = !qRaw ? all.slice(0, 80) : all.filter(o => o.toLowerCase().includes(qRaw)).slice(0, 80);
+
+            let html = '';
+            filtered.forEach(opt => {
+                html += `<button type="button" class="pedagogy-opt block w-full px-3 py-2 text-left text-[13px] text-slate-700 hover:bg-slate-50 border-0 bg-transparent" data-value="${escapeHtml(opt)}">${escapeHtml(opt)}</button>`;
+            });
+
+            const typed = PedagogyRegistry.normalize(input.value);
+            if (typed && !PedagogyRegistry.matchesExisting(typed)) {
+                html += `<button type="button" class="pedagogy-add block w-full px-3 py-2 text-left text-[13px] font-semibold text-red-600 hover:bg-red-50 border-t border-slate-100 bg-transparent" data-add="${escapeHtml(typed)}">Add '${escapeHtml(typed)}'</button>`;
+            }
+
+            if (!html) {
+                html = `<div class="px-3 py-2 text-[12px] text-slate-400">No matches — type to add new</div>`;
+            }
+
+            panel.innerHTML = html;
+            panel.classList.remove('hidden');
+            requestAnimationFrame(() => pedagogyPositionPanelFixed(root));
+        }
+
+        function pedagogyPick(root, value) {
+            if (!root) return;
+            const n = PedagogyRegistry.normalize(value);
+            const hi = root.querySelector('.pedagogy-combo-hidden');
+            const se = root.querySelector('.pedagogy-combo-search');
+            if (hi) hi.value = n;
+            if (se) se.value = n;
+            pedagogyHidePanel(root.querySelector('.pedagogy-combo-panel'));
+
+            const mid = root.getAttribute('data-pedagogy-manual-id');
+            if (mid && typeof App !== 'undefined' && typeof App.updateManualQuestion === 'function') {
+                App.updateManualQuestion(mid, 'pedagogy', n);
+            }
+        }
+
+        function pedagogyCommitBlur(root) {
+            if (!root) return;
+            const se = root.querySelector('.pedagogy-combo-search');
+            const hi = root.querySelector('.pedagogy-combo-hidden');
+            if (!se || !hi) return;
+            const n = PedagogyRegistry.normalize(se.value);
+            hi.value = n;
+            const mid = root.getAttribute('data-pedagogy-manual-id');
+            if (mid && typeof App !== 'undefined' && typeof App.updateManualQuestion === 'function') {
+                App.updateManualQuestion(mid, 'pedagogy', n);
+            }
+            pedagogyHidePanel(root.querySelector('.pedagogy-combo-panel'));
+        }
+
+        (function setupPedagogyComboDelegation() {
+            document.addEventListener('focusin', (e) => {
+                const s = e.target.closest('.pedagogy-combo-search');
+                if (!s) return;
+                const root = s.closest('.pedagogy-combo');
+                if (root) pedagogyRenderPanel(root);
+            });
+
+            document.addEventListener('input', (e) => {
+                const s = e.target.closest('.pedagogy-combo-search');
+                if (!s) return;
+                pedagogyRenderPanel(s.closest('.pedagogy-combo'));
+            });
+
+            document.addEventListener('mousedown', (e) => {
+                const opt = e.target.closest('.pedagogy-opt');
+                if (opt) {
+                    e.preventDefault();
+                    const root = opt.closest('.pedagogy-combo');
+                    pedagogyPick(root, opt.getAttribute('data-value') || '');
+                    return;
+                }
+                const addBtn = e.target.closest('.pedagogy-add');
+                if (addBtn) {
+                    e.preventDefault();
+                    const root = addBtn.closest('.pedagogy-combo');
+                    const raw = addBtn.getAttribute('data-add') || '';
+                    const res = PedagogyRegistry.addCustom(raw);
+                    if (res.ok) {
+                        pedagogyPick(root, res.value);
+                    } else if (res.reason === 'duplicate' && res.value != null) {
+                        pedagogyPick(root, res.value);
+                    }
+                    if (root) pedagogyRenderPanel(root);
+                    return;
+                }
+            });
+
+            document.addEventListener('blur', (e) => {
+                const s = e.target.closest('.pedagogy-combo-search');
+                if (!s) return;
+                const root = s.closest('.pedagogy-combo');
+                setTimeout(() => {
+                    if (!root || root.contains(document.activeElement)) return;
+                    pedagogyCommitBlur(root);
+                }, 120);
+            }, true);
+
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('.pedagogy-combo')) return;
+                pedagogyHideAllPedagogyPanels();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key !== 'Escape') return;
+                pedagogyHideAllPedagogyPanels();
+            });
+
+            if (!window._pedagogyRepositionBound) {
+                window._pedagogyRepositionBound = true;
+                window.addEventListener('scroll', pedagogyRepositionOpenPanels, true);
+                window.addEventListener('resize', pedagogyRepositionOpenPanels);
+            }
+        })();
+
         function normalizeQuestionRecord(question = {}, fallbackSectionIdx = null) {
             return {
                 ...question,
@@ -5425,6 +6141,7 @@ if (!empty($Tests)) {
                 marks: parseInt(question.marks ?? 0, 10) || 0,
                 type: question.type || question.marks_type || '',
                 question: question.question || '',
+                pedagogy: String(question.pedagogy ?? question.knowledge_type ?? '').trim(),
                 option_a: question.option_a || '',
                 option_b: question.option_b || '',
                 option_c: question.option_c || '',
@@ -5532,7 +6249,10 @@ if (!empty($Tests)) {
                     return `
                                                 <div class="rounded-xl border border-slate-100 bg-white px-3 py-3">
                                                     <div class="flex items-start justify-between gap-3">
-                                                        <p class="text-[11px] font-semibold text-slate-700 mb-0">${questionIdx + 1}. ${escapeHtml(question.question || 'Untitled question')}</p>
+                                                        <div class="min-w-0">
+                                                            <p class="text-[11px] font-semibold text-slate-700 mb-0">${questionIdx + 1}. ${escapeHtml(question.question || 'Untitled question')}</p>
+                                                            ${question.pedagogy ? `<p class="text-[9px] font-bold uppercase tracking-widest text-indigo-500 mb-0 mt-1">${escapeHtml(question.pedagogy)}</p>` : ''}
+                                                        </div>
                                                         <span class="shrink-0 rounded-lg bg-slate-50 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-slate-500">${escapeHtml(question.marks || marksEach)}M</span>
                                                     </div>
                                                     ${isMcq && options ? `<div class="mt-2 flex flex-wrap gap-2">${options}</div>` : ''}
@@ -5639,7 +6359,7 @@ if (!empty($Tests)) {
             const nameEl = document.getElementById('activeQBName');
             const subtitleEl = document.getElementById('activeQBSubtitle');
             if (nameEl) nameEl.textContent = 'Select a Bank';
-            if (subtitleEl) subtitleEl.textContent = 'Repository Context';
+            if (subtitleEl) subtitleEl.textContent = '';
             
             const show = ['qbEmptyState'];
             const hide = ['qbContentArea', 'qbHeaderStats', 'qbSecondaryControls', 'qbFooter', 'qbNavigationArrows'];
@@ -5656,39 +6376,33 @@ if (!empty($Tests)) {
             createBtn.classList.toggle('hidden', isCreateMode);
         }
 
-        async function updateQuestionInline(id) {
-            const idx = activeQB.questions.findIndex(q => (q.id || '').toString() === id.toString());
-            if (idx === -1) return;
+        function setQBFooterVisibility(visible) {
+            const footer = document.getElementById('qbFooter');
+            if (!footer) return;
+            footer.classList.toggle('hidden', !visible);
+        }
 
-            const q = activeQB.questions[idx];
-            const updatedData = {
-                question: document.getElementById('editQContent').value.trim()
+        function collapseFreshQBAfterSave(bank = null) {
+            const qCount = Array.isArray(bank?.questions) ? bank.questions.length : 0;
+            if (qCount > 0) return;
+
+            document.getElementById('qbSecondaryControls')?.classList.add('hidden');
+            document.getElementById('qbContentArea')?.classList.add('hidden');
+            document.getElementById('qbNavigationArrows')?.classList.add('hidden');
+            setQBFooterVisibility(false);
+        }
+
+        function focusQBNameInput() {
+            const focusNow = () => {
+                const nameInput = document.getElementById('inlineQBName');
+                if (!nameInput) return;
+                nameInput.focus();
+                const len = nameInput.value.length;
+                nameInput.setSelectionRange(len, len);
             };
 
-            if (q.type === 'MCQ') {
-                updatedData.option_a = document.getElementById('editOptA').value;
-                updatedData.option_b = document.getElementById('editOptB').value;
-                updatedData.option_c = document.getElementById('editOptC').value;
-                updatedData.option_d = document.getElementById('editOptD').value;
-                updatedData.correct_answer = document.getElementById('editCorrect').value;
-            } else {
-                const expEl = document.getElementById('editExpected');
-                updatedData.correct_answer = expEl ? expEl.value : (q.expected_answer || '');
-            }
-
-            try {
-                const response = await fetch(`/Test/updateQBQuestion/${id}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedData)
-                });
-                const result = await response.json();
-                if (result.status === 'success') {
-                    Object.assign(q, updatedData);
-                    renderQBQuestions();
-                    Swal.fire({ icon: 'success', title: 'Updated!', timer: 1000, showConfirmButton: false });
-                }
-            } catch (e) { console.error(e); }
+            requestAnimationFrame(focusNow);
+            setTimeout(focusNow, 40);
         }
 
         function promptCreateQB() {
@@ -5702,19 +6416,27 @@ if (!empty($Tests)) {
             renderQuestionBanks();
 
             const hide = ['qbEmptyState'];
-            const show = ['qbContentArea', 'qbHeaderStats', 'qbSecondaryControls', 'qbFooter', 'qbNavigationArrows'];
+            const show = ['qbContentArea', 'qbHeaderStats', 'qbSecondaryControls', 'qbFooter'];
             
             hide.forEach(id => document.getElementById(id)?.classList.add('hidden'));
             show.forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+            document.getElementById('qbNavigationArrows')?.classList.add('hidden');
 
             const nameEl = document.getElementById('activeQBName');
             const subtitleEl = document.getElementById('activeQBSubtitle');
             if (nameEl) {
                 nameEl.innerHTML = `
-                    <input type="text" id="inlineQBName" class="w-full text-xl font-black text-slate-800 border-b-2 border-red-500 focus:outline-none bg-transparent placeholder:text-slate-300 py-1 pr-2" placeholder="Enter Bank Name..." autofocus oninput="if(activeQB){activeQB.name=this.value.trim();}">
+                    <div class="flex flex-col gap-2">
+                        <div>
+                            <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0">Question Bank Name</h4>
+                            <p class="text-[9px] text-slate-400 font-bold uppercase mb-0">Define question bank name</p>
+                        </div>
+                        <input type="text" id="inlineQBName" class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 focus:ring-2 focus:ring-red-100 focus:border-red-400 transition-all text-slate-700 shadow-inner placeholder:text-slate-300" placeholder="Enter Question Bank Name..." autofocus oninput="if(activeQB){activeQB.name=this.value.trim();}">
+                    </div>
                 `;
             }
-            if (subtitleEl) subtitleEl.textContent = 'Draft Repository Context';
+            if (subtitleEl) subtitleEl.textContent = '';
+            focusQBNameInput();
             const tabsContainer = document.getElementById('qbCategoryTabs');
             if (tabsContainer) {
                 tabsContainer.innerHTML = `
@@ -5724,8 +6446,8 @@ if (!empty($Tests)) {
                             ${activeQBCategory === 'MCQ' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
                         </div>
                         <div class="relative py-3">
-                            <button class="text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeQBCategory === '2 Marks' ? 'text-red-600' : 'text-slate-400 hover:text-slate-500'}" onclick="selectQBCategory('2 Marks')">2 Marks</button>
-                            ${activeQBCategory === '2 Marks' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
+                            <button class="text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeQBCategory === 'descriptive' ? 'text-red-600' : 'text-slate-400 hover:text-slate-500'}" onclick="selectQBCategory('descriptive')">Descriptive question</button>
+                            ${activeQBCategory === 'descriptive' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
                         </div>
                     </div>
                 `;
@@ -5766,6 +6488,7 @@ if (!empty($Tests)) {
                     renderQuestionBanks();
                     syncQBDropdowns();
                     selectQuestionBank(newBank.id);
+                    collapseFreshQBAfterSave(newBank);
                     Swal.fire({ icon: 'success', title: 'Bank Created!', timer: 1500, showConfirmButton: false });
                 } else {
                     throw new Error(result.message);
@@ -5804,8 +6527,8 @@ if (!empty($Tests)) {
             if (contentArea) contentArea.classList.remove('hidden');
             if (statsArea) statsArea.classList.remove('hidden');
             if (secondaryControls) secondaryControls.classList.remove('hidden');
-            if (navigationArrows) navigationArrows.classList.remove('hidden');
-            if (footerArea) footerArea.classList.remove('hidden');
+            if (navigationArrows) navigationArrows.classList.add('hidden');
+            if (footerArea) footerArea.classList.add('hidden');
 
             restoreQBHeader();
             selectQBCategory(activeQBCategory);
@@ -5830,6 +6553,17 @@ if (!empty($Tests)) {
             }
         }
 
+        function qbQuestionMatchesCategory(q, activeCat) {
+            if (!q) return false;
+            if (activeCat === 'MCQ') return (q.type || '') === 'MCQ';
+            if (activeCat === 'descriptive') {
+                return typeof App !== 'undefined' && App.normalizeType
+                    ? App.normalizeType(q.type) === 'descriptive'
+                    : false;
+            }
+            return false;
+        }
+
         function selectQBCategory(cat) {
             activeQBCategory = cat;
             renderQuestionBanks(); // Sync sidebar tabs
@@ -5838,7 +6572,7 @@ if (!empty($Tests)) {
         }
 
         function navigateQBCategory(dir) {
-            const categories = ['MCQ', '2 Marks'];
+            const categories = ['MCQ', 'descriptive'];
             let idx = categories.indexOf(activeQBCategory);
             if (idx === -1) idx = 0;
             idx += dir;
@@ -5863,8 +6597,8 @@ if (!empty($Tests)) {
                             ${activeQBCategory === 'MCQ' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
                         </div>
                         <div class="relative py-3">
-                            <button class="text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeQBCategory === '2 Marks' ? 'text-red-600' : 'text-slate-400 hover:text-slate-500'}" onclick="selectQBCategory('2 Marks')">2 Marks</button>
-                            ${activeQBCategory === '2 Marks' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
+                            <button class="text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeQBCategory === 'descriptive' ? 'text-red-600' : 'text-slate-400 hover:text-slate-500'}" onclick="selectQBCategory('descriptive')">Descriptive question</button>
+                            ${activeQBCategory === 'descriptive' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
                         </div>
                     </div>
                 `;
@@ -5876,7 +6610,7 @@ if (!empty($Tests)) {
             const content = document.getElementById('qbContentArea');
             if (!activeQB || !content) return;
 
-            const filteredQuestions = activeQB.questions ? activeQB.questions.filter(q => q.type === activeQBCategory || (activeQBCategory === '2 Marks' && q.type === 'Short Answer')) : [];
+            const filteredQuestions = activeQB.questions ? activeQB.questions.filter(q => qbQuestionMatchesCategory(q, activeQBCategory)) : [];
 
             // Show secondary controls area with null check
             const secondaryControls = document.getElementById('qbSecondaryControls');
@@ -5899,11 +6633,22 @@ if (!empty($Tests)) {
             }
 
             let html = `
-                <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden mb-6 shadow-sm">
-                    <div class="grid ${activeQBCategory === 'MCQ' ? 'grid-cols-[60px_60%_1fr]' : 'grid-cols-[60px_1fr]'} bg-slate-50/80 border-b border-slate-100 px-2 py-3">
+                <div class="bg-white rounded-3xl border border-slate-200 overflow-visible mb-6 shadow-sm">
+                    <div class="relative bg-slate-50/80 border-b border-slate-100 py-3 px-10">
+                        <button class="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center shadow-sm z-10"
+                            onclick="navigateQBCategory(-1)" title="Previous Section" data-bs-toggle="tooltip" data-bs-title="Previous Section">
+                            <i class="bi bi-chevron-left text-[12px]"></i>
+                        </button>
+                        <button class="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center shadow-sm z-10"
+                            onclick="navigateQBCategory(1)" title="Next Section" data-bs-toggle="tooltip" data-bs-title="Next Section">
+                            <i class="bi bi-chevron-right text-[12px]"></i>
+                        </button>
+                        <div class="grid ${activeQBCategory === 'MCQ' ? 'grid-cols-[48px_minmax(96px,0.9fr)_minmax(0,1.1fr)_minmax(0,1fr)]' : 'grid-cols-[48px_minmax(96px,0.9fr)_1fr]'} gap-2">
                         <div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] text-center">#</div>
+                        <div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Pedagogy</div>
                         <div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Question Content</div>
-                        ${activeQBCategory === 'MCQ' ? '<div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] px-4">Option Details</div>' : ''}
+                        ${activeQBCategory === 'MCQ' ? '<div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] px-2">Option Details</div>' : ''}
+                        </div>
                     </div>
                     <div id="questionsList" class="divide-y divide-slate-100">
                         ${filteredQuestions.map((q, idx) => renderQuestionCard(q, idx)).join('')}
@@ -5938,6 +6683,7 @@ if (!empty($Tests)) {
                 renderQuestionBanks();
                 renderQBQuestions();
                 syncQBDropdowns();
+                setQBFooterVisibility(false);
                 return;
             }
 
@@ -5963,7 +6709,8 @@ if (!empty($Tests)) {
                         option_d: q.option_d || '',
                         correct_answer: q.correct_answer || '',
                         marks: q.marks || (q.type === 'Short Answer' ? 2 : 1),
-                        section_name: q.category || bankName
+                        section_name: q.category || bankName,
+                        pedagogy: q.pedagogy || ''
                     }));
 
                     const qResponse = await fetch('/Test/bulkSaveQBQuestions', {
@@ -5993,6 +6740,7 @@ if (!empty($Tests)) {
                 renderQuestionBanks();
                 syncQBDropdowns();
                 selectQuestionBank(activeQB.id);
+                collapseFreshQBAfterSave(activeQB);
                 Swal.fire({ icon: 'success', title: 'Repository Saved!', timer: 1500, showConfirmButton: false });
             })
             .catch(error => {
@@ -6002,14 +6750,19 @@ if (!empty($Tests)) {
 
         function renderQuestionCard(q, idx) {
             if (!q) return '';
-            const gridClass = activeQBCategory === 'MCQ' ? "grid grid-cols-[60px_60%_1fr] gap-2 items-center" : "grid grid-cols-[60px_1fr] gap-2 items-center";
+            const gridClass = activeQBCategory === 'MCQ' ? "grid grid-cols-[48px_minmax(96px,0.9fr)_minmax(0,1.1fr)_minmax(0,1fr)] gap-2 items-center" : "grid grid-cols-[48px_minmax(96px,0.9fr)_1fr] gap-2 items-center";
+            const ped = (q.pedagogy || q.knowledge_type || '').trim();
             if (activeQBCategory === 'MCQ') {
                 return `
-                    <div class="p-1.5 hover:bg-slate-50/30 transition-all group relative" id="question-card-${q.id || idx}">
+                    <div class="py-1.5 px-10 hover:bg-slate-50/30 transition-all group relative" id="question-card-${q.id || idx}">
                         <div class="${gridClass}">
                             <div class="flex flex-col items-center gap-1">
                                 <div class="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-black shadow-sm border border-slate-700">${idx + 1}</div>
                                 <span class="px-1.5 py-0.5 rounded-md bg-red-50 text-red-600 text-[7px] font-black uppercase tracking-widest border border-red-100">MCQ</span>
+                            </div>
+                            <div class="min-w-0 px-1">
+                                <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Pedagogy</p>
+                                <p class="text-[10px] font-bold text-slate-600 truncate mb-0">${ped ? escapeHtml(ped) : '—'}</p>
                             </div>
                             <div class="min-w-0">
                                 <p class="text-[13px] font-bold text-slate-800 leading-tight truncate">${q.question || ''}</p>
@@ -6024,7 +6777,7 @@ if (!empty($Tests)) {
                             </div>
                         </div>
                         <!-- Floating Actions on hover -->
-                        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-white/90 border border-slate-100 rounded-lg px-1.5 py-1 shadow-sm">
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-white/90 border border-slate-100 rounded-lg px-1.5 py-1 shadow-sm z-10">
                             <button class="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 shadow-sm transition-all" onclick="editQuestionInline('${q.id || idx}')">
                                 <i class="bi bi-pencil-square text-[11px]"></i>
                             </button>
@@ -6036,17 +6789,21 @@ if (!empty($Tests)) {
                 `;
             } else {
                 return `
-                    <div class="p-1.5 hover:bg-slate-50/30 transition-all group relative" id="question-card-${q.id || idx}">
+                    <div class="py-1.5 px-10 hover:bg-slate-50/30 transition-all group relative" id="question-card-${q.id || idx}">
                         <div class="${gridClass}">
                             <div class="flex flex-col items-center gap-1">
                                 <div class="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-black shadow-sm border border-slate-700">${idx + 1}</div>
-                                <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[7px] font-black uppercase tracking-widest border border-blue-100">2M</span>
+                                <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[7px] font-black uppercase tracking-widest border border-blue-100">Descriptive</span>
                             </div>
-                            <div class="min-w-0 pr-4">
+                            <div class="min-w-0 px-1">
+                                <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Pedagogy</p>
+                                <p class="text-[10px] font-bold text-slate-600 truncate mb-0">${ped ? escapeHtml(ped) : '—'}</p>
+                            </div>
+                            <div class="min-w-0 pr-20">
                                 <p class="text-[13px] font-bold text-slate-800 leading-tight truncate">${q.question || ''}</p>
                             </div>
                         </div>
-                        <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-white/90 border border-slate-100 rounded-lg px-1.5 py-1 shadow-sm">
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-white/90 border border-slate-100 rounded-lg px-1.5 py-1 shadow-sm z-10">
                             <button class="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 shadow-sm transition-all" onclick="editQuestionInline('${q.id || idx}')">
                                 <i class="bi bi-pencil-square text-[11px]"></i>
                             </button>
@@ -6075,21 +6832,25 @@ if (!empty($Tests)) {
             list.prepend(placeholder);
 
             let formHtml = '';
-            const nextIdx = activeQB.questions.filter(q => q.type === activeQBCategory || (activeQBCategory === '2 Marks' && q.type === 'Short Answer')).length + 1;
-            const gridClass = activeQBCategory === 'MCQ' ? "grid grid-cols-[60px_60%_1fr] gap-2 items-center" : "grid grid-cols-[60px_1fr] gap-2 items-center";
+            const nextIdx = activeQB.questions.filter(q => qbQuestionMatchesCategory(q, activeQBCategory)).length + 1;
+            const gridClass = activeQBCategory === 'MCQ' ? "grid grid-cols-[48px_minmax(96px,0.9fr)_minmax(0,1.1fr)_minmax(0,1fr)] gap-2 items-stretch" : "grid grid-cols-[48px_minmax(96px,0.9fr)_1fr] gap-2 items-center";
 
             if (activeQBCategory === 'MCQ') {
                 formHtml = `
-                    <div class="p-1 bg-white border-b border-red-100 transition-all shadow-inner">
+                    <div class="py-1 px-10 bg-white border-b border-red-100 transition-all shadow-inner">
                         <div class="${gridClass}">
-                            <div class="flex flex-col items-center gap-1">
+                            <div class="flex flex-col items-center gap-1 justify-start pt-0.5 min-h-0">
                                 <div class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-[10px] shadow-sm">${nextIdx}</div>
                                 <div class="px-1 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[7px] font-black uppercase tracking-widest border border-blue-100">MCQ</div>
                             </div>
-                            <div class="p-1">
-                                <textarea id="inlineQContent" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[13px] font-bold text-slate-700 focus:bg-white focus:border-red-400 outline-none transition-all resize-none" rows="1" placeholder="Question..." autofocus></textarea>
+                            <div class="p-1 min-w-0 min-h-0 flex flex-col justify-start h-full">
+                                <label class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5 shrink-0">Pedagogy</label>
+                                ${pedagogyComboHtml('inlinePedagogy', '', { fillCell: true, searchClass: 'w-full bg-slate-50 border border-slate-200 rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-700' })}
                             </div>
-                            <div class="grid grid-cols-2 gap-1.5 px-1">
+                            <div class="p-1 min-w-0 min-h-0 flex flex-col h-full">
+                                <textarea id="inlineQContent" class="w-full min-h-0 flex-1 bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[13px] font-bold text-slate-700 focus:bg-white focus:border-red-400 outline-none transition-all resize-none" rows="1" placeholder="Question..." autofocus></textarea>
+                            </div>
+                            <div class="min-h-0 h-full grid grid-cols-2 gap-1.5 px-1 content-start self-stretch">
                                 ${['A', 'B', 'C', 'D'].map(opt => `
                                     <div class="relative group">
                                         <div class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-blue-400 uppercase tracking-widest">${opt}</div>
@@ -6110,13 +6871,17 @@ if (!empty($Tests)) {
                 `;
             } else {
                 formHtml = `
-                    <div class="p-1 bg-white border-b border-blue-100 transition-all shadow-inner">
+                    <div class="py-1 px-10 bg-white border-b border-blue-100 transition-all shadow-inner">
                         <div class="${gridClass}">
                             <div class="flex flex-col items-center gap-1">
                                 <div class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-[10px] shadow-sm">${nextIdx}</div>
                                 <div class="px-1 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[7px] font-black uppercase tracking-widest border border-blue-100">2M</div>
                             </div>
-                            <div class="p-1">
+                            <div class="p-1 min-w-0 flex flex-col justify-start">
+                                <label class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Pedagogy</label>
+                                ${pedagogyComboHtml('inlinePedagogy', '', { searchClass: 'w-full bg-slate-50 border border-slate-200 rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-700' })}
+                            </div>
+                            <div class="p-1 min-w-0">
                                 <textarea id="inlineQContent" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-400 outline-none transition-all resize-none" rows="1" placeholder="Question..." autofocus></textarea>
                             </div>
                         </div>
@@ -6155,9 +6920,10 @@ if (!empty($Tests)) {
             const qData = {
                 repository_id: activeQB.id,
                 question: content,
-                type: activeQBCategory === '2 Marks' ? 'Short Answer' : 'MCQ',
-                marks: activeQBCategory === '2 Marks' ? 2 : 1,
-                category: activeQB.name
+                type: activeQBCategory === 'descriptive' ? 'Short Answer' : 'MCQ',
+                marks: activeQBCategory === 'descriptive' ? 2 : 1,
+                category: activeQB.name,
+                pedagogy: getPedagogyComboValue('inlinePedagogy')
             };
 
             if (activeQBCategory === 'MCQ') {
@@ -6203,6 +6969,11 @@ if (!empty($Tests)) {
             } catch (e) { console.error(e); }
         }
 
+        /** Question bank rows use numeric DB ids; draft banks use string ids like draft_* or draft_import_*. */
+        function isQBQuestionPersisted(id) {
+            return /^\d+$/.test(String(id ?? '').trim());
+        }
+
         async function deleteQuestion(id) {
             const confirmed = await Swal.fire({
                 title: 'Delete Question?',
@@ -6214,6 +6985,15 @@ if (!empty($Tests)) {
             });
 
             if (!confirmed.isConfirmed) return;
+
+            if (!isQBQuestionPersisted(id)) {
+                activeQB.questions = activeQB.questions.filter(q => (q.id || '').toString() !== id.toString());
+                updateQBCounters();
+                renderQBQuestions();
+                renderQuestionBanks();
+                Swal.fire({ icon: 'success', title: 'Removed', timer: 1000, showConfirmButton: false });
+                return;
+            }
 
             try {
                 const response = await fetch(`/Test/deleteQBQuestion/${id}`, { method: 'POST' });
@@ -6235,21 +7015,26 @@ if (!empty($Tests)) {
             const q = activeQB.questions[idx];
             const card = document.getElementById(`question-card-${id}`);
             const questionIdx = activeQB.questions.filter(qu => qu.type === q.type).indexOf(q) + 1;
-            const gridClass = activeQBCategory === 'MCQ' ? "grid grid-cols-[60px_60%_1fr] gap-2 items-center" : "grid grid-cols-[60px_1fr] gap-2 items-center";
+            const gridClass = activeQBCategory === 'MCQ' ? "grid grid-cols-[48px_minmax(96px,0.9fr)_minmax(0,1.1fr)_minmax(0,1fr)] gap-2 items-stretch" : "grid grid-cols-[48px_minmax(96px,0.9fr)_1fr] gap-2 items-center";
+            const pedVal = (q.pedagogy || q.knowledge_type || '').trim();
 
             let editHtml = '';
             if (q.type === 'MCQ') {
                 editHtml = `
-                    <div class="p-1 bg-blue-50/30 border-y border-blue-100 transition-all shadow-inner">
+                    <div class="py-1 px-10 bg-blue-50/30 border-y border-blue-100 transition-all shadow-inner">
                         <div class="${gridClass}">
-                            <div class="flex flex-col items-center gap-1">
+                            <div class="flex flex-col items-center gap-1 justify-start pt-0.5 min-h-0">
                                 <div class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-black shadow-sm border border-blue-500">${questionIdx}</div>
                                 <span class="px-1 py-0 rounded-md bg-blue-100 text-blue-600 text-[7px] font-black uppercase tracking-widest">EDIT</span>
                             </div>
-                            <div class="p-1">
-                                <textarea id="editQContent" class="w-full bg-white border border-blue-200 rounded p-1.5 text-[13px] font-bold text-slate-700 outline-none transition-all resize-none" rows="1">${q.question}</textarea>
+                            <div class="p-1 min-w-0 min-h-0 flex flex-col justify-start h-full">
+                                <label class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5 shrink-0">Pedagogy</label>
+                                ${pedagogyComboHtml('editPedagogy', pedVal, { fillCell: true, searchClass: 'w-full bg-white border border-blue-200 rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-700' })}
                             </div>
-                            <div class="grid grid-cols-2 gap-1 px-1">
+                            <div class="p-1 min-w-0 min-h-0 flex flex-col h-full">
+                                <textarea id="editQContent" class="w-full min-h-0 flex-1 bg-white border border-blue-200 rounded p-1.5 text-[13px] font-bold text-slate-700 outline-none transition-all resize-none" rows="1">${q.question}</textarea>
+                            </div>
+                            <div class="min-h-0 h-full grid grid-cols-2 gap-1 px-1 content-start self-stretch">
                                 ${['A', 'B', 'C', 'D'].map(opt => `
                                     <div class="relative group">
                                         <div class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-blue-400 uppercase tracking-widest">${opt}</div>
@@ -6270,13 +7055,17 @@ if (!empty($Tests)) {
                 `;
             } else {
                 editHtml = `
-                    <div class="p-2 bg-blue-50/30 border-y border-blue-100 transition-all shadow-inner">
+                    <div class="py-2 px-10 bg-blue-50/30 border-y border-blue-100 transition-all shadow-inner">
                         <div class="${gridClass}">
                             <div class="flex flex-col items-center gap-1">
                                 <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px] font-black shadow-sm border border-blue-500">${questionIdx}</div>
                                 <span class="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-600 text-[8px] font-black uppercase tracking-widest">EDIT</span>
                             </div>
-                            <div class="p-1">
+                            <div class="p-1 min-w-0 flex flex-col justify-start">
+                                <label class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Pedagogy</label>
+                                ${pedagogyComboHtml('editPedagogy', pedVal, { searchClass: 'w-full bg-white border border-blue-200 rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-700' })}
+                            </div>
+                            <div class="p-1 min-w-0">
                                 <textarea id="editQContent" class="w-full bg-white border border-blue-200 rounded p-2 text-sm font-bold text-slate-700 outline-none transition-all resize-none" rows="1">${q.question}</textarea>
                             </div>
                         </div>
@@ -6289,6 +7078,7 @@ if (!empty($Tests)) {
             }
 
             card.innerHTML = editHtml;
+            setQBFooterVisibility(true);
         }
 
         function setEditCorrect(opt) {
@@ -6311,7 +7101,8 @@ if (!empty($Tests)) {
 
             const q = activeQB.questions[idx];
             const updatedData = {
-                question: document.getElementById('editQContent').value.trim()
+                question: document.getElementById('editQContent').value.trim(),
+                pedagogy: getPedagogyComboValue('editPedagogy')
             };
 
             if (q.type === 'MCQ') {
@@ -6325,30 +7116,30 @@ if (!empty($Tests)) {
                 updatedData.correct_answer = expEl ? expEl.value : (q.expected_answer || '');
             }
 
+            if (!isQBQuestionPersisted(id)) {
+                Object.assign(q, updatedData);
+                renderQBQuestions();
+                Swal.fire({ icon: 'success', title: 'Updated', text: 'Saved in draft. Use Save on the bank to persist.', timer: 1400, showConfirmButton: false });
+                return;
+            }
+
             try {
                 const response = await fetch(`/Test/updateQBQuestion/${id}`, {
                     method: 'POST',
-                    body: JSON.stringify({ name: name })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
                 });
 
                 const result = await response.json();
                 if (result.status === 'success') {
-                    const newBank = {
-                        id: result.id,
-                        name: result.name,
-                        questions: [],
-                        sections: 0
-                    };
-                    QuestionBanks.push(newBank);
-                    renderQuestionBanks();
-                    syncQBDropdowns();
-                    selectQuestionBank(newBank.id);
-                    Swal.fire({ icon: 'success', title: 'Bank Created!', timer: 1500, showConfirmButton: false });
+                    Object.assign(q, updatedData);
+                    renderQBQuestions();
+                    Swal.fire({ icon: 'success', title: 'Updated!', timer: 1000, showConfirmButton: false });
                 } else {
                     throw new Error(result.message);
                 }
             } catch (error) {
-                Swal.fire('Error', error.message || 'Failed to save bank', 'error');
+                Swal.fire('Error', error.message || 'Failed to update question', 'error');
             }
         }
 
@@ -6364,9 +7155,9 @@ if (!empty($Tests)) {
 
 
         function downloadQBTemplate() {
-            const headers = "section_name,question,type,option_a,option_b,option_c,option_d,correct_answer,marks,expected_answer\n";
-            const sample1 = "MCQ,What is 2+2?,MCQ,3,4,5,6,B,1,\n";
-            const sample2 = "Aptitude,Explain gravity.,Short Answer,,,,,,2,Force that pulls objects towards each other.\n";
+            const headers = "section_name,question,type,option_a,option_b,option_c,option_d,correct_answer,marks,expected_answer,pedagogy\n";
+            const sample1 = "MCQ,What is 2+2?,MCQ,3,4,5,6,B,1,,Factual\n";
+            const sample2 = "Aptitude,Explain gravity.,Descriptive question,,,,,,2,Force that pulls objects towards each other.,Conceptual\n";
 
             const blob = new Blob([headers + sample1 + sample2], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
@@ -6390,19 +7181,25 @@ if (!empty($Tests)) {
                     startIndex++;
                 }
 
+                const isDescriptiveCsvType = (cell) => {
+                    const t = String(cell || '').trim().toLowerCase();
+                    return t === 'short answer' || t === 'descriptive question' || t.includes('descriptive');
+                };
                 const questions = rows.slice(startIndex).filter(r => r.trim()).map(r => {
                     const cols = r.split(',').map(c => c.replace(/^"|"$/g, '').trim());
+                    const desc = isDescriptiveCsvType(cols[2]);
                     return {
                         section_name: cols[0] || 'General',
                         question: cols[1],
-                        type: cols[2] === 'Short Answer' ? 'Short Answer' : 'MCQ',
+                        type: desc ? 'Short Answer' : 'MCQ',
                         option_a: cols[3] || '',
                         option_b: cols[4] || '',
                         option_c: cols[5] || '',
                         option_d: cols[6] || '',
                         correct_answer: cols[7] || '',
-                        marks: parseInt(cols[8]) || (cols[2] === 'Short Answer' ? 2 : 1),
-                        expected_answer: cols[9] || ''
+                        marks: parseInt(cols[8], 10) || (desc ? 2 : 1),
+                        expected_answer: cols[9] || '',
+                        pedagogy: (cols[10] || '').trim()
                     };
                 });
 
@@ -6425,7 +7222,8 @@ if (!empty($Tests)) {
                         option_d: q.option_d || '',
                         correct_answer: q.correct_answer || q.expected_answer || '',
                         marks: q.marks || (q.type === 'Short Answer' ? 2 : 1),
-                        category: activeQB.name || 'Draft'
+                        category: activeQB.name || 'Draft',
+                        pedagogy: q.pedagogy || ''
                     }));
                     activeQB.questions = [...(activeQB.questions || []), ...localQuestions];
                     updateQBCounters();
@@ -6531,7 +7329,7 @@ if (!empty($Tests)) {
                     if (typeof switchResultView === 'function') {
                         switchResultView('student');
                     } else if (App.loadCandidateResult) {
-                        App.loadCandidateResult(1);
+                        App.loadCandidateResult();
                     }
                 }
 
@@ -6583,33 +7381,49 @@ if (!empty($Tests)) {
                         if (isNaN(startTime.getTime())) return; // Skip invalid dates
 
                         const diffMins = (startTime - now) / 60000;
+                        const completedSubmission = App.getAllSubmissions().find(
+                            s => String(s.pack_id) === String(pack.id) && String(s.candidate_name || '').toLowerCase() === String(App.getCandidateName() || '').toLowerCase()
+                        );
 
                         let status = '';
-                        let action = '';
+                        let primaryAction = '';
                         let badgeClass = '';
 
+                        if (completedSubmission) {
+                            status = 'COMPLETED';
+                            badgeClass = 'badge-green';
+                            const resultsPublished = Number(pack.results_published) === 1 || pack.results_published === true || pack.results_published === '1';
+                            if (resultsPublished) {
+                                primaryAction = `<button type="button" class="px-4 py-1.5 bg-violet-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-violet-700 transition-all" onclick="App.openStudentResultSummaryModal(${pack.id})" title="View your results">
+                                        <i class="bi bi-bar-chart-line me-1"></i> View Results
+                                     </button>`;
+                            } else {
+                                primaryAction = `<span class="text-emerald-600 text-[10px] font-black uppercase tracking-widest">Completed</span>`;
+                            }
+                        } else
                         // 5-minute pre-test logic
                         if (diffMins > 5) {
                             status = 'SCHEDULED';
                             badgeClass = 'badge-blue';
-                            action = `<span class="text-slate-400 text-[10px] font-black uppercase tracking-widest">Locked</span>`;
+                            primaryAction = `<span class="text-slate-400 text-[10px] font-black uppercase tracking-widest">Locked</span>`;
                         } else if (diffMins <= 5 && now < startTime) {
                             status = 'READY';
                             badgeClass = 'badge-yellow';
-                            action = `<button class="px-4 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-not-allowed border border-slate-200 shadow-sm" disabled>
+                            primaryAction = `<button class="px-4 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-not-allowed border border-slate-200 shadow-sm" disabled>
                                     Waiting...
                                  </button>`;
                         } else if (now >= startTime && now < endTime) {
                             status = 'LIVE';
                             badgeClass = 'badge-green';
-                            action = `<button class="px-4 py-1.5 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-100 hover:bg-red-700 transition-all" onclick="App.startExecution('${test.id}', '${pack.id}')">
+                            primaryAction = `<button class="px-4 py-1.5 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-100 hover:bg-red-700 transition-all" onclick="App.startExecution('${test.id}', '${pack.id}')">
                                     <i class="bi bi-play-fill me-1"></i> Take Test
                                  </button>`;
                         } else {
                             status = 'EXPIRED';
                             badgeClass = 'badge-red';
-                            action = `<span class="text-slate-300 text-[10px] font-black uppercase tracking-widest">Closed</span>`;
+                            primaryAction = `<span class="text-slate-300 text-[10px] font-black uppercase tracking-widest">Closed</span>`;
                         }
+                        const action = `<div class="flex items-center justify-end gap-2">${primaryAction}</div>`;
 
                         html += `
                         <tr class="hover:bg-slate-50/50 transition-colors border-b border-slate-50">
@@ -6657,6 +7471,9 @@ if (!empty($Tests)) {
         };
         let TestsDataTable = null;
         function initTestsDataTable() {
+            if (typeof jQuery === 'undefined' || typeof $.fn.dataTable !== 'function') {
+                return;
+            }
             if ($.fn.dataTable.isDataTable('#TestsDataTable')) {
                 return;
             }
@@ -6709,17 +7526,26 @@ if (!empty($Tests)) {
                     {
                         data: 'test_packs',
                         className: 'text-center',
-                        render: (data) => `<span class="font-bold text-slate-700">${data ? data.length : 0} <span class="text-slate-400 text-[10px] uppercase">Batches</span></span>`
+                        render: (data) => {
+                            const packs = data || [];
+                            const completed = packs.reduce((sum, p) => sum + App.getPackSubmissionStats(p.id).completed, 0);
+                            return `
+                                <div class="flex flex-col items-center">
+                                    <span class="font-bold text-slate-700">${packs.length} <span class="text-slate-400 text-[10px] uppercase">Batches</span></span>
+                                    <span class="text-[9px] font-black uppercase tracking-widest ${completed > 0 ? 'text-emerald-600' : 'text-slate-300'}">${completed} Completed</span>
+                                </div>
+                            `;
+                        }
                     },
                     {
                         data: null,
                         className: 'text-center px-6',
                         render: (data, type, row) => `
                         <div class="flex items-center justify-center gap-2">
-                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-all" onclick="event.stopPropagation(); switchMainTab('results')" title="Results & Evaluation">
+                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-all" onclick="event.stopPropagation(); App.openResultsForTest('${(row.name || '').replace(/'/g, "\\'")}')" title="Results & Evaluation">
                                 <i class="bi bi-file-earmark-text"></i>
                             </button>
-                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-all" onclick="event.stopPropagation(); editTest(${JSON.stringify(row).replace(/"/g, '&quot;')})" title="Edit">
+                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-all" onclick="event.stopPropagation(); editTestById(${row.id})" title="Edit">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition-all" onclick="event.stopPropagation(); deleteTest(${row.id})" title="Delete">
@@ -6782,11 +7608,11 @@ if (!empty($Tests)) {
                         <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Manage and schedule test deployments for "${d.name}"</p>
                     </div>
                     <button type="button" class="px-5 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-100 hover:bg-red-700 transition-all flex items-center gap-2" onclick="addNewBatchRow('${d.id}')">
-                        <i class="bi bi-plus-lg"></i> Add New Batch
+                        <i class="bi bi-plus-lg"></i> Add New Group
                     </button>
                 </div>
 
-                <div class="bg-white rounded-[24px] border border-slate-200 overflow-hidden shadow-sm">
+                <div class="bg-white rounded-[24px] border border-slate-200 overflow-visible shadow-sm">
                     <table id="BatchTable_${d.id}" class="w-full text-left border-collapse">
                         <thead class="bg-slate-50/50 border-b border-slate-100">
                             <tr>
@@ -6828,12 +7654,16 @@ if (!empty($Tests)) {
                         data: 'pack_name',
                         width: '18%',
                         className: 'px-4 py-3',
-                        render: (data, type, row) => `
+                        render: (data, type, row) => {
+                            const stats = App.getPackSubmissionStats(row.id);
+                            return `
                             <div class="flex flex-col gap-1">
                                 <input type="text" class="inline-editable-input" data-field="pack_name" value="${data}" placeholder="e.g. Morning Batch" ${row.status === 'published' ? 'readonly' : ''}>
                                 ${row.status === 'published' ? '<div class="published-badge"><i class="bi bi-shield-check"></i> Published</div>' : ''}
+                                ${stats.total > 0 ? `<div class="text-[9px] font-black uppercase tracking-widest ${stats.subjectivePending > 0 ? 'text-amber-600' : 'text-emerald-600'}">${stats.completed}/${stats.total} Completed • ${stats.subjectivePending} Pending Eval</div>` : ''}
                             </div>
                         `
+                        }
                     },
                     {
                         data: 'template_id',
@@ -6861,9 +7691,34 @@ if (!empty($Tests)) {
                             const val = data || 'all';
                             const totalCount = App.employees ? App.employees.length : 0;
                             const specificCount = (val && val !== 'all') ? val.split(',').length : 0;
-
-                            let display = isAll ? `All Candidates (${totalCount})` : `Specific Candidates (${specificCount})`;
                             const isPublished = row.status === 'published';
+                            const selectedIds = (val && val !== 'all')
+                                ? val.split(',').filter(Boolean)
+                                : (App.employees || []).map(emp => String(emp.id));
+                            const selectedNames = (App.employees || [])
+                                .filter(emp => selectedIds.includes(String(emp.id)))
+                                .map(emp => emp.name)
+                                .slice(0, 2);
+                            const display = selectedIds.length === totalCount
+                                ? `All Candidates (${totalCount})`
+                                : (selectedNames.length
+                                    ? `${selectedNames.join(', ')}${selectedIds.length > 2 ? ` +${selectedIds.length - 2}` : ''}`
+                                    : `Selected (${specificCount})`);
+                            const selectAllChecked = selectedIds.length > 0 && selectedIds.length === totalCount ? 'checked' : '';
+                            const candidateRows = (App.employees || []).map(emp => {
+                                const empId = String(emp.id);
+                                const checked = selectedIds.includes(empId) ? 'checked' : '';
+                                return `
+                                    <label class="batch-candidate-item" data-name="${escapeHtml(emp.name || '').toLowerCase()}" data-email="${escapeHtml(emp.email || '').toLowerCase()}">
+                                        <input type="checkbox" class="form-check-input batch-candidate-check" value="${empId}" ${checked}
+                                            onchange="toggleBatchCandidateCheckbox(this)" ${isPublished ? 'disabled' : ''}>
+                                        <div class="min-w-0">
+                                            <div class="name truncate">${escapeHtml(emp.name || 'Candidate')}</div>
+                                            <div class="meta truncate">${escapeHtml(emp.email || '')}</div>
+                                        </div>
+                                    </label>
+                                `;
+                            }).join('');
 
                             return `
                                 <div class="candidate-selector-wrapper">
@@ -6872,15 +7727,26 @@ if (!empty($Tests)) {
                                         <span>${display}</span>
                                     </div>
                                     <div class="edit-view">
-                                        <div class="inline-select-container flex-1">
-                                            <select class="inline-editable-input appearance-none pr-8" data-field="candidates_type" onchange="handleCandidateTypeChange(this)" ${isPublished ? 'disabled' : ''}>
-                                                <option value="all" ${type_val === 'all' ? 'selected' : ''}>All</option>
-                                                <option value="specific" ${type_val === 'specific' ? 'selected' : ''}>Specific</option>
-                                            </select>
+                                        <div class="batch-candidate-inline">
+                                            <button type="button" class="batch-candidate-trigger" onclick="toggleBatchCandidateDropdown(this)" ${isPublished ? 'disabled' : ''}>
+                                                <span class="truncate batch-candidate-trigger-label">${display}</span>
+                                                <i class="bi bi-chevron-down text-[10px] text-slate-400"></i>
+                                            </button>
+                                            <div class="batch-candidate-dropdown hidden">
+                                                <input type="text" class="inline-editable-input !h-[34px] !text-[11px] !font-semibold !px-2.5 !py-1.5 !rounded-lg !border-slate-200" placeholder="Search candidates..." oninput="filterBatchCandidateOptions(this)">
+                                                <label class="flex items-center justify-between gap-2 mt-2 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                                                    <span class="flex items-center gap-2">
+                                                        <input type="checkbox" class="form-check-input batch-candidate-select-all" onchange="toggleBatchCandidateSelectAll(this)" ${selectAllChecked} ${isPublished ? 'disabled' : ''}>
+                                                        Select All
+                                                    </span>
+                                                    <span class="batch-candidate-count">${isAll ? totalCount : specificCount} selected</span>
+                                                </label>
+                                                <div class="batch-candidate-list">
+                                                    ${candidateRows || '<div class="text-[11px] text-slate-400 italic py-2">No candidates available.</div>'}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <button type="button" class="specific-picker-btn ${isAll ? 'hidden' : ''} w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 border border-transparent hover:border-blue-100 transition-all flex items-center justify-center" onclick="openCandidatePickerForBatch(this, '${row.id}')" title="Select Candidates" ${isPublished ? 'disabled' : ''}>
-                                            <i class="bi bi-person-plus"></i>
-                                        </button>
+                                        <input type="hidden" data-field="candidates_type" value="${type_val}">
                                         <input type="hidden" data-field="candidates" value="${val}">
                                     </div>
                                 </div>
@@ -6937,11 +7803,14 @@ if (!empty($Tests)) {
                         width: '15%',
                         render: (data, type, row) => {
                             const isPublished = row.status === 'published';
+                            const stats = App.getPackSubmissionStats(row.id);
+                            const resultsPublished = Number(row.results_published) === 1 || row.results_published === true || row.results_published === '1';
+                            const canPublishResults = isPublished && stats.total > 0 && stats.completed === stats.total && stats.subjectivePending === 0 && !resultsPublished;
                             return `
-                            <div class="flex items-center justify-end gap-1.5" data-batch-id="${row.id}">
+                            <div class="flex items-center justify-end gap-1.5 flex-wrap" data-batch-id="${row.id}">
                                 ${!isPublished ? `
                                     <button class="batch-action-btn bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white" onclick="saveBatchInline(this, '${row.id}', '${testId}')" title="Save Changes" data-action="save">
-                                        <i class="bi bi-check-lg"></i>
+                                        <i class="bi bi-floppy-fill"></i>
                                     </button>
                                     <button class="batch-action-btn bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white" onclick="toggleEditBatch(this)" title="Edit Row" data-action="edit">
                                         <i class="bi bi-pencil"></i>
@@ -6956,6 +7825,16 @@ if (!empty($Tests)) {
                                     <div class="w-8 h-8 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg" title="Batch Published & Locked">
                                         <i class="bi bi-lock-fill"></i>
                                     </div>
+                                    ${canPublishResults ? `
+                                        <button type="button" class="batch-action-btn bg-violet-50 text-violet-600 hover:bg-violet-600 hover:text-white" onclick="publishEvaluatedPackResults(this, '${row.id}', '${testId}')" title="Publish evaluated results to candidates">
+                                            <i class="bi bi-megaphone-fill"></i>
+                                        </button>
+                                    ` : ''}
+                                    ${resultsPublished ? `
+                                        <div class="w-8 h-8 flex items-center justify-center text-violet-600 bg-violet-50 rounded-lg" title="Results published to candidates">
+                                            <i class="bi bi-check2-circle"></i>
+                                        </div>
+                                    ` : ''}
                                 `}
                                 <button class="batch-action-btn bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white" onclick="App.previewTestPack('${row.id}')" title="View Question Paper">
                                     <i class="bi bi-eye"></i>
@@ -7053,6 +7932,66 @@ if (!empty($Tests)) {
             }
         }
 
+        async function publishEvaluatedPackResults(btn, batchId, testId) {
+            if (!batchId) return;
+            const warn = await Swal.fire({
+                title: 'Publish results to candidates?',
+                text: 'Candidates who completed this batch can view their results from Scheduled & Live Tests.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#7c3aed',
+                cancelButtonColor: '#f1f5f9',
+                confirmButtonText: 'Yes, publish',
+                customClass: { cancelButton: '!text-slate-600' }
+            });
+            if (!warn.isConfirmed) return;
+
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div>';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('Test/publishPackResults', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `id=${encodeURIComponent(batchId)}`
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Results published',
+                        text: 'Candidates can now open their results.',
+                        timer: 1800,
+                        showConfirmButton: false
+                    });
+
+                    const table = $(`#BatchTable_${testId}`).DataTable();
+                    const tr = $(btn).closest('tr');
+                    const row = table.row(tr);
+                    const rowData = row.data();
+                    rowData.results_published = 1;
+                    row.data(rowData).draw(false);
+
+                    const testRow = App.Tests.find(t => String(t.id) === String(testId));
+                    if (testRow && testRow.test_packs) {
+                        const pack = testRow.test_packs.find(p => String(p.id) === String(batchId));
+                        if (pack) pack.results_published = 1;
+                    }
+                    if (App.initExecutionDashboard) App.initExecutionDashboard();
+                } else {
+                    Swal.fire('Error', data.message || 'Could not publish results', 'error');
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
         function addNewBatchRow(testId) {
             const table = $(`#BatchTable_${testId}`).DataTable();
             const newRowData = {
@@ -7061,6 +8000,7 @@ if (!empty($Tests)) {
                 template_id: '',
                 candidates: 'all',
                 status: 'draft',
+                results_published: 0,
                 _isEditing: true,
                 scheduled_date: new Date().toISOString().split('T')[0],
                 start_time: '10:00',
@@ -7079,74 +8019,96 @@ if (!empty($Tests)) {
 
 
 
-        function handleCandidateTypeChange(select) {
-            const wrapper = $(select).closest('.candidate-selector-wrapper');
-            const pickerBtn = wrapper.find('.specific-picker-btn');
-            const hiddenInput = wrapper.find('input[data-field="candidates"]');
-            const displaySpan = wrapper.find('.readonly-view span');
-            const totalCount = App.employees ? App.employees.length : 0;
+        function handleCandidateTypeChange() { }
 
-            if (select.value === 'all') {
-                pickerBtn.addClass('hidden');
-                hiddenInput.val('all');
-                displaySpan.text(`All Candidates (${totalCount})`);
-            } else {
-                pickerBtn.removeClass('hidden');
-                const val = hiddenInput.val();
-                const count = (val && val !== 'all') ? val.split(',').length : 0;
-                displaySpan.text(`Specific Candidates (${count})`);
-                // Trigger picker immediately for convenience
-                pickerBtn.click();
+        function syncBatchCandidateSummary(wrapperEl) {
+            if (!wrapperEl) return;
+            const hiddenInput = wrapperEl.querySelector('input[data-field="candidates"]');
+            const typeInput = wrapperEl.querySelector('[data-field="candidates_type"]');
+            const displaySpan = wrapperEl.querySelector('.readonly-view span');
+            const triggerLabel = wrapperEl.querySelector('.batch-candidate-trigger-label');
+            const countLabel = wrapperEl.querySelector('.batch-candidate-count');
+            const selectAll = wrapperEl.querySelector('.batch-candidate-select-all');
+            const checks = Array.from(wrapperEl.querySelectorAll('.batch-candidate-check'));
+            const selected = checks.filter(cb => cb.checked).map(cb => cb.value);
+            const totalCount = checks.length;
+            const selectedCount = selected.length;
+            const selectedNames = checks
+                .filter(cb => cb.checked)
+                .map(cb => cb.closest('.batch-candidate-item')?.querySelector('.name')?.textContent?.trim())
+                .filter(Boolean);
+            const previewNames = selectedNames.slice(0, 2).join(', ');
+            const isAllSelected = selectedCount === totalCount || selectedCount === 0;
+
+            if (hiddenInput) hiddenInput.value = isAllSelected ? 'all' : selected.join(',');
+            if (typeInput) typeInput.value = isAllSelected ? 'all' : 'specific';
+
+            const summary = isAllSelected
+                ? `All Candidates (${totalCount})`
+                : `${previewNames}${selectedCount > 2 ? ` +${selectedCount - 2}` : ''}`;
+
+            if (displaySpan) displaySpan.textContent = summary;
+            if (triggerLabel) triggerLabel.textContent = summary;
+            if (countLabel) {
+                countLabel.textContent = isAllSelected ? `${totalCount} selected` : `${selectedCount} selected`;
+            }
+
+            if (selectAll) {
+                selectAll.checked = totalCount > 0 && selectedCount === totalCount;
+                selectAll.indeterminate = selectedCount > 0 && selectedCount < totalCount;
             }
         }
 
-        function openCandidatePickerForBatch(btn, batchId) {
-            const wrapper = $(btn).closest('.candidate-selector-wrapper');
-            const hiddenInput = wrapper.find('input[data-field="candidates"]');
-            const currentVal = hiddenInput.val();
+        function closeAllBatchCandidateDropdowns(exceptWrapper = null) {
+            document.querySelectorAll('.candidate-selector-wrapper .batch-candidate-dropdown').forEach(dd => {
+                const wrapper = dd.closest('.candidate-selector-wrapper');
+                if (exceptWrapper && wrapper === exceptWrapper) return;
+                dd.classList.add('hidden');
+            });
+        }
 
-            // Re-use existing candidate picker modal if possible
-            // We'll need a way to pass the selected IDs back.
-            // For now, let's use a simple prompt or a specialized modal call.
+        function toggleBatchCandidateDropdown(btn) {
+            const wrapper = btn.closest('.candidate-selector-wrapper');
+            const dropdown = wrapper ? wrapper.querySelector('.batch-candidate-dropdown') : null;
+            if (!wrapper || !dropdown) return;
 
-            const TestId = $(btn).closest('table').attr('id').replace('BatchTable_', '');
+            const willOpen = dropdown.classList.contains('hidden');
+            closeAllBatchCandidateDropdowns(wrapper);
+            dropdown.classList.toggle('hidden', !willOpen);
+            if (willOpen) {
+                syncBatchCandidateSummary(wrapper);
+                const searchInput = dropdown.querySelector('input[type="text"]');
+                if (searchInput) searchInput.focus();
+            }
+        }
 
-            // Store current context
-            window.activeBatchPicker = {
-                input: hiddenInput,
-                wrapper: wrapper,
-                batchId: batchId
-            };
+        function filterBatchCandidateOptions(input) {
+            const wrapper = input.closest('.candidate-selector-wrapper');
+            if (!wrapper) return;
+            const keyword = String(input.value || '').trim().toLowerCase();
+            wrapper.querySelectorAll('.batch-candidate-item').forEach(item => {
+                const name = item.getAttribute('data-name') || '';
+                const email = item.getAttribute('data-email') || '';
+                const match = !keyword || name.includes(keyword) || email.includes(keyword);
+                item.classList.toggle('hidden', !match);
+            });
+        }
 
-            // Assuming openCandidatePicker is globally available
-            // and we can hook into its 'Save' button.
-            openCandidatePicker(TestId, currentVal === 'all' ? '' : currentVal);
+        function toggleBatchCandidateSelectAll(check) {
+            const wrapper = check.closest('.candidate-selector-wrapper');
+            if (!wrapper) return;
+            const items = Array.from(wrapper.querySelectorAll('.batch-candidate-item'));
+            items.forEach(item => {
+                if (item.classList.contains('hidden')) return;
+                const cb = item.querySelector('.batch-candidate-check');
+                if (cb && !cb.disabled) cb.checked = check.checked;
+            });
+            syncBatchCandidateSummary(wrapper);
+        }
 
-            // Override the global App.saveSelectedCandidates if it exists, or hook into the modal
-            const originalSave = App.saveSelectedCandidates;
-            App.saveSelectedCandidates = function () {
-                const selected = App.selectedCandidates[TestId] || [];
-                const val = selected.join(',');
-
-                if (window.activeBatchPicker) {
-                    const totalCount = App.employees ? App.employees.length : 0;
-                    const display = val ? `Specific Candidates (${selected.length})` : `All Candidates (${totalCount})`;
-
-                    window.activeBatchPicker.input.val(val);
-                    window.activeBatchPicker.wrapper.find('.readonly-view span').text(display);
-
-                    if (!val) {
-                        window.activeBatchPicker.wrapper.find('select').val('all');
-                        window.activeBatchPicker.wrapper.find('.specific-picker-btn').addClass('hidden');
-                        window.activeBatchPicker.input.val('all');
-                    }
-                }
-
-                // Call original and then restore it
-                if (originalSave) originalSave.apply(App, arguments);
-                App.saveSelectedCandidates = originalSave;
-                window.activeBatchPicker = null;
-            };
+        function toggleBatchCandidateCheckbox(input) {
+            const wrapper = input.closest('.candidate-selector-wrapper');
+            syncBatchCandidateSummary(wrapper);
         }
 
         function toggleEditBatch(btn) {
@@ -7384,7 +8346,7 @@ if (!empty($Tests)) {
             }
         }
 
-        function selectTemplate(templateId, clearQuestions = false) {
+        function selectTemplate(templateId, clearQuestions = false, keepBuilderView = false) {
             document.getElementById('baseTemplateSelect').value = templateId;
             isInlineTemplateEditMode = false;
 
@@ -7408,7 +8370,7 @@ if (!empty($Tests)) {
 
             // If in template mode, switch back to batch view to show the details
             const builderView = document.getElementById('templateBuilderInlineView');
-            if (builderView && !builderView.classList.contains('hidden')) {
+            if (!keepBuilderView && builderView && !builderView.classList.contains('hidden')) {
                 toggleWizardView('batch');
             }
 
@@ -7651,6 +8613,51 @@ if (!empty($Tests)) {
 
         var currentEditingTemplateIdInline = null;
         var isInlineTemplateEditMode = false;
+        var isInlineTemplateCloneMode = false;
+        var hasBuilderGeneratedPreview = false;
+
+        function getUniqueTemplateCloneName(baseName) {
+            const templates = Array.isArray(App.templates) ? App.templates : [];
+            const existingNames = new Set(
+                templates
+                    .map(t => (t && t.name ? String(t.name).trim().toLowerCase() : ''))
+                    .filter(Boolean)
+            );
+
+            const safeBase = (baseName || 'Untitled Template').trim();
+            let candidate = `${safeBase} Copy`;
+            let idx = 2;
+            while (existingNames.has(candidate.trim().toLowerCase())) {
+                candidate = `${safeBase} Copy ${idx++}`;
+            }
+            return candidate;
+        }
+
+        function isTemplateNameTaken(name, editingId = null) {
+            const normalized = String(name || '').trim().toLowerCase();
+            if (!normalized) return false;
+
+            const templates = Array.isArray(App.templates) ? App.templates : [];
+            return templates.some(t => {
+                const sameName = String(t?.name || '').trim().toLowerCase() === normalized;
+                if (!sameName) return false;
+                if (editingId && String(t?.id) === String(editingId)) return false;
+                return true;
+            });
+        }
+
+        function focusTemplateNameInput() {
+            const focusNow = () => {
+                const input = document.getElementById('builder_storage_name_inline');
+                if (!input) return;
+                input.focus();
+                const len = input.value.length;
+                input.setSelectionRange(len, len);
+            };
+
+            requestAnimationFrame(focusNow);
+            setTimeout(focusNow, 40);
+        }
 
         function toggleWizardView(view) {
             const configView = document.getElementById('batchWizardConfigView');
@@ -7660,6 +8667,7 @@ if (!empty($Tests)) {
             const header = document.getElementById('quick-mode-header');
             const sidebar = document.getElementById('wizardDiscoverySidebar');
             const mainColumn = document.getElementById('wizardMainColumn');
+            const modalEl = document.getElementById('createPackModal');
 
             const forceDisplay = (element, value = null) => {
                 if (!element) return;
@@ -7683,6 +8691,7 @@ if (!empty($Tests)) {
             forceDisplay(header, 'none');
 
             if (view === 'template') {
+                if (modalEl) modalEl.classList.add('template-scroll-mode');
                 if (builderView) builderView.classList.remove('hidden');
                 if (backBtn) backBtn.classList.remove('hidden');
                 if (createBtn) createBtn.classList.add('hidden');
@@ -7696,6 +8705,7 @@ if (!empty($Tests)) {
                 if (sidebar) sidebar.classList.remove('opacity-50', 'pointer-events-none');
                 forceDisplay(header, 'flex');
             } else if (view === 'batch') {
+                if (modalEl) modalEl.classList.remove('template-scroll-mode');
                 if (configView) configView.classList.remove('hidden');
                 if (footer) footer.classList.remove('hidden');
                 if (backBtn) backBtn.classList.add('hidden');
@@ -7706,6 +8716,7 @@ if (!empty($Tests)) {
                 forceDisplay(footer, 'flex');
                 if (sidebar) sidebar.classList.remove('opacity-50', 'pointer-events-none');
             } else if (view === 'paper') {
+                if (modalEl) modalEl.classList.remove('template-scroll-mode');
                 if (paperView) paperView.classList.remove('hidden');
                 if (backBtn) backBtn.classList.remove('hidden');
                 if (createBtn) createBtn.classList.add('hidden');
@@ -7783,6 +8794,8 @@ if (!empty($Tests)) {
             console.log("Opening Template Builder Inline...");
             currentEditingTemplateIdInline = null; // New Template
             isInlineTemplateEditMode = false;
+            isInlineTemplateCloneMode = false;
+            hasBuilderGeneratedPreview = false;
             updateBuilderTemplateFooterVisibility();
             ensureBuilderQuestionScrollWorks();
             
@@ -7809,10 +8822,15 @@ if (!empty($Tests)) {
             // 3. Reset inputs
             const nameInput = document.getElementById('builder_storage_name_inline');
             if (nameInput) nameInput.value = '';
+            const passMarkInline = document.getElementById('builder_pass_mark_inline');
+            const passMarkVisible = document.getElementById('builder_pass_mark_visible');
+            if (passMarkInline) passMarkInline.value = 60;
+            if (passMarkVisible) passMarkVisible.value = 60;
 
             // 4. Clear state
             if (typeof App !== 'undefined') {
                 App.manualQuestions = [];
+                App.quickModePaperSource = null;
             }
 
             // 5. Hide Questions Section
@@ -7825,11 +8843,77 @@ if (!empty($Tests)) {
 
             // 7. Toggle View
             toggleWizardView('template');
+            // Start with one editable section by default.
+            addNewSectionRowInline();
+            updateBuilderTemplateFooterVisibility();
+            focusTemplateNameInput();
+        }
+
+        function openTemplateCloneBuilderInline(templateId) {
+            const template = (App.templates || []).find(t => String(t.id) === String(templateId));
+            if (!template) return;
+
+            // Start from clean "create template" state first.
+            openTemplateBuilderInline();
+            isInlineTemplateCloneMode = true;
+            hasBuilderGeneratedPreview = false;
+
+            currentEditingTemplateIdInline = null;
+            isInlineTemplateEditMode = false;
+            updateBuilderTemplateFooterVisibility();
+
+            // Unique default clone name.
+            const cloneName = getUniqueTemplateCloneName(template.name || 'Untitled Template');
+            const nameInput = document.getElementById('builder_storage_name_inline');
+            if (nameInput) nameInput.value = cloneName;
+            const clonePassMark = parseInt(template.pass_mark || 60, 10) || 60;
+            const passMarkInline = document.getElementById('builder_pass_mark_inline');
+            const passMarkVisible = document.getElementById('builder_pass_mark_visible');
+            if (passMarkInline) passMarkInline.value = clonePassMark;
+            if (passMarkVisible) passMarkVisible.value = clonePassMark;
+
+            // Clone structure as editable rows.
+            const container = document.getElementById('builder_sections_container_inline');
+            if (container) container.innerHTML = '';
+            const header = document.getElementById('inline_builder_header');
+            if (header) header.style.display = 'grid';
+
+            let structure = [];
+            if (Array.isArray(template.sections)) {
+                structure = template.sections;
+            } else if (typeof template.sections === 'string') {
+                try {
+                    structure = JSON.parse(template.sections || '[]') || [];
+                } catch (e) {
+                    structure = [];
+                }
+            }
+
+            structure.forEach(s => {
+                addSelectedSectionInline(
+                    s.marks_type || s.type || 'MCQ',
+                    s.section_name || s.name || 'Section',
+                    s.num_questions || s.count || 0,
+                    s.marks_per_question || s.marks || 1
+                );
+            });
+
+            // Clone should behave like Create Template: fresh QB mapping and fresh generation.
+            App.manualQuestions = [];
+            App.quickModePaperSource = null;
+            const qbSelectInline = document.getElementById('builder_qb_select_inline');
+            if (qbSelectInline) qbSelectInline.value = '';
+            const quickQbSelect = document.getElementById('quick_qb_select');
+            if (quickQbSelect) quickQbSelect.value = '';
+
+            updateBuilderStatsInline();
+            toggleWizardView('template');
         }
 
         function loadTemplateToBuilderInline(id, editable = false) {
             currentEditingTemplateIdInline = id;
             isInlineTemplateEditMode = !!editable;
+            isInlineTemplateCloneMode = false;
             updateBuilderTemplateFooterVisibility();
             ensureBuilderQuestionScrollWorks();
             const template = App.templates.find(t => t.id == id);
@@ -7837,6 +8921,11 @@ if (!empty($Tests)) {
 
             // 1. Set Name
             document.getElementById('builder_storage_name_inline').value = template.name;
+            const templatePassMark = parseInt(template.pass_mark || 60, 10) || 60;
+            const passMarkInline = document.getElementById('builder_pass_mark_inline');
+            const passMarkVisible = document.getElementById('builder_pass_mark_visible');
+            if (passMarkInline) passMarkInline.value = templatePassMark;
+            if (passMarkVisible) passMarkVisible.value = templatePassMark;
             
             // 2. Clear Container
             const container = document.getElementById('builder_sections_container_inline');
@@ -7846,6 +8935,8 @@ if (!empty($Tests)) {
             // 3. Load Sections
             const structure = typeof template.sections === 'string' ? JSON.parse(template.sections) : template.sections;
             App.manualQuestions = hydrateTemplateQuestions(template.id, template.questions || []);
+            hasBuilderGeneratedPreview = Array.isArray(App.manualQuestions) && App.manualQuestions.length > 0;
+            updateBuilderTemplateFooterVisibility();
 
             if (structure && structure.length > 0) {
                 structure.forEach(s => {
@@ -7860,17 +8951,30 @@ if (!empty($Tests)) {
             updateBuilderStatsInline();
             const qbSection = document.getElementById('quick-qb-selector-section');
             if (qbSection) qbSection.classList.add('hidden');
+            focusTemplateNameInput();
         }
 
         function updateBuilderTemplateFooterVisibility() {
             const footer = document.getElementById('builder_template_footer');
             if (!footer) return;
-            const shouldShow = !currentEditingTemplateIdInline || isInlineTemplateEditMode;
+            const hasGenerated = Array.isArray(App.manualQuestions) && App.manualQuestions.length > 0 && !!hasBuilderGeneratedPreview;
+            const shouldShow = hasGenerated;
             footer.classList.toggle('hidden', !shouldShow);
+        }
+
+        function isInlineMarksEditable(type) {
+            return normalizeInlineSectionType(type) === 'descriptive';
         }
 
         function addSelectedSectionInline(type, name = null, count = 10, marks = null) {
             if (!type) return;
+            const normalizedType = normalizeInlineSectionType(type);
+            const used = getUsedInlineSectionTypes();
+            if (used.length >= 2 && !used.includes(normalizedType)) {
+                Swal.fire('Section limit reached', 'Only two sections are allowed: one MCQ and one descriptive question.', 'info');
+                return;
+            }
+
             const container = document.getElementById('builder_sections_container_inline');
             const emptyState = document.getElementById('builder_empty_state_inline');
             const header = document.getElementById('inline_builder_header');
@@ -7879,29 +8983,32 @@ if (!empty($Tests)) {
             if (header) header.style.display = 'grid';
 
             const row = document.createElement('div');
-            row.className = 'grid grid-cols-12 gap-0 bg-white hover:bg-slate-50/50 transition-colors animate-fadeIn items-center';
-            row.dataset.type = type;
-            const displayName = name || `${type} Section`;
-            const displayMarks = marks !== null ? marks : (type === '2 Marks' ? 2 : 1);
+            row.className = 'grid grid-cols-12 gap-0 bg-white hover:bg-slate-50/50 transition-colors animate-fadeIn items-center min-h-[56px] section-builder-row-inline';
+            row.dataset.type = normalizedType;
+            const typeLabel = inlineSectionTypeDisplayName(normalizedType);
+            const displayName = name || `${typeLabel} Section`;
+            const displayMarks = getFixedMarksByType(normalizedType);
+            const marksEditable = isInlineMarksEditable(normalizedType);
 
             row.innerHTML = `
-            <div class="col-span-6 py-3 pl-14 flex items-center gap-3">
+            <div class="col-span-4 py-2.5 pl-14 pr-3 flex items-center gap-3 min-h-[56px]">
                 <div class="w-6 h-6 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400">
                     <i class="bi bi-grip-vertical"></i>
                 </div>
-                <div>
+                <div class="leading-tight">
+                    <input type="hidden" class="sec-name-hidden-inline" value="${displayName}">
                     <input type="text" class="bg-transparent border-0 font-bold text-slate-800 p-0 focus:ring-0 text-[11px] w-full" value="${displayName}">
-                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">${type} Component</p>
+                    <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">${typeLabel} Component</p>
                 </div>
             </div>
-            <div class="col-span-2 py-2 px-2 text-center">
-                <input type="number" class="w-14 mx-auto bg-slate-50 border border-slate-100 rounded-lg py-1 px-1 font-bold text-slate-800 text-[11px] text-center focus:ring-2 focus:ring-red-100 sec-count-inline" value="${count}" oninput="updateBuilderStatsInline()">
+            <div class="col-span-2 py-2 px-2 min-h-[56px] flex items-center justify-center">
+                <input type="number" class="w-16 h-8 mx-auto bg-slate-50 border border-slate-200 rounded-lg px-2 font-bold text-slate-800 text-[11px] text-center focus:ring-2 focus:ring-red-100 sec-count-inline" value="${count}" oninput="updateBuilderStatsInline()">
             </div>
-            <div class="col-span-2 py-2 px-2 text-center">
-                <input type="number" class="w-14 mx-auto bg-slate-50 border border-slate-100 rounded-lg py-1 px-1 font-bold text-slate-800 text-[11px] text-center focus:ring-2 focus:ring-red-100 sec-marks-inline" value="${displayMarks}" oninput="updateBuilderStatsInline()">
+            <div class="col-span-2 py-2 px-2 min-h-[56px] flex items-center justify-center">
+                <input type="number" class="w-16 h-8 mx-auto bg-slate-50 border border-slate-200 rounded-lg px-2 font-bold text-slate-800 text-[11px] text-center focus:ring-2 focus:ring-red-100 sec-marks-inline" value="${displayMarks}" min="1" ${marksEditable ? '' : 'readonly'}>
             </div>
-            <div class="col-span-2 py-2 px-3 text-right">
-                <button class="w-6 h-6 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center mx-auto" 
+            <div class="col-span-4 py-2 px-3 min-h-[56px] flex items-center justify-end">
+                <button class="w-7 h-7 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center" 
                         onclick="this.closest('.grid').remove(); updateBuilderStatsInline(); if(document.querySelectorAll('.sec-count-inline').length === 0) { document.getElementById('builder_empty_state_inline').style.display='block'; document.getElementById('inline_builder_header').style.display='none'; }">
                     <i class="bi bi-trash-fill text-[9px]"></i>
                 </button>
@@ -7944,7 +9051,9 @@ if (!empty($Tests)) {
             // Question Content Management
             const qSection = document.getElementById('builder_questions_section_inline');
             if (qSection) {
-                if (totalSections > 0) {
+                if (isInlineTemplateCloneMode || !hasBuilderGeneratedPreview) {
+                    qSection.classList.add('hidden');
+                } else if (totalSections > 0) {
                     qSection.classList.remove('hidden');
                     const dataSections = Array.from(sections).map(s => ({
                         name: (
@@ -8101,16 +9210,21 @@ if (!empty($Tests)) {
             const name = document.getElementById('builder_storage_name_inline').value.trim();
             if (!name) { Swal.fire('Required', 'Please enter a Template Name', 'warning'); return; }
             const isEditMode = !!currentEditingTemplateIdInline;
+            if (isTemplateNameTaken(name, currentEditingTemplateIdInline)) {
+                Swal.fire('Duplicate Name', 'Template name already exists. Please use a unique name.', 'warning');
+                return;
+            }
 
             const sections = [];
             document.querySelectorAll('.section-builder-row-inline:not(.is-editing)').forEach(row => {
+                const sectionType = normalizeInlineSectionType(row.dataset.type);
                 sections.push({
                     name: (
                         row.querySelector('.sec-name-hidden-inline')?.value ||
                         row.querySelector('.sec-display-name')?.textContent ||
                         'Section'
                     ),
-                    type: row.dataset.type,
+                    type: sectionType,
                     count: parseInt(
                         row.querySelector('.sec-count-inline')?.value ||
                         row.querySelector('.sec-display-count')?.textContent ||
@@ -8119,10 +9233,15 @@ if (!empty($Tests)) {
                     marks: parseInt(
                         row.querySelector('.sec-marks-inline')?.value ||
                         row.querySelector('.sec-display-marks')?.textContent ||
-                        '0'
-                    ) || 0
+                        String(getFixedMarksByType(sectionType))
+                    ) || getFixedMarksByType(sectionType)
                 });
             });
+
+            if (sections.length > 2) {
+                Swal.fire('Section limit reached', 'Only two sections are allowed: one MCQ and one descriptive question.', 'warning');
+                return;
+            }
 
             if (sections.length === 0) { 
                 Swal.fire('Required', 'Please add and SAVE at least one section to your template structure', 'warning'); 
@@ -8143,7 +9262,7 @@ if (!empty($Tests)) {
 
             try {
                 const data = {
-                    id: currentEditingTemplateIdInline,
+                    id: currentEditingTemplateIdInline || null,
                     name: name,
                     category: document.getElementById('builder_category_inline').value,
                     duration: document.getElementById('builder_duration_inline').value || 60,
@@ -8222,7 +9341,7 @@ if (!empty($Tests)) {
                     select.appendChild(option);
 
                     // Select it
-                    selectTemplate(newTemplate.id);
+                    selectTemplate(newTemplate.id, false, true);
                     
                     // Refresh Sidebar UI completely to ensure consistency
                     if (typeof filterSidebar === 'function') {
@@ -8243,8 +9362,11 @@ if (!empty($Tests)) {
                     const newEl = document.getElementById(`temp_card_${newTemplate.id}`);
                     if (newEl) newEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     
-                    // Switch back after a small delay
-                    toggleWizardView('batch');
+                    hasBuilderGeneratedPreview = false;
+                    updateBuilderTemplateFooterVisibility();
+
+                    const quickFooter = document.getElementById('quick-mode-footer');
+                    if (quickFooter) quickFooter.classList.add('hidden');
                 } else {
                     throw new Error(result.message);
                 }
@@ -8266,6 +9388,8 @@ if (!empty($Tests)) {
                 if (btnEl) btnEl.classList.add('hidden');
                 if (statusEl) statusEl.classList.add('hidden');
             }
+            hasBuilderGeneratedPreview = false;
+            updateBuilderTemplateFooterVisibility();
         };
 
         function handleQuickQuestionBankChange(qbId) {
@@ -8279,9 +9403,105 @@ if (!empty($Tests)) {
         }
 
         // --- INLINE SECTION BUILDER LOGIC ---
+        function normalizeInlineSectionType(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return 'MCQ';
+
+            const nt = typeof App !== 'undefined' && App.normalizeType ? App.normalizeType(raw) : '';
+            if (nt === 'descriptive') return 'descriptive';
+            if (nt === 'mcq') return 'MCQ';
+
+            const v = raw.toLowerCase();
+            if (v.includes('coding') || v.includes('practical')) return raw;
+
+            return 'MCQ';
+        }
+
+        /** Sidebar/template builder keys: MCQ vs descriptive (displayed as descriptive question). */
+        function inlineSectionTypeDisplayName(internalType) {
+            const t = normalizeInlineSectionType(internalType);
+            if (t === 'descriptive') return 'Descriptive question';
+            if (t === 'MCQ') return 'MCQ';
+            return String(internalType || '').trim() || 'MCQ';
+        }
+
+        function getUsedInlineSectionTypes(excludeRowId = null) {
+            const rows = Array.from(document.querySelectorAll('#builder_sections_container_inline .section-builder-row-inline'));
+            const types = [];
+
+            rows.forEach(row => {
+                if (excludeRowId && row.id === excludeRowId) return;
+                const select = row.querySelector('.sec-type-select-inline');
+                const type = normalizeInlineSectionType(select?.value || row.dataset.type);
+                if (type) types.push(type);
+            });
+
+            return [...new Set(types)];
+        }
+
+        function getAllowedTypesForNewInlineRow() {
+            const used = getUsedInlineSectionTypes();
+            if (used.length >= 2) return [];
+            if (used.includes('MCQ')) return ['descriptive'];
+            if (used.includes('descriptive')) return ['MCQ'];
+            return ['MCQ', 'descriptive'];
+        }
+
+        function buildInlineTypeOptions(allowedTypes, selectedType) {
+            return allowedTypes.map(type => {
+                const label = `${inlineSectionTypeDisplayName(type)} Section`;
+                return `<option value="${type}" ${type === selectedType ? 'selected' : ''}>${label}</option>`;
+            }).join('');
+        }
+
+        function getFixedMarksByType(type) {
+            return normalizeInlineSectionType(type) === 'descriptive' ? 2 : 1;
+        }
+
+        function handleInlineSectionTypeChange(selectEl) {
+            const row = selectEl.closest('.section-builder-row-inline');
+            if (!row) return;
+
+            const nextType = normalizeInlineSectionType(selectEl.value);
+            const usedOtherTypes = getUsedInlineSectionTypes(row.id);
+            if (usedOtherTypes.includes(nextType)) {
+                Swal.fire('Type already used', 'You can only have one MCQ section and one descriptive question section.', 'info');
+                const fallback = usedOtherTypes.includes('MCQ') ? 'descriptive' : 'MCQ';
+                selectEl.value = fallback;
+            }
+
+            const finalType = normalizeInlineSectionType(selectEl.value);
+            row.dataset.type = finalType;
+
+            const nameHidden = row.querySelector('.sec-name-hidden-inline');
+            if (nameHidden) nameHidden.value = `${inlineSectionTypeDisplayName(finalType)} Section`;
+
+            const marksInput = row.querySelector('.sec-marks-inline');
+            if (marksInput) {
+                if (!isInlineMarksEditable(finalType)) {
+                    marksInput.value = getFixedMarksByType(finalType);
+                } else if (!marksInput.value || parseInt(marksInput.value, 10) <= 0) {
+                    marksInput.value = getFixedMarksByType(finalType);
+                }
+                marksInput.readOnly = !isInlineMarksEditable(finalType);
+            }
+            hasBuilderGeneratedPreview = false;
+            updateBuilderTemplateFooterVisibility();
+        }
+
         function addNewSectionRowInline() {
             const container = document.getElementById('builder_sections_container_inline');
             const emptyState = document.getElementById('builder_empty_state_inline');
+            const allowedTypes = getAllowedTypesForNewInlineRow();
+            if (allowedTypes.length === 0) {
+                Swal.fire('Section limit reached', 'Only two sections are allowed: one MCQ and one descriptive question.', 'info');
+                return;
+            }
+
+            const defaultType = allowedTypes[0];
+            const defaultMarks = getFixedMarksByType(defaultType);
+            const marksEditable = isInlineMarksEditable(defaultType);
+
             if (emptyState) emptyState.classList.add('hidden');
             document.getElementById('inline_builder_header').style.display = 'grid';
 
@@ -8289,20 +9509,19 @@ if (!empty($Tests)) {
             const row = document.createElement('div');
             row.className = 'grid grid-cols-12 gap-0 items-center py-2.5 group section-builder-row-inline is-editing';
             row.id = rowId;
-            row.dataset.type = 'MCQ'; // Default
+            row.dataset.type = defaultType;
             
             row.innerHTML = `
-                <div class="col-span-4 pl-14 pr-4">
+                <div class="col-span-4 pl-4 sm:pl-14 pr-4">
                     <div class="edit-mode">
-                        <select class="w-full bg-slate-50 border border-slate-100 rounded-lg h-9 px-3 text-[12px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 focus:border-red-400 sec-type-select-inline" onchange="this.closest('.section-builder-row-inline').dataset.type = this.value">
-                            <option value="MCQ">MCQ Section</option>
-                            <option value="2 Marks">2 Marks Section</option>
+                        <select class="w-full bg-slate-50 border border-slate-100 rounded-lg h-9 px-3 text-[12px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 focus:border-red-400 sec-type-select-inline" onchange="handleInlineSectionTypeChange(this)">
+                            ${buildInlineTypeOptions(allowedTypes, defaultType)}
                         </select>
-                        <input type="hidden" class="sec-name-hidden-inline" value="MCQ Section">
+                        <input type="hidden" class="sec-name-hidden-inline" value="${inlineSectionTypeDisplayName(defaultType)} Section">
                     </div>
                     <div class="view-mode hidden">
-                        <h5 class="text-[12px] font-black text-slate-800 mb-0 sec-display-name">MCQ Section</h5>
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 sec-display-type">MCQ Component</p>
+                        <h5 class="text-[12px] font-black text-slate-800 mb-0 sec-display-name">${inlineSectionTypeDisplayName(defaultType)} Section</h5>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 sec-display-type">${inlineSectionTypeDisplayName(defaultType)} Component</p>
                     </div>
                 </div>
                 <div class="col-span-2 px-2 flex justify-center">
@@ -8313,9 +9532,9 @@ if (!empty($Tests)) {
                 </div>
                 <div class="col-span-2 px-2 flex justify-center">
                     <div class="edit-mode w-16">
-                        <input type="number" class="w-full bg-slate-50 border border-slate-100 rounded-lg h-9 px-2 text-[12px] font-bold text-slate-700 text-center sec-marks-inline" value="1" min="1">
+                        <input type="number" class="w-full bg-slate-50 border border-slate-100 rounded-lg h-9 px-2 text-[12px] font-bold text-slate-700 text-center sec-marks-inline" value="${defaultMarks}" min="1" ${marksEditable ? '' : 'readonly'}>
                     </div>
-                    <div class="view-mode hidden text-[12px] font-black text-slate-700 sec-display-marks">1</div>
+                    <div class="view-mode hidden text-[12px] font-black text-slate-700 sec-display-marks">${defaultMarks}</div>
                 </div>
                 <div class="col-span-4 px-4 flex items-center justify-end gap-3">
                     <div class="edit-mode flex gap-2">
@@ -8329,6 +9548,8 @@ if (!empty($Tests)) {
                 </div>
             `;
             container.appendChild(row);
+            hasBuilderGeneratedPreview = false;
+            updateBuilderTemplateFooterVisibility();
         }
 
         function saveInlineSectionRow(rowId) {
@@ -8338,18 +9559,26 @@ if (!empty($Tests)) {
             const marksInput = row.querySelector('.sec-marks-inline');
             const nameHidden = row.querySelector('.sec-name-hidden-inline');
 
-            const type = typeSelect.value;
+            const type = normalizeInlineSectionType(typeSelect.value);
+            const usedOtherTypes = getUsedInlineSectionTypes(rowId);
+            if (usedOtherTypes.includes(type)) {
+                Swal.fire('Type already used', 'Only one MCQ section and one descriptive question section are allowed.', 'warning');
+                return;
+            }
+
             const count = countInput.value;
-            const marks = marksInput.value;
-            const name = type + " Section";
+            const marks = Math.max(1, parseInt(marksInput.value || String(getFixedMarksByType(type)), 10) || getFixedMarksByType(type));
+            const name = inlineSectionTypeDisplayName(type) + " Section";
 
             // Update hidden name
             nameHidden.value = name;
             row.dataset.type = type;
+            marksInput.value = marks;
+            marksInput.readOnly = !isInlineMarksEditable(type);
 
             // Update display labels
             row.querySelector('.sec-display-name').textContent = name;
-            row.querySelector('.sec-display-type').textContent = type + " Component";
+            row.querySelector('.sec-display-type').textContent = inlineSectionTypeDisplayName(type) + " Component";
             row.querySelector('.sec-display-count').textContent = count;
             row.querySelector('.sec-display-marks').textContent = marks;
 
@@ -8360,12 +9589,15 @@ if (!empty($Tests)) {
 
             // Update stats
             updateBuilderStatsInline();
+            hasBuilderGeneratedPreview = false;
+            updateBuilderTemplateFooterVisibility();
         }
 
         function cancelInlineSectionRow(rowId) {
             const row = document.getElementById(rowId);
             // If it's a new row (no name yet), remove it
-            if (row.querySelector('.sec-display-name').textContent === 'MCQ Section' && !row.classList.contains('was-saved')) {
+            const __dn = row.querySelector('.sec-display-name').textContent.trim();
+            if (!row.classList.contains('was-saved') && (__dn === 'MCQ Section' || __dn === 'Descriptive question Section' || __dn === '')) {
                 row.remove();
                 // Check if empty
                 if (document.querySelectorAll('.section-builder-row-inline').length === 0) {
@@ -8382,9 +9614,25 @@ if (!empty($Tests)) {
 
         function editInlineSectionRow(rowId) {
             const row = document.getElementById(rowId);
+            let currentType = 'MCQ';
+            const typeSelect = row.querySelector('.sec-type-select-inline');
+            if (typeSelect) {
+                currentType = normalizeInlineSectionType(typeSelect.value || row.dataset.type);
+                const usedOtherTypes = getUsedInlineSectionTypes(rowId);
+                const allowed = usedOtherTypes.length > 0 ? [usedOtherTypes.includes('MCQ') ? 'descriptive' : 'MCQ'] : ['MCQ', 'descriptive'];
+                const safeAllowed = allowed.includes(currentType) ? allowed : [...new Set([currentType, ...allowed])];
+                typeSelect.innerHTML = buildInlineTypeOptions(safeAllowed, currentType);
+                typeSelect.value = currentType;
+            }
+
             row.classList.add('is-editing', 'was-saved');
             row.querySelectorAll('.edit-mode').forEach(el => el.classList.remove('hidden'));
             row.querySelectorAll('.view-mode').forEach(el => el.classList.add('hidden'));
+
+            const marksInput = row.querySelector('.sec-marks-inline');
+            if (marksInput) {
+                marksInput.readOnly = !isInlineMarksEditable(currentType);
+            }
         }
 
         function deleteInlineSectionRow(rowId) {
@@ -8394,6 +9642,8 @@ if (!empty($Tests)) {
                 document.getElementById('inline_builder_header').style.display = 'none';
             }
             updateBuilderStatsInline();
+            hasBuilderGeneratedPreview = false;
+            updateBuilderTemplateFooterVisibility();
         }
 
         App.downloadBuilderTemplate = () => {
@@ -8506,8 +9756,8 @@ if (!empty($Tests)) {
                         </div>
                         <div class="grid grid-cols-12 gap-4 flex-1 items-center">
                             <div class="col-span-5">
-                                <span class="block text-[12px] font-black text-slate-800 leading-none mb-1">${s.marks_type || s.name || 'Section'}</span>
-                                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none">${s.marks_type || s.type || 'MCQ'} Component</span>
+                                <span class="block text-[12px] font-black text-slate-800 leading-none mb-1">${s.section_name || s.name || inlineSectionTypeDisplayName(s.marks_type || s.type || 'MCQ')}</span>
+                                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none">${inlineSectionTypeDisplayName(s.marks_type || s.type || 'MCQ')} Component</span>
                             </div>
                             <div class="col-span-3 flex items-center gap-2">
                                 <input type="number" value="${s.num_questions || s.count || 0}" 
@@ -8738,8 +9988,8 @@ if (!empty($Tests)) {
                 { id: 7, text: 'Which testing types are included in the software testing pyramid?', type: 'Multi-select', options: ['Unit Tests', 'Integration Tests', 'Performance Tests', 'End-to-End Tests'], category: 'Testing', marks: 3 },
                 { id: 8, text: 'Redux is primarily used for component styling.', type: 'True/False', options: ['True', 'False'], category: 'State Management', marks: 1 },
                 { id: 9, text: 'Agile methodology uses fixed, long-term plans that don\'t change.', type: 'True/False', options: ['True', 'False'], category: 'Project Management', marks: 1 },
-                { id: 10, text: 'Describe the SOLID principles in object-oriented design.', type: '2-Mark', options: [], category: 'Software Design', marks: 2 },
-                { id: 11, text: 'Explain the concept of closures in JavaScript.', type: '2-Mark', options: [], category: 'JavaScript', marks: 2 },
+                { id: 10, text: 'Describe the SOLID principles in object-oriented design.', type: 'Short Answer', options: [], category: 'Software Design', marks: 2 },
+                { id: 11, text: 'Explain the concept of closures in JavaScript.', type: 'Short Answer', options: [], category: 'JavaScript', marks: 2 },
                 { id: 12, text: 'What is the purpose of the "use strict" directive?', type: 'MCQ', options: ['Enable new features', 'Enforce stricter parsing', 'Optimize performance', 'Prevent hoisting'], category: 'JavaScript', marks: 1 },
                 { id: 13, text: 'What does "this" refer to in a global context?', type: 'MCQ', options: ['The function', 'The object', 'The window/global', 'undefined'], category: 'JavaScript', marks: 1 },
                 { id: 14, text: 'Which method is used to remove the last element from an array?', type: 'MCQ', options: ['shift()', 'pop()', 'splice()', 'remove()'], category: 'JavaScript', marks: 1 },
@@ -8754,7 +10004,163 @@ if (!empty($Tests)) {
                 flagged: new Set(),
                 timeLeft: 3600, // 60 minutes
                 timerInterval: null,
-                violations: 0
+                violations: 0,
+                packId: null,
+                passMark: 0,
+                durationMins: 60,
+                startedAt: null,
+                testId: null,
+                attachment: null,
+                attachments: []
+            },
+
+            evaluationState: {
+                submissions: {}
+            },
+
+            saveEvaluationState: () => {
+                try {
+                    localStorage.setItem('evaluationSubmissions', JSON.stringify(App.evaluationState.submissions || {}));
+                } catch (e) {
+                    console.warn('Failed to persist evaluation state', e);
+                }
+            },
+
+            loadEvaluationState: () => {
+                try {
+                    const raw = localStorage.getItem('evaluationSubmissions');
+                    if (!raw) return;
+                    const parsed = JSON.parse(raw);
+                    if (parsed && typeof parsed === 'object') {
+                        App.evaluationState.submissions = parsed;
+                    }
+                } catch (e) {
+                    console.warn('Failed to load evaluation state', e);
+                }
+            },
+
+            _parseIntroUrls: (row) => {
+                if (!row || row.intro_videos == null) return [];
+                let raw = row.intro_videos;
+                if (Array.isArray(raw)) return raw.filter(Boolean);
+                if (typeof raw === 'string') {
+                    try {
+                        const p = JSON.parse(raw);
+                        return Array.isArray(p) ? p.filter(Boolean) : [];
+                    } catch (e) {
+                        return [];
+                    }
+                }
+                return [];
+            },
+
+            _resolveIntroVideoSrc: (url) => {
+                if (!url) return '';
+                const s = String(url).trim();
+                const pathMatch = s.match(/(\/uploads\/assessment_intro\/[^?#]+)/);
+                if (pathMatch && typeof window.__APP_BASE__ === 'string' && window.__APP_BASE__) {
+                    return window.__APP_BASE__ + pathMatch[1];
+                }
+                if (/^https?:\/\//i.test(s)) return s;
+                const base = typeof window.__APP_BASE__ === 'string' ? window.__APP_BASE__ : '';
+                if (!base) return s;
+                return base + (s.startsWith('/') ? s : '/' + s);
+            },
+
+            resolveIntroConfig: async (testId, testMeta) => {
+                const parseAddVideo = (val) => (val === true || val === 1 || val === '1' || String(val).toLowerCase() === 'yes');
+
+                let meta = testMeta || null;
+                let urls = App._parseIntroUrls(meta);
+                let addVideoOn = parseAddVideo(meta?.add_video);
+
+                // Fallback to in-memory test map if payload is stale/incomplete.
+                if ((!addVideoOn || urls.length === 0) && Array.isArray(App.Tests)) {
+                    const local = App.Tests.find(t => String(t.id) === String(testId));
+                    if (local) {
+                        meta = local;
+                        urls = App._parseIntroUrls(local);
+                        addVideoOn = parseAddVideo(local.add_video);
+                    }
+                }
+
+                // Final fallback: fetch latest tests snapshot from server.
+                if ((!addVideoOn || urls.length === 0) && testId) {
+                    try {
+                        const r = await fetch('Test/getTests');
+                        const j = await r.json();
+                        const tests = Array.isArray(j?.tests) ? j.tests : [];
+                        const srv = tests.find(t => String(t.id) === String(testId));
+                        if (srv) {
+                            meta = srv;
+                            urls = App._parseIntroUrls(srv);
+                            addVideoOn = parseAddVideo(srv.add_video);
+                        }
+                    } catch (e) {
+                        console.warn('Failed to refresh intro config from server', e);
+                    }
+                }
+
+                return {
+                    addVideoOn,
+                    introUrls: Array.isArray(urls) ? urls : []
+                };
+            },
+
+            setupIntroGate: (urls) => {
+                const overlay = document.getElementById('execIntroOverlay');
+                const mount = document.getElementById('execIntroVideosMount');
+                const btn = document.getElementById('execIntroCompleteBtn');
+                if (!overlay || !mount || !btn) {
+                    document.getElementById('executionView').classList.remove('d-none');
+                    document.body.style.overflow = 'hidden';
+                    App.startTimer();
+                    App.renderExecutionQuestion();
+                    App.renderNavigator();
+                    App.updateProgress();
+                    return;
+                }
+                mount.innerHTML = '';
+                App.introGateTotal = urls.length;
+                App.introGateEnded = new Set();
+                btn.disabled = false;
+                urls.forEach((url, idx) => {
+                    const box = document.createElement('div');
+                    box.className = 'bg-white rounded-3 p-3 shadow-sm';
+                    const v = document.createElement('video');
+                    v.className = 'w-100 rounded-3';
+                    v.controls = true;
+                    v.setAttribute('playsinline', '');
+                    v.preload = 'metadata';
+                    const src = App._resolveIntroVideoSrc(url);
+                    v.src = src;
+                    v.addEventListener('ended', () => App.markIntroVideoEnded(idx));
+                    v.addEventListener('error', () => {
+                        console.warn('Intro video failed to load:', src);
+                    });
+                    box.appendChild(v);
+                    mount.appendChild(box);
+                });
+                overlay.classList.remove('d-none');
+            },
+
+            markIntroVideoEnded: (idx) => {
+                if (!App.introGateEnded) App.introGateEnded = new Set();
+                App.introGateEnded.add(idx);
+                const btn = document.getElementById('execIntroCompleteBtn');
+                if (btn) btn.disabled = false;
+            },
+
+            completeIntroGate: () => {
+                const overlay = document.getElementById('execIntroOverlay');
+                if (overlay) overlay.classList.add('d-none');
+                const ev = document.getElementById('executionView');
+                if (ev) ev.classList.remove('d-none');
+                document.body.style.overflow = 'hidden';
+                App.startTimer();
+                App.renderExecutionQuestion();
+                App.renderNavigator();
+                App.updateProgress();
             },
 
             startExecution: async (testId, packId) => {
@@ -8788,14 +10194,23 @@ if (!empty($Tests)) {
                         text: q.question,
                         type: q.type,
                         options: [q.option_a, q.option_b, q.option_c, q.option_d].filter(o => o && o.trim() !== ''),
+                        option_a: q.option_a || '',
+                        option_b: q.option_b || '',
+                        option_c: q.option_c || '',
+                        option_d: q.option_d || '',
+                        correct_answer: q.correct_answer || '',
                         category: q.category || 'General',
-                        marks: q.marks || 1
+                        marks: q.marks || 1,
+                        pedagogy: String(q.pedagogy ?? q.knowledge_type ?? '').trim()
                     }));
 
                     const pack = data.pack;
                     const duration = pack ? parseInt(pack.duration || 60) : 60;
 
-                    if (test) {
+                    const testMeta = data.test || test;
+                    if (testMeta && testMeta.name) {
+                        document.getElementById('execTestTitle').textContent = testMeta.name;
+                    } else if (test) {
                         document.getElementById('execTestTitle').textContent = test.name;
                     }
 
@@ -8805,6 +10220,27 @@ if (!empty($Tests)) {
                     App.executionState.flagged = new Set();
                     App.executionState.timeLeft = duration * 60;
                     App.executionState.violations = 0;
+                    App.executionState.packId = packId;
+                    App.executionState.testId = testId;
+                    App.executionState.passMark = parseInt(pack ? (pack.pass_mark || 70) : 70, 10) || 70;
+                    App.executionState.durationMins = duration;
+                    App.executionState.startedAt = Date.now();
+                    App.executionState.testName = testMeta?.name || test?.name || 'Test';
+                    App.executionState.batchName = pack?.pack_name || 'Standard Batch';
+                    App.executionState.testType = testMeta?.assessment_type || test?.assessment_type || 'Standard';
+                    App.executionState.assignedRoles = testMeta?.assigned_to || test?.assigned_to || pack?.user_role || 'General Access';
+                    App.executionState.attachment = null;
+                    App.executionState.attachments = [];
+                    const attachInput = document.getElementById('execSubmissionAttachmentInput');
+                    const attachMeta = document.getElementById('execSubmissionAttachmentMeta');
+                    const singleInput = document.getElementById('execFinalSingleFileInput');
+                    const bulkInput = document.getElementById('execFinalBulkFileInput');
+                    if (attachInput) attachInput.value = '';
+                    if (attachMeta) attachMeta.textContent = '';
+                    if (singleInput) singleInput.value = '';
+                    if (bulkInput) bulkInput.value = '';
+                    App.renderExecutionAttachmentList();
+                    App.backToQuestionsFromFinal();
 
                     // Calculate Total Marks
                     const totalMarks = App.executionState.questions.reduce((acc, q) => acc + (parseInt(q.marks) || 0), 0);
@@ -8821,12 +10257,21 @@ if (!empty($Tests)) {
                     }
 
                     Swal.close();
-                    document.getElementById('executionView').classList.remove('d-none');
-                    document.body.style.overflow = 'hidden';
-                    App.startTimer();
-                    App.renderExecutionQuestion();
-                    App.renderNavigator();
-                    App.updateProgress();
+
+                    const introConfig = await App.resolveIntroConfig(testId, testMeta);
+                    const wantIntro = introConfig.addVideoOn && introConfig.introUrls.length > 0;
+
+                    if (wantIntro) {
+                        document.getElementById('executionView').classList.add('d-none');
+                        App.setupIntroGate(introConfig.introUrls);
+                    } else {
+                        document.getElementById('executionView').classList.remove('d-none');
+                        document.body.style.overflow = 'hidden';
+                        App.startTimer();
+                        App.renderExecutionQuestion();
+                        App.renderNavigator();
+                        App.updateProgress();
+                    }
 
                 } catch (e) {
                     Swal.fire('Error', e.message, 'error');
@@ -8866,9 +10311,11 @@ if (!empty($Tests)) {
 
                 document.getElementById('execQuestionProgress').textContent = `Question ${qIdx + 1} of ${App.executionState.questions.length}`;
                 document.getElementById('qIdxBadge').textContent = `Q${qIdx + 1}`;
-                document.getElementById('qTypeBadge').textContent = q.type;
-                document.getElementById('qMarksBadge').textContent = `${q.marks} mark${q.marks > 1 ? 's' : ''}`;
-                document.getElementById('qCategoryBadge').textContent = q.category;
+                const pedEl = document.getElementById('qPedagogyBadge');
+                if (pedEl) {
+                    const ped = (q.pedagogy || '').trim();
+                    pedEl.textContent = ped || '—';
+                }
                 document.getElementById('qTextContent').textContent = q.text;
 
                 const flagBtn = document.getElementById('flagBtn');
@@ -8883,7 +10330,7 @@ if (!empty($Tests)) {
                 const area = document.getElementById('answerArea');
                 area.innerHTML = '';
 
-                if (q.type === '2-Mark') {
+                if (App.normalizeType(q.type) === 'descriptive') {
                     const textarea = document.createElement('textarea');
                     textarea.className = 'form-control mt-4 p-3';
                     textarea.rows = 6;
@@ -8913,7 +10360,9 @@ if (!empty($Tests)) {
                     area.appendChild(grid);
                 }
 
-                document.getElementById('nextQBtn').innerHTML = qIdx === App.executionState.questions.length - 1 ? 'Finish Test' : 'Next Question <i class="bi bi-chevron-right ms-2"></i>';
+                document.getElementById('nextQBtn').innerHTML = qIdx === App.executionState.questions.length - 1
+                    ? 'Next <i class="bi bi-chevron-right ms-2"></i>'
+                    : 'Next Question <i class="bi bi-chevron-right ms-2"></i>';
             },
 
             handleOptionClick: (qIdx, opt, type) => {
@@ -8985,7 +10434,7 @@ if (!empty($Tests)) {
                     App.renderExecutionQuestion();
                     App.renderNavigator();
                 } else {
-                    App.showSubmitConfirmation();
+                    App.openFinalSubmissionPage();
                 }
             },
 
@@ -9054,24 +10503,256 @@ if (!empty($Tests)) {
             },
 
             showSubmitConfirmation: () => {
-                const answered = Object.keys(App.executionState.answers).length;
-                const total = App.executionState.questions.length;
-                document.getElementById('confirmAnsweredCount').textContent = answered;
-                document.getElementById('confirmTotalCount').textContent = total;
-                document.getElementById('submitConfirmModal').classList.remove('d-none');
+                App.openFinalSubmissionPage();
             },
 
             hideSubmitConfirmation: () => {
                 document.getElementById('submitConfirmModal').classList.add('d-none');
             },
 
-            confirmSubmit: () => App.showSubmitConfirmation(),
+            readExecutionFileAsDataUrl: (file) => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || ''));
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            }),
+
+            renderExecutionAttachmentList: () => {
+                const wrap = document.getElementById('execFinalAttachmentList');
+                if (!wrap) return;
+                const files = Array.isArray(App.executionState.attachments) ? App.executionState.attachments : [];
+                if (!files.length) {
+                    wrap.innerHTML = '<div class="text-[11px] text-slate-400 italic">No files selected.</div>';
+                    return;
+                }
+                wrap.innerHTML = files.map((f, idx) => `
+                    <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white">
+                        <div class="min-w-0">
+                            <div class="text-[11px] font-bold text-slate-700 truncate">${f.name}</div>
+                            <div class="text-[10px] text-slate-400">${Math.max(1, Math.round((f.size || 0) / 1024))} KB</div>
+                        </div>
+                        <button type="button" class="text-red-500 hover:text-red-600 text-[11px] font-black uppercase tracking-wider" onclick="App.removeExecutionAttachment(${idx})">Remove</button>
+                    </div>
+                `).join('');
+            },
+
+            removeExecutionAttachment: (idx) => {
+                if (!Array.isArray(App.executionState.attachments)) App.executionState.attachments = [];
+                App.executionState.attachments.splice(idx, 1);
+                App.executionState.attachment = App.executionState.attachments[0] || null;
+                App.renderExecutionAttachmentList();
+            },
+
+            onExecutionAttachmentsChange: async (inputEl) => {
+                const files = Array.from(inputEl?.files || []);
+                if (!files.length) return;
+                const maxBytes = 2 * 1024 * 1024;
+                const validFiles = files.filter(file => (file.size || 0) <= maxBytes);
+                if (validFiles.length !== files.length) {
+                    Swal.fire('File too large', 'Some files were skipped because they exceed 2 MB.', 'warning');
+                }
+                const current = Array.isArray(App.executionState.attachments) ? App.executionState.attachments : [];
+                const room = Math.max(0, 10 - current.length);
+                const picked = validFiles.slice(0, room);
+                if (!picked.length) {
+                    if (inputEl) inputEl.value = '';
+                    App.renderExecutionAttachmentList();
+                    return;
+                }
+                try {
+                    const parsed = await Promise.all(picked.map(async file => ({
+                        name: file.name,
+                        type: file.type || 'application/octet-stream',
+                        size: file.size || 0,
+                        data_url: await App.readExecutionFileAsDataUrl(file)
+                    })));
+                    App.executionState.attachments = [...current, ...parsed];
+                    App.executionState.attachment = App.executionState.attachments[0] || null;
+                    App.renderExecutionAttachmentList();
+                } catch (e) {
+                    Swal.fire('Attachment error', 'Failed to read selected file.', 'error');
+                } finally {
+                    if (inputEl) inputEl.value = '';
+                }
+            },
+
+            onExecutionAttachmentChange: (inputEl) => App.onExecutionAttachmentsChange(inputEl),
+
+            openFinalSubmissionPage: () => {
+                document.getElementById('questionCard')?.classList.add('d-none');
+                document.getElementById('execQuestionFooter')?.classList.add('d-none');
+                document.getElementById('finalSubmissionPage')?.classList.remove('d-none');
+                App.renderExecutionAttachmentList();
+            },
+
+            backToQuestionsFromFinal: () => {
+                document.getElementById('questionCard')?.classList.remove('d-none');
+                document.getElementById('execQuestionFooter')?.classList.remove('d-none');
+                document.getElementById('finalSubmissionPage')?.classList.add('d-none');
+            },
+
+            confirmSubmit: () => App.openFinalSubmissionPage(),
+
+            isMcqCorrect: (question, answer) => {
+                if (answer === undefined || answer === null) return false;
+
+                const normalize = (v) => String(v || '').trim().toLowerCase();
+                const correctRaw = String(question.correct_answer || '').trim();
+                if (!correctRaw) return false;
+
+                const optionMap = {
+                    a: question.option_a || '',
+                    b: question.option_b || '',
+                    c: question.option_c || '',
+                    d: question.option_d || ''
+                };
+
+                const expectedValues = correctRaw
+                    .split(/[,/|]/)
+                    .map(s => s.trim())
+                    .filter(Boolean)
+                    .map(token => {
+                        const key = token.toLowerCase();
+                        if (optionMap[key]) return optionMap[key];
+                        return token;
+                    });
+
+                if (Array.isArray(answer)) {
+                    const selected = answer.map(normalize).filter(Boolean).sort();
+                    const expected = expectedValues.map(normalize).filter(Boolean).sort();
+                    return selected.length > 0 &&
+                        selected.length === expected.length &&
+                        selected.every((v, idx) => v === expected[idx]);
+                }
+
+                const ans = normalize(answer);
+                const expectedNormalized = expectedValues.map(normalize);
+                return expectedNormalized.includes(ans) || expectedNormalized.includes(normalize(optionMap[ans]));
+            },
+
+            getCandidateName: () => {
+                const el = document.getElementById('execCandidateName');
+                return (el?.textContent || 'Candidate').trim();
+            },
+
+            getSubmissionKey: () => {
+                const name = App.getCandidateName();
+                const packId = App.executionState.packId || 'pack';
+                return `${packId}::${name}`;
+            },
+
+            getAttachmentActionsHtml: (submission) => {
+                const file = submission?.attachment || (Array.isArray(submission?.attachments) ? submission.attachments[0] : null);
+                if (!file || !file.data_url) {
+                    return '<span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">-</span>';
+                }
+                const safeName = String(file.name || 'attachment').replace(/"/g, '');
+                return `
+                    <div class="flex items-center justify-center gap-2">
+                        <a href="${file.data_url}" target="_blank" onclick="event.stopPropagation()"
+                            class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all inline-flex items-center justify-center"
+                            title="View Attachment">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="${file.data_url}" download="${safeName}" onclick="event.stopPropagation()"
+                            class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all inline-flex items-center justify-center"
+                            title="Download Attachment">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                `;
+            },
+
+            getAllSubmissions: () => Object.values(App.evaluationState.submissions || {}),
+
+            getPackSubmissionStats: (packId) => {
+                const rows = App.getAllSubmissions().filter(s => String(s.pack_id) === String(packId));
+                const completed = rows.filter(s => s.completed).length;
+                const subjectivePending = rows.filter(s =>
+                    (s.subjective_items || []).some(q => (q.candidate_answer || '').trim() && !q.graded)
+                ).length;
+                return { total: rows.length, completed, subjectivePending };
+            },
 
             submitTest: (auto = false) => {
                 clearInterval(App.executionState.timerInterval);
                 document.getElementById('submitConfirmModal').classList.add('d-none');
                 document.getElementById('executionView').classList.add('d-none');
                 document.getElementById('submissionSuccessOverlay').classList.remove('d-none');
+
+                const questions = App.executionState.questions || [];
+                const answers = App.executionState.answers || {};
+
+                let mcqScore = 0;
+                let mcqTotal = 0;
+                const subjectiveItems = [];
+
+                questions.forEach((q, idx) => {
+                    const type = App.normalizeType(q.type);
+                    const marks = parseInt(q.marks || 0, 10) || 0;
+                    const answer = answers[idx];
+
+                    if (type === 'mcq') {
+                        mcqTotal += marks;
+                        if (App.isMcqCorrect(q, answer)) mcqScore += marks;
+                    } else if (type === 'descriptive') {
+                        const ansText = String(answer ?? '').trim();
+                        if (!ansText) return;
+                        subjectiveItems.push({
+                            id: `${q.id || idx}`,
+                            index: idx,
+                            text: q.text || '',
+                            marks,
+                            candidate_answer: ansText,
+                            awarded_marks: null,
+                            graded: false
+                        });
+                    }
+                });
+
+                const totalMarks = questions.reduce((sum, q) => sum + (parseInt(q.marks || 0, 10) || 0), 0);
+                const elapsedSeconds = Math.max(
+                    0,
+                    (parseInt(App.executionState.durationMins || 60, 10) * 60) - (parseInt(App.executionState.timeLeft || 0, 10))
+                );
+                const manualScore = subjectiveItems.reduce((sum, item) => sum + (item.awarded_marks || 0), 0);
+                const finalScore = mcqScore + manualScore;
+                const key = App.getSubmissionKey();
+
+                App.evaluationState.submissions[key] = {
+                    key,
+                    candidate_name: App.getCandidateName(),
+                    test_id: App.executionState.testId,
+                    pack_id: App.executionState.packId,
+                    test_name: App.executionState.testName || 'Test',
+                    batch_name: App.executionState.batchName || 'Batch',
+                    test_type: App.executionState.testType || 'Standard',
+                    assigned_roles: App.executionState.assignedRoles || 'General Access',
+                    submitted_date: new Date().toISOString(),
+                    submitted_at: Date.now(),
+                    completed: true,
+                    auto_submitted: !!auto,
+                    mcq_score: mcqScore,
+                    mcq_total: mcqTotal,
+                    subjective_total: subjectiveItems.reduce((sum, item) => sum + item.marks, 0),
+                    subjective_items: subjectiveItems,
+                    evaluation_saved: subjectiveItems.length === 0,
+                    final_score: finalScore,
+                    total_marks: totalMarks,
+                    pass_mark: parseInt(App.executionState.passMark || 70, 10) || 70,
+                    duration_seconds: elapsedSeconds,
+                    answers_snapshot: { ...answers },
+                    attachment: App.executionState.attachment ? { ...App.executionState.attachment } : null,
+                    attachments: Array.isArray(App.executionState.attachments)
+                        ? App.executionState.attachments.map(f => ({ ...f }))
+                        : []
+                };
+
+                App.saveEvaluationState();
+                App.loadCandidateResult();
+                App.renderEvaluatorView();
+                if (typeof initTestsDataTable === 'function') initTestsDataTable();
+                if (typeof App.initExecutionDashboard === 'function') App.initExecutionDashboard();
             },
 
 
@@ -9081,34 +10762,316 @@ if (!empty($Tests)) {
             },
 
             // --- Results & Evaluation ---
-            loadCandidateResult: (id) => {
-                const mockLeaderboard = [
-                    { name: 'Arjun Sharma', score: 82, accuracy: '82%', status: 'Pass', time: '42m 15s' },
-                    { name: 'Priya Patel', score: 80, accuracy: '80%', status: 'Pass', time: '38m 20s' },
-                    { name: 'Vikram Singh', score: 80, accuracy: '80%', status: 'Pass', time: '45m 10s' },
-                    { name: 'Ananya Iyer', score: 78, accuracy: '78%', status: 'Pass', time: '52m 05s' },
-                    { name: 'Rohan Mehta', score: 75, accuracy: '75%', status: 'Pass', time: '48m 30s' },
-                    { name: 'Sneha Reddy', score: 72, accuracy: '72%', status: 'Pass', time: '55m 45s' },
-                    { name: 'Kabir Das', score: 68, accuracy: '68%', status: 'Fail', time: '58m 12s' }
-                ];
-                const tbody = document.getElementById('topicBreakdownTable');
-                if (tbody) tbody.innerHTML = mockLeaderboard.map((item, idx) => `
-                <tr class="hover:bg-[#f8fafc] transition-colors cursor-pointer" onclick="App.loadDetailedResult('${item.name}')">
-                    <td class="px-6 py-2 text-[11px] font-bold text-[#94a3b8]">${idx + 1}</td>
-                    <td class="px-6 py-2 text-[13px] font-bold text-[#334155]">${item.name}</td>
-                    <td class="px-6 py-2 text-[13px] text-[#64748b] text-center font-medium">${item.score}</td>
-                    <td class="px-6 py-2 text-[13px] text-[#64748b] text-center font-medium">${item.accuracy}</td>
-                    <td class="px-6 py-2 text-center">
-                        <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${item.status === 'Pass' ? 'bg-[#f0fdf4] text-[#16a34a]' : 'bg-[#fef2f2] text-[#dc2230]'}">${item.status}</span>
-                    </td>
-                    <td class="px-6 py-2 font-bold text-[#475569] text-right text-[13px]">${item.time}</td>
-                </tr>
-            `).join('');
+            loadCandidateResult: () => {
+                const testTypeFilterEl = document.getElementById('resultsTypeFilter');
+                const testFilterEl = document.getElementById('resultsTestFilter');
+                const groupFilterEl = document.getElementById('resultsGroupFilter');
+                const dateFilterEl = document.getElementById('resultsDateFilter');
+                const sortFilterEl = document.getElementById('resultsSortFilter');
+                const candidateSearchEl = document.getElementById('resultsCandidateSearch');
 
-                document.getElementById('resTotalScore').textContent = '82';
-                document.getElementById('resPercentage').textContent = '82%';
-                document.getElementById('resTimeTaken').textContent = '78m';
-                document.getElementById('breakdown-cat-count').textContent = `${mockLeaderboard.length} Candidates`;
+                const selectedType = testTypeFilterEl?.value || '';
+                const selectedTest = testFilterEl?.value || '';
+                const selectedGroup = groupFilterEl?.value || '';
+                const selectedDate = dateFilterEl?.value || '';
+                const sortMode = sortFilterEl?.value || 'high';
+                const candidateSearch = (candidateSearchEl?.value || '').trim().toLowerCase();
+
+                const norm = (v) => String(v || '').trim();
+                const normLower = (v) => norm(v).toLowerCase();
+                const ymd = (v) => {
+                    if (!v) return '';
+                    const d = new Date(v);
+                    if (Number.isNaN(d.getTime())) return '';
+                    return d.toISOString().slice(0, 10);
+                };
+
+                const submissionsByPackCandidate = {};
+                const submissions = App.getAllSubmissions().map(item => {
+                    const subjectiveAwarded = (item.subjective_items || []).reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
+                    const finalScore = (item.mcq_score || 0) + ((item.evaluation_saved || (item.subjective_items || []).length === 0) ? subjectiveAwarded : 0);
+                    const totalMarks = parseInt(item.total_marks || 0, 10) || 0;
+                    const accuracy = totalMarks > 0 ? Math.round((finalScore / totalMarks) * 100) : 0;
+                    const passMark = parseInt(item.pass_mark || 70, 10) || 70;
+                    const passCutoff = Math.round((totalMarks * passMark) / 100);
+                    const key = `${item.pack_id || ''}::${normLower(item.candidate_name)}`;
+                    const enriched = {
+                        ...item,
+                        final_score: finalScore,
+                        total_marks: totalMarks,
+                        accuracy,
+                        status: item.completed ? 'Completed' : 'Pending',
+                        pass_fail: finalScore >= passCutoff ? 'Pass' : 'Fail',
+                        submitted_ymd: ymd(item.submitted_date || item.submitted_at)
+                    };
+                    submissionsByPackCandidate[key] = enriched;
+                    return enriched;
+                });
+
+                const roleMap = {};
+                (App.Tests || []).forEach(test => {
+                    const testName = norm(test?.name);
+                    const testType = norm(test?.type);
+                    const role = norm(test?.assigned_to || test?.user_role || 'General Access');
+                    (test?.test_packs || []).forEach(pack => {
+                        const packId = String(pack?.id || '');
+                        if (!packId) return;
+                        roleMap[packId] = roleMap[packId] || {
+                            test_name: testName || '-',
+                            test_type: testType || '-',
+                            role: role || '-',
+                            group_name: norm(pack?.pack_name || 'Batch'),
+                            date_ymd: ymd(pack?.scheduled_date || pack?.start_time)
+                        };
+                    });
+                });
+
+                const rows = [];
+                (App.Tests || []).forEach(test => {
+                    const testName = norm(test?.name || '-');
+                    const testType = norm(test?.type || '-');
+                    const role = norm(test?.assigned_to || test?.user_role || 'General Access');
+                    const packs = Array.isArray(test?.test_packs) ? test.test_packs : [];
+
+                    packs.forEach(pack => {
+                        const packId = String(pack?.id || '');
+                        if (!packId) return;
+                        const groupName = norm(pack?.pack_name || 'Batch');
+                        const dateYmd = ymd(pack?.scheduled_date || pack?.start_time);
+                        const passMark = parseInt(pack?.pass_mark || test?.pass_mark || 70, 10) || 70;
+
+                        const selectedIds = (() => {
+                            const raw = norm(pack?.candidates);
+                            if (!raw || raw.toLowerCase() === 'all') {
+                                return (App.employees || []).map(e => String(e.id));
+                            }
+                            return raw.split(',').map(v => v.trim()).filter(Boolean);
+                        })();
+
+                        selectedIds.forEach(empId => {
+                            const emp = (App.employees || []).find(e => String(e.id) === String(empId));
+                            if (!emp) return;
+                            const candidateName = norm(emp?.name || '');
+                            if (!candidateName) return;
+                            const subKey = `${packId}::${normLower(candidateName)}`;
+                            const submission = submissionsByPackCandidate[subKey];
+
+                            if (submission) {
+                                const totalMarks = parseInt(submission.total_marks || 0, 10) || 0;
+                                const finalScore = parseInt(submission.final_score || 0, 10) || 0;
+                                const accuracy = totalMarks > 0 ? Math.round((finalScore / totalMarks) * 100) : 0;
+                                const passCutoff = Math.round((totalMarks * passMark) / 100);
+                                rows.push({
+                                    key: submission.key || subKey,
+                                    candidate_name: candidateName,
+                                    test_type: norm(submission.test_type || testType),
+                                    test_name: norm(submission.test_name || testName),
+                                    role: norm(submission.assigned_roles || role),
+                                    group_name: groupName,
+                                    date_ymd: submission.submitted_ymd || dateYmd,
+                                    status: 'Completed',
+                                    marks_text: `${finalScore} / ${totalMarks}`,
+                                    final_score: finalScore,
+                                    overall_pct: accuracy,
+                                    pass_fail: finalScore >= passCutoff ? 'Pass' : 'Fail',
+                                    subjective_items: submission.subjective_items || []
+                                });
+                            } else {
+                                rows.push({
+                                    key: `pending::${packId}::${empId}`,
+                                    candidate_name: candidateName,
+                                    test_type: testType,
+                                    test_name: testName,
+                                    role: role,
+                                    group_name: groupName,
+                                    date_ymd: dateYmd,
+                                    status: 'Pending',
+                                    marks_text: '0 / 0',
+                                    final_score: 0,
+                                    overall_pct: 0,
+                                    pass_fail: '-',
+                                    subjective_items: []
+                                });
+                            }
+                        });
+                    });
+                });
+
+                // Include completed submissions even if no candidate mapping exists anymore
+                submissions.forEach(sub => {
+                    const already = rows.some(r => String(r.key) === String(sub.key));
+                    if (already) return;
+                    const meta = roleMap[String(sub.pack_id)] || {};
+                    rows.push({
+                        key: sub.key,
+                        candidate_name: norm(sub.candidate_name || 'Candidate'),
+                        test_type: norm(sub.test_type || meta.test_type || '-'),
+                        test_name: norm(sub.test_name || meta.test_name || '-'),
+                        role: norm(sub.assigned_roles || meta.role || '-'),
+                        group_name: norm(sub.batch_name || meta.group_name || 'Batch'),
+                        date_ymd: sub.submitted_ymd || meta.date_ymd || '',
+                        status: 'Completed',
+                        marks_text: `${sub.final_score || 0} / ${sub.total_marks || 0}`,
+                        final_score: parseInt(sub.final_score || 0, 10) || 0,
+                        overall_pct: parseInt(sub.accuracy || 0, 10) || 0,
+                        pass_fail: sub.pass_fail || '-',
+                        subjective_items: sub.subjective_items || []
+                    });
+                });
+
+                const bindOptions = (el, options, allText) => {
+                    if (!el) return;
+                    const current = el.value || '';
+                    const safeOptions = [...new Set(options.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+                    el.innerHTML = `<option value="">${allText}</option>${safeOptions.map(v => `<option value="${v}">${v}</option>`).join('')}`;
+                    if (safeOptions.includes(current)) el.value = current;
+                };
+
+                bindOptions(testTypeFilterEl, rows.map(r => r.test_type), 'All Test Types');
+                bindOptions(testFilterEl, rows.map(r => r.test_name), 'All Test Names');
+
+                let activeSelectedTest = selectedTest;
+                const contextTestName = String(App.resultsContextTestName || '').trim();
+                if (contextTestName && testFilterEl) {
+                    const matchingOption = Array.from(testFilterEl.options || []).find(opt => opt.value === contextTestName);
+                    if (matchingOption) {
+                        testFilterEl.value = contextTestName;
+                        activeSelectedTest = contextTestName;
+                        if (groupFilterEl) groupFilterEl.value = '';
+                        if (dateFilterEl) dateFilterEl.value = '';
+                    }
+                    App.resultsContextTestName = '';
+                }
+
+                const groupScopeRows = activeSelectedTest
+                    ? rows.filter(r => r.test_name === activeSelectedTest)
+                    : rows;
+                bindOptions(groupFilterEl, groupScopeRows.map(r => r.group_name), 'All Groups');
+                bindOptions(dateFilterEl, groupScopeRows.map(r => r.date_ymd), 'All Dates');
+
+                let filtered = rows.filter(r => {
+                    if (selectedType && r.test_type !== selectedType) return false;
+                    if (activeSelectedTest && r.test_name !== activeSelectedTest) return false;
+                    if (selectedGroup && r.group_name !== selectedGroup) return false;
+                    if (selectedDate && r.date_ymd !== selectedDate) return false;
+                    if (candidateSearch && !normLower(r.candidate_name).includes(candidateSearch)) return false;
+                    return true;
+                });
+
+                filtered.sort((a, b) => {
+                    const scoreDiff = sortMode === 'low' ? (a.final_score - b.final_score) : (b.final_score - a.final_score);
+                    if (scoreDiff !== 0) return scoreDiff;
+                    return norm(a.candidate_name).localeCompare(norm(b.candidate_name));
+                });
+
+                const paginationState = App.resultsPagination || { page: 1, perPage: 10 };
+                App.resultsPagination = paginationState;
+                const totalRows = filtered.length;
+                const totalPages = Math.max(1, Math.ceil(totalRows / paginationState.perPage));
+                if (paginationState.page > totalPages) paginationState.page = totalPages;
+                if (paginationState.page < 1) paginationState.page = 1;
+                const startIdx = (paginationState.page - 1) * paginationState.perPage;
+                const endIdx = startIdx + paginationState.perPage;
+                const pagedRows = filtered.slice(startIdx, endIdx);
+
+                const tbody = document.getElementById('topicBreakdownTable');
+                if (tbody) {
+                    if (!pagedRows.length) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="px-6 py-8 text-center text-[12px] font-bold text-slate-400 uppercase tracking-widest">
+                                    No candidate data found
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        tbody.innerHTML = pagedRows.map((item) => `
+                            ${(() => {
+                                const hasAnsweredSubjective = (item.subjective_items || []).some(q => (q.candidate_answer || '').trim() !== '');
+                                const canEvaluate = item.status === 'Completed' && !!item.key && !String(item.key).startsWith('pending::') && hasAnsweredSubjective;
+                                const evaluateCell = canEvaluate
+                                    ? `<button class="w-7 h-7 rounded-md border border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all inline-flex items-center justify-center"
+                                            onclick="event.stopPropagation(); App.openEvaluatorForSubmission('${item.key}')"
+                                            title="Evaluate Candidate">
+                                            <i class="bi bi-clipboard-check text-[11px]"></i>
+                                       </button>`
+                                    : `<span class="text-slate-300 text-[11px] font-black">-</span>`;
+                                return `
+                            <tr class="hover:bg-[#f8fafc] transition-colors">
+                                <td class="px-6 py-2 text-[12px] font-bold text-[#334155]">${item.candidate_name || '-'}</td>
+                                <td class="px-6 py-2 text-[12px] text-[#64748b] text-center font-bold">${item.test_type || '-'}</td>
+                                <td class="px-6 py-2 text-[12px] text-[#64748b] text-center font-bold uppercase">${item.role || '-'}</td>
+                                <td class="px-6 py-2 text-center">
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${item.status === 'Completed' ? 'bg-[#ecfeff] text-[#0891b2] border border-[#a5f3fc]' : 'bg-[#f8fafc] text-[#64748b] border border-[#e2e8f0]'}">${item.status}</span>
+                                </td>
+                                <td class="px-6 py-2 text-[12px] text-right font-black text-[#dc2230]">${item.marks_text}</td>
+                                <td class="px-6 py-2 text-[12px] text-right font-black text-[#1e293b]">${item.overall_pct}%</td>
+                                <td class="px-6 py-2 text-center">
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${item.pass_fail === 'Pass' ? 'bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]' : item.pass_fail === 'Fail' ? 'bg-[#fef2f2] text-[#dc2626] border border-[#fecaca]' : 'bg-[#f8fafc] text-[#64748b] border border-[#e2e8f0]'}">${item.pass_fail}</span>
+                                </td>
+                                <td class="px-6 py-2 text-center">${evaluateCell}</td>
+                            </tr>
+                            `;
+                            })()}
+                        `).join('');
+                    }
+                }
+
+                const paginationEl = document.getElementById('resultsLeaderboardPagination');
+                if (paginationEl) {
+                    if (totalRows <= paginationState.perPage) {
+                        paginationEl.innerHTML = '';
+                    } else {
+                        const maxVisible = 5;
+                        let startPage = Math.max(1, paginationState.page - Math.floor(maxVisible / 2));
+                        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+                        if ((endPage - startPage + 1) < maxVisible) {
+                            startPage = Math.max(1, endPage - maxVisible + 1);
+                        }
+
+                        const pageBtns = [];
+                        for (let p = startPage; p <= endPage; p++) {
+                            pageBtns.push(`
+                                <button type="button"
+                                    class="h-8 min-w-[32px] px-2 rounded-md text-[10px] font-black border transition-all ${p === paginationState.page ? 'bg-red-600 text-white border-red-600' : 'bg-white text-slate-500 border-slate-200 hover:border-red-200 hover:text-red-600'}"
+                                    onclick="App.setResultsPage(${p})">${p}</button>
+                            `);
+                        }
+
+                        paginationEl.innerHTML = `
+                            <button type="button"
+                                class="h-8 px-3 rounded-md text-[10px] font-black border ${paginationState.page === 1 ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-white text-slate-500 border-slate-200 hover:border-red-200 hover:text-red-600'}"
+                                ${paginationState.page === 1 ? 'disabled' : ''}
+                                onclick="App.setResultsPage(${paginationState.page - 1})">Previous</button>
+                            ${pageBtns.join('')}
+                            <button type="button"
+                                class="h-8 px-3 rounded-md text-[10px] font-black border ${paginationState.page === totalPages ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-white text-slate-500 border-slate-200 hover:border-red-200 hover:text-red-600'}"
+                                ${paginationState.page === totalPages ? 'disabled' : ''}
+                                onclick="App.setResultsPage(${paginationState.page + 1})">Next</button>
+                        `;
+                    }
+                }
+
+                const hasAnyFilter = !!(selectedType || activeSelectedTest || selectedGroup || selectedDate || candidateSearch);
+                const totalScore = hasAnyFilter ? filtered.reduce((sum, r) => sum + (r.final_score || 0), 0) : 0;
+                const completedRows = hasAnyFilter ? filtered.filter(r => r.status === 'Completed') : [];
+                const passRows = completedRows.filter(r => r.pass_fail === 'Pass');
+                const failRows = completedRows.filter(r => r.pass_fail === 'Fail');
+                const pendingRows = hasAnyFilter ? filtered.filter(r => r.status === 'Pending') : [];
+                const passPct = hasAnyFilter && completedRows.length ? Math.round((passRows.length / completedRows.length) * 100) : 0;
+
+                const totalScoreEl = document.getElementById('resSummaryTotalScore');
+                const passPctEl = document.getElementById('resSummaryPassPct');
+                const failCountEl = document.getElementById('resSummaryFailCount');
+                const pendingCountEl = document.getElementById('resSummaryPendingCount');
+                if (totalScoreEl) totalScoreEl.textContent = `${totalScore}`;
+                if (passPctEl) passPctEl.textContent = `${passPct}%`;
+                if (failCountEl) failCountEl.textContent = `${failRows.length}`;
+                if (pendingCountEl) pendingCountEl.textContent = `${pendingRows.length}`;
+
+                const countEl = document.getElementById('breakdown-cat-count');
+                if (countEl) countEl.textContent = `${filtered.length} Candidate${filtered.length === 1 ? '' : 's'}`;
+
             },
 
             loadDetailedResult: (name) => {
@@ -9119,6 +11082,298 @@ if (!empty($Tests)) {
                     timer: 1000,
                     showConfirmButton: false
                 });
+            },
+
+            deleteLeaderboardEntry: async (submissionKey) => {
+                const submission = App.evaluationState.submissions?.[submissionKey];
+                if (!submission) return;
+
+                const result = await Swal.fire({
+                    title: 'Delete Candidate Score?',
+                    text: `This will remove ${submission.candidate_name || 'this candidate'} from leaderboard and evaluator list.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Delete',
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#cbd5e1'
+                });
+                if (!result.isConfirmed) return;
+
+                delete App.evaluationState.submissions[submissionKey];
+                App.saveEvaluationState();
+                App.loadCandidateResult();
+                App.renderEvaluatorView();
+                if (typeof initTestsDataTable === 'function') initTestsDataTable();
+                if (typeof App.initExecutionDashboard === 'function') App.initExecutionDashboard();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Deleted',
+                    text: 'Candidate score entry removed.',
+                    timer: 1000,
+                    showConfirmButton: false
+                });
+            },
+
+            setResultsPage: (pageNo) => {
+                if (!App.resultsPagination) App.resultsPagination = { page: 1, perPage: 10 };
+                App.resultsPagination.page = Math.max(1, parseInt(pageNo || 1, 10) || 1);
+                App.loadCandidateResult();
+            },
+
+            openResultsForTest: (testName) => {
+                App.resultsContextTestName = String(testName || '').trim();
+                if (typeof window.switchMainTab === 'function') window.switchMainTab('results');
+                if (typeof window.switchResultView === 'function') window.switchResultView('student');
+            },
+
+            /**
+             * Build leaderboard rows for one batch (same scoring rules as admin leaderboard).
+             */
+            computePackScoreboard: (packId) => {
+                const pid = String(packId ?? '');
+                if (!pid) return null;
+                let pack = null;
+                let test = null;
+                for (const t of App.Tests || []) {
+                    const p = (t.test_packs || []).find(pp => String(pp.id) === pid);
+                    if (p) {
+                        pack = p;
+                        test = t;
+                        break;
+                    }
+                }
+                if (!pack || !test) return null;
+
+                const norm = (v) => String(v || '').trim();
+                const normLower = (v) => norm(v).toLowerCase();
+
+                const submissionsByKey = {};
+                App.getAllSubmissions().forEach((item) => {
+                    if (String(item.pack_id) !== pid) return;
+                    const subjectiveAwarded = (item.subjective_items || []).reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
+                    const gradedPart = (item.evaluation_saved || (item.subjective_items || []).length === 0) ? subjectiveAwarded : 0;
+                    const finalScore = (item.mcq_score || 0) + gradedPart;
+                    const totalMarks = parseInt(item.total_marks || 0, 10) || 0;
+                    const k = `${pid}::${normLower(item.candidate_name)}`;
+                    submissionsByKey[k] = { item, final_score: finalScore, total_marks: totalMarks };
+                });
+
+                const selectedIds = (() => {
+                    const raw = norm(pack.candidates);
+                    if (!raw || raw.toLowerCase() === 'all') {
+                        return (App.employees || []).map(e => String(e.id));
+                    }
+                    return raw.split(',').map((v) => v.trim()).filter(Boolean);
+                })();
+
+                const passMarkPct = parseInt(pack.pass_mark ?? test.pass_mark ?? 70, 10) || 70;
+                const board = [];
+                selectedIds.forEach((empId) => {
+                    const emp = (App.employees || []).find((e) => String(e.id) === String(empId));
+                    if (!emp) return;
+                    const candidateName = norm(emp.name);
+                    if (!candidateName) return;
+                    const sk = `${pid}::${normLower(candidateName)}`;
+                    const hit = submissionsByKey[sk];
+                    let finalScore = 0;
+                    let totalMarks = 0;
+                    let submission = null;
+                    if (hit) {
+                        finalScore = hit.final_score;
+                        totalMarks = hit.total_marks;
+                        submission = hit.item;
+                    }
+                    const overallPct = totalMarks > 0 ? Math.round((finalScore / totalMarks) * 100) : 0;
+                    const passCutoff = Math.round((totalMarks * passMarkPct) / 100);
+                    let passFail = '-';
+                    if (totalMarks > 0) {
+                        passFail = finalScore >= passCutoff ? 'Pass' : 'Fail';
+                    }
+                    board.push({
+                        candidate_name: candidateName,
+                        final_score: finalScore,
+                        total_marks: totalMarks,
+                        overall_pct: overallPct,
+                        pass_fail: passFail,
+                        submission
+                    });
+                });
+
+                // Submissions keyed by display name at test time may not match roster names (e.g. "Candidate" vs HR name).
+                const namesOnBoard = new Set(board.map((r) => normLower(r.candidate_name)));
+                App.getAllSubmissions().forEach((item) => {
+                    if (String(item.pack_id) !== pid || !item.completed) return;
+                    const cn = norm(item.candidate_name);
+                    if (!cn) return;
+                    if (namesOnBoard.has(normLower(cn))) return;
+                    const subjectiveAwarded = (item.subjective_items || []).reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
+                    const gradedPart = (item.evaluation_saved || (item.subjective_items || []).length === 0) ? subjectiveAwarded : 0;
+                    const fs = (item.mcq_score || 0) + gradedPart;
+                    const tm = parseInt(item.total_marks || 0, 10) || 0;
+                    const overallPct = tm > 0 ? Math.round((fs / tm) * 100) : 0;
+                    const passCutoff = Math.round((tm * passMarkPct) / 100);
+                    let passFail = '-';
+                    if (tm > 0) passFail = fs >= passCutoff ? 'Pass' : 'Fail';
+                    board.push({
+                        candidate_name: cn,
+                        final_score: fs,
+                        total_marks: tm,
+                        overall_pct: overallPct,
+                        pass_fail: passFail,
+                        submission: item
+                    });
+                    namesOnBoard.add(normLower(cn));
+                });
+
+                board.sort((a, b) => {
+                    if (b.final_score !== a.final_score) return b.final_score - a.final_score;
+                    if (b.overall_pct !== a.overall_pct) return b.overall_pct - a.overall_pct;
+                    return a.candidate_name.localeCompare(b.candidate_name);
+                });
+
+                let lastRank = 0;
+                let lastKey = '';
+                board.forEach((row, idx) => {
+                    const tieKey = `${row.final_score}|${row.overall_pct}`;
+                    if (idx === 0 || tieKey !== lastKey) {
+                        lastRank = idx + 1;
+                        lastKey = tieKey;
+                    }
+                    row.rank = lastRank;
+                });
+
+                return { test, pack, board, passMarkPct };
+            },
+
+            openStudentResultSummaryModal: (packId) => {
+                const normL = (v) => String(v || '').trim().toLowerCase();
+                const me = normL(App.getCandidateName());
+                const modalEl = document.getElementById('studentResultSummaryModal');
+                const titleEl = document.getElementById('studentResultSummaryTitleLabel');
+                const subEl = document.getElementById('studentResultSummarySubtitle');
+                const bodyEl = document.getElementById('studentResultSummaryBody');
+                if (!modalEl || !titleEl || !subEl || !bodyEl) return;
+
+                const directSub = App.getAllSubmissions().find((s) =>
+                    String(s.pack_id) === String(packId) && s.completed && normL(s.candidate_name) === me
+                );
+                if (!directSub) {
+                    Swal.fire('No results', 'No completed submission was found for you in this batch.', 'info');
+                    return;
+                }
+
+                let data = App.computePackScoreboard(packId);
+                if (!data) {
+                    Swal.fire('Unavailable', 'Could not load this batch.', 'info');
+                    return;
+                }
+
+                const nameKey = normL(directSub.candidate_name);
+                let myRow = data.board.find((r) => normL(r.candidate_name) === nameKey && r.submission);
+                if (!myRow) {
+                    const subjectiveAwarded = (directSub.subjective_items || []).reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
+                    const gradedPart = (directSub.evaluation_saved || (directSub.subjective_items || []).length === 0) ? subjectiveAwarded : 0;
+                    const finalScore = (directSub.mcq_score || 0) + gradedPart;
+                    const totalMarks = parseInt(directSub.total_marks || 0, 10) || 0;
+                    const passMarkPct = data.passMarkPct;
+                    const overallPct = totalMarks > 0 ? Math.round((finalScore / totalMarks) * 100) : 0;
+                    const passCutoff = Math.round((totalMarks * passMarkPct) / 100);
+                    let passFail = '-';
+                    if (totalMarks > 0) passFail = finalScore >= passCutoff ? 'Pass' : 'Fail';
+                    const merged = data.board.filter((r) => normL(r.candidate_name) !== nameKey).concat([{
+                        candidate_name: String(directSub.candidate_name || '').trim() || App.getCandidateName(),
+                        final_score: finalScore,
+                        total_marks: totalMarks,
+                        overall_pct: overallPct,
+                        pass_fail: passFail,
+                        submission: directSub
+                    }]);
+                    merged.sort((a, b) => {
+                        if (b.final_score !== a.final_score) return b.final_score - a.final_score;
+                        if (b.overall_pct !== a.overall_pct) return b.overall_pct - a.overall_pct;
+                        return a.candidate_name.localeCompare(b.candidate_name);
+                    });
+                    let lastRank = 0;
+                    let lastKey = '';
+                    merged.forEach((row, idx) => {
+                        const tieKey = `${row.final_score}|${row.overall_pct}`;
+                        if (idx === 0 || tieKey !== lastKey) {
+                            lastRank = idx + 1;
+                            lastKey = tieKey;
+                        }
+                        row.rank = lastRank;
+                    });
+                    myRow = merged.find((r) => normL(r.candidate_name) === nameKey);
+                    data = { ...data, board: merged };
+                }
+
+                if (!myRow) {
+                    Swal.fire('No results', 'Could not match your submission to this batch.', 'info');
+                    return;
+                }
+
+                let evalNote = '';
+                const sub = myRow.submission || directSub;
+                const hasSubjective = Array.isArray(sub.subjective_items) && sub.subjective_items.length > 0;
+                if (hasSubjective && !sub.evaluation_saved) {
+                    evalNote = `
+                        <p class="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-0 mt-3">
+                            <i class="bi bi-info-circle me-1"></i> Descriptive scores may still update until evaluation is finalized.
+                        </p>`;
+                }
+
+                const passBadge = myRow.pass_fail === 'Pass'
+                    ? '<span class="inline-flex px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-100">Pass</span>'
+                    : (myRow.pass_fail === 'Fail'
+                        ? '<span class="inline-flex px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-red-50 text-red-700 border border-red-100">Fail</span>'
+                        : '<span class="inline-flex px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-slate-100 text-slate-600 border border-slate-200">—</span>');
+
+                titleEl.textContent = `${data.test.name || 'Test'} — your results`;
+                subEl.textContent = data.pack.pack_name || 'Batch';
+
+                bodyEl.innerHTML = `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Marks obtained</p>
+                            <p class="text-[22px] font-black text-slate-900 mb-0">${myRow.final_score}<span class="text-slate-400 text-[14px] font-bold"> / ${myRow.total_marks}</span></p>
+                        </div>
+                        <div class="rounded-xl border border-violet-100 bg-violet-50/60 p-4">
+                            <p class="text-[9px] font-black text-violet-700 uppercase tracking-widest mb-1">Overall rank in batch</p>
+                            <p class="text-[22px] font-black text-violet-900 mb-0">#${myRow.rank}<span class="text-violet-600/80 text-[12px] font-bold"> of ${data.board.length}</span></p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-white p-4">
+                        <div>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Overall %</p>
+                            <p class="text-[16px] font-black text-slate-800 mb-0">${myRow.overall_pct}%</p>
+                        </div>
+                        <div class="h-8 w-px bg-slate-100 hidden sm:block"></div>
+                        <div>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Outcome</p>
+                            <div>${passBadge}</div>
+                        </div>
+                        <div class="h-8 w-px bg-slate-100 hidden sm:block"></div>
+                        <div class="flex-1 min-w-[140px]">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Pass mark (${data.passMarkPct}%)</p>
+                            <p class="text-[12px] font-bold text-slate-600 mb-0">You need roughly ${Math.round((myRow.total_marks || 0) * (data.passMarkPct || 70) / 100)} marks to pass this test.</p>
+                        </div>
+                    </div>
+                    ${evalNote}
+                    <div class="mt-4 d-flex justify-content-end">
+                        <button type="button" class="btn btn-sm btn-light border text-slate-700 px-4" data-bs-dismiss="modal">Close</button>
+                    </div>`;
+
+                const inst = bootstrap.Modal.getOrCreateInstance(modalEl);
+                inst.show();
+            },
+
+            openEvaluatorForSubmission: (submissionKey) => {
+                if (!submissionKey) return;
+                App.activeEvaluatorSubmissionKey = submissionKey;
+                if (typeof window.switchMainTab === 'function') window.switchMainTab('results');
+                if (typeof window.switchResultView === 'function') window.switchResultView('evaluator');
+                App.renderEvaluatorView(submissionKey);
             },
 
             downloadBulkEvaluationTemplate: () => {
@@ -9203,73 +11458,227 @@ if (!empty($Tests)) {
                     if (result.isConfirmed) {
                         Swal.fire('Success', 'Marks updated successfully for 4 candidates.', 'success');
                         document.getElementById('bulkEvaluationPreview').classList.add('hidden');
-                        App.loadCandidateResult(1); // Refresh leaderboard
+                        App.loadCandidateResult(); // Refresh leaderboard
                     }
                 });
             },
 
-            renderEvaluatorView: (candidateId = 1) => {
+            renderEvaluatorView: (submissionKey = null) => {
                 const list = document.getElementById('pendingEvaluationList');
+                if (!list) return;
 
-                if (candidateId == "2") {
+                const submissions = App.getAllSubmissions().filter(s =>
+                    (s.subjective_items || []).some(q => (q.candidate_answer || '').trim() !== '')
+                );
+                if (!submissions.length) {
                     list.innerHTML = `
-                    <div class="py-12 text-center bg-gray-50/30 rounded-[10px] border border-dashed border-[#e2e8f0]">
-                        <div class="inline-flex items-center justify-center w-12 h-12 bg-[#f0fdf4] text-[#16a34a] rounded-full mb-3">
-                            <i class="bi bi-patch-check-fill text-2xl"></i>
+                        <div class="py-12 text-center bg-gray-50/30 rounded-[10px] border border-dashed border-[#e2e8f0]">
+                            <h5 class="text-sm font-bold text-[#1e293b]">No subjective evaluation required</h5>
+                            <p class="text-[11px] text-[#94a3b8] uppercase tracking-wider font-bold">Descriptive answers will appear here automatically after submission</p>
                         </div>
-                        <h5 class="text-sm font-bold text-[#1e293b]">Evaluation Complete</h5>
-                        <p class="text-[11px] text-[#94a3b8] uppercase tracking-wider font-bold">This candidate has no pending subjective items</p>
-                    </div>
-                `;
+                    `;
                     return;
                 }
 
-                const subjectiveQuestions = [
-                    {
-                        id: 10,
-                        text: 'Describe the SOLID principles in object-oriented design.',
-                        marks: 2,
-                        answer: '"SOLID is an acronym for five design principles intended to make software designs more understandable, flexible, and maintainable. S: Single Responsibility, O: Open-Closed, L: Liskov Substitution, I: Interface Segregation, D: Dependency Inversion. Each class should have one responsibility, be open for extension but closed for modification..."'
-                    },
-                    {
-                        id: 11,
-                        text: 'Explain the concept of closures in JavaScript.',
-                        marks: 2,
-                        answer: '"Candidate provided a detailed explanation of JavaScript concepts, focusing on practical implementation and best practices..."'
-                    }
-                ];
+                const key = submissionKey || App.activeEvaluatorSubmissionKey || submissions[0].key;
+                App.activeEvaluatorSubmissionKey = key;
 
-                list.innerHTML = subjectiveQuestions.map(q => `
-                <div class="bg-white border border-[#f1f5f9] rounded-[10px] p-4 shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="flex items-center gap-2">
-                            <span class="bg-[#eff6ff] text-[#2563eb] px-1.5 py-0.5 rounded-[3px] text-[10px] font-bold">Q${q.id}</span>
-                            <h5 class="text-[14px] font-bold text-[#1e293b] mb-0">${q.text}</h5>
-                        </div>
-                        <span class="bg-[#fefce8] text-[#a16207] px-2 py-0.5 rounded-[4px] text-[9px] font-bold border border-[#fef08a] uppercase tracking-wider">Pending Evaluation</span>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="text-[9px] font-bold text-[#94a3b8] uppercase tracking-widest mb-2 block">CANDIDATE ANSWER:</label>
-                        <div class="bg-[#f8fafc] border-l-[3px] border-[#e2e8f0] p-4 rounded-r-[8px]">
-                            <p class="text-[13px] text-[#475569] leading-relaxed italic mb-0">${q.answer}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center justify-between mt-4">
-                        <div class="flex items-center gap-4">
-                            <span class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest">Award Marks:</span>
-                            <div class="flex items-center gap-2">
-                                <input type="number" class="w-[44px] h-[32px] border border-[#cbd5e1] rounded-[4px] text-center font-bold text-[14px] outline-none focus:border-[#dc2230]" value="1" max="${q.marks}" min="0">
-                                <span class="text-[#2563eb] font-bold text-[12px]">/ ${q.marks} Marks</span>
+                const submission = App.evaluationState.submissions[key];
+                if (!submission) return;
+
+                const subjectiveItemsAll = submission.subjective_items || [];
+                const subjectiveItems = subjectiveItemsAll.filter(q => (q.candidate_answer || '').trim() !== '');
+                const pending = subjectiveItems.filter(q => !q.graded);
+                const awarded = subjectiveItems.reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
+                const subjectiveMaxPoints = subjectiveItems.reduce((s, q) => s + (parseInt(q.marks, 10) || 0), 0);
+
+                const evalAttachment = submission?.attachment || (Array.isArray(submission?.attachments) ? submission.attachments[0] : null);
+                const attachmentBlock = evalAttachment?.data_url
+                    ? `
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest mb-1">Attachment</p>
+                                <p class="text-[12px] font-black mb-0"><a href="${evalAttachment.data_url}" target="_blank" class="text-indigo-600 hover:text-indigo-700" onclick="event.stopPropagation()">View</a> · <a href="${evalAttachment.data_url}" download="${evalAttachment.name || 'attachment'}" class="text-emerald-600 hover:text-emerald-700" onclick="event.stopPropagation()">Download</a></p>
                             </div>
+                    `
+                    : '';
+
+                const headerCard = `
+                    <div class="px-1 py-1">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 ${evalAttachment?.data_url ? 'xl:grid-cols-4' : 'xl:grid-cols-3'} gap-4 items-start">
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest mb-1">Candidate</p>
+                                <p class="text-[14px] font-bold text-[#1e293b] mb-0">${submission.candidate_name}</p>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest mb-1">MCQ Auto Score</p>
+                                <p class="text-[14px] font-black text-[#2563eb] mb-0">${submission.mcq_score} / ${submission.mcq_total}</p>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest mb-1">Descriptive question graded</p>
+                                <p class="text-[14px] font-black text-[#dc2230] mb-0">${awarded} / ${subjectiveMaxPoints}</p>
+                            </div>
+                            ${attachmentBlock}
                         </div>
-                        <button class="bg-[#dc2230] hover:bg-[#c61e2b] text-white px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm" onclick="Swal.fire({ title: 'Grade Submitted', text: 'Marks for Q${q.id} have been updated.', icon: 'success' })">
+                    </div>
+                `;
+
+                if (!pending.length) {
+                    const saveEvalBtnBlock = submission.evaluation_saved ? '' : `
+                        <div class="flex justify-end">
+                            <button class="bg-[#dc2230] hover:bg-[#c61e2b] text-white px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm" onclick="App.saveFinalEvaluation('${submission.key}')">
+                                Save Evaluation
+                            </button>
+                        </div>
+                    `;
+                    list.innerHTML = `
+                        ${headerCard}
+                        ${saveEvalBtnBlock}
+                        <div class="py-12 text-center bg-gray-50/30 rounded-[10px] border border-dashed border-[#e2e8f0]">
+                            <div class="inline-flex items-center justify-center w-12 h-12 bg-[#f0fdf4] text-[#16a34a] rounded-full mb-3">
+                                <i class="bi bi-patch-check-fill text-2xl"></i>
+                            </div>
+                            <h5 class="text-sm font-bold text-[#1e293b]">Evaluation Complete</h5>
+                            <p class="text-[11px] text-[#94a3b8] uppercase tracking-wider font-bold">All subjective answers are graded</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                list.innerHTML = headerCard + `
+                    <div class="bg-white border border-[#e2e8f0] rounded-[10px] overflow-hidden shadow-sm">
+                        <div class="grid grid-cols-12 gap-2 px-4 py-2.5 bg-[#f8fafc] border-b border-[#f1f5f9]">
+                            <div class="col-span-4 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Question</div>
+                            <div class="col-span-6 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Candidate Answer</div>
+                            <div class="col-span-2 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest text-right">Marks</div>
+                        </div>
+                        ${subjectiveItems.map(q => `
+                            <div class="grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-[#f8fafc] last:border-0 items-start">
+                                <div class="col-span-4 pr-2">
+                                    <div class="flex items-start gap-2">
+                                        <span class="bg-[#eff6ff] text-[#2563eb] px-1.5 py-0.5 rounded-[3px] text-[10px] font-bold shrink-0">Q${q.index + 1}</span>
+                                        <div>
+                                            <p class="text-[12px] font-bold text-[#1e293b] mb-1 leading-snug">${q.text}</p>
+                                            <span class="${q.graded ? 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0]' : 'bg-[#fefce8] text-[#a16207] border-[#fef08a]'} inline-flex px-2 py-0.5 rounded-[4px] text-[9px] font-bold border uppercase tracking-wider">${q.graded ? 'Evaluated' : 'Pending'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-span-6">
+                                    <div class="h-[72px] overflow-y-auto bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] px-3 py-2">
+                                        <p class="text-[12px] text-[#475569] italic mb-0 whitespace-pre-wrap leading-relaxed">${q.candidate_answer || 'No answer submitted.'}</p>
+                                    </div>
+                                </div>
+                                <div class="col-span-2 flex items-start justify-end">
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" id="manual_mark_${submission.key}_${q.id}" class="w-[54px] h-[30px] border border-[#cbd5e1] rounded-[4px] text-center font-bold text-[12px] outline-none focus:border-[#dc2230]" value="${q.awarded_marks ?? 0}" max="${q.marks}" min="0" ${q.graded ? 'disabled' : ''}>
+                                        <span class="text-[#2563eb] font-bold text-[11px]">/ ${q.marks}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="flex justify-end mt-3">
+                        <button class="bg-[#dc2230] hover:bg-[#c61e2b] text-white px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm"
+                            onclick="App.submitAllManualGrades('${submission.key}')">
                             Submit Grade
                         </button>
                     </div>
-                </div>
-            `).join('');
+                `;
+            },
+
+            submitAllManualGrades: (submissionKey) => {
+                const submission = App.evaluationState.submissions[submissionKey];
+                if (!submission) return;
+
+                const subjectiveItems = (submission.subjective_items || []).filter(q => (q.candidate_answer || '').trim() !== '');
+                if (!subjectiveItems.length) {
+                    Swal.fire('Nothing to grade', 'No answered descriptive questions for grading.', 'info');
+                    return;
+                }
+
+                for (const item of subjectiveItems) {
+                    const input = document.getElementById(`manual_mark_${submissionKey}_${item.id}`);
+                    if (!input) continue;
+                    const maxMarks = parseInt(item.marks || 0, 10) || 0;
+                    const parsed = parseInt(input.value || '', 10);
+                    if (Number.isNaN(parsed)) {
+                        Swal.fire('Invalid marks', `Please enter marks for Q${(item.index || 0) + 1}.`, 'warning');
+                        return;
+                    }
+                    const safeVal = Math.max(0, Math.min(parsed, maxMarks));
+                    item.awarded_marks = safeVal;
+                    item.graded = true;
+                }
+
+                submission.evaluation_saved = false;
+                submission.final_score = (submission.mcq_score || 0) + subjectiveItems.reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
+                App.saveEvaluationState();
+                App.saveFinalEvaluation(submissionKey);
+            },
+
+            enableManualGradeEdit: (submissionKey, questionId) => {
+                const submission = App.evaluationState.submissions[submissionKey];
+                if (!submission) return;
+                const idx = (submission.subjective_items || []).findIndex(q => String(q.id) === String(questionId));
+                if (idx === -1) return;
+
+                submission.subjective_items[idx].graded = false;
+                submission.evaluation_saved = false;
+                App.saveEvaluationState();
+                App.renderEvaluatorView(submissionKey);
+            },
+
+            submitManualGrade: (submissionKey, questionId, maxMarks) => {
+                const input = document.getElementById(`manual_mark_${submissionKey}_${questionId}`);
+                if (!input) return;
+                const val = Math.max(0, Math.min(parseInt(input.value || '0', 10) || 0, parseInt(maxMarks || 0, 10) || 0));
+
+                const submission = App.evaluationState.submissions[submissionKey];
+                if (!submission) return;
+
+                const idx = (submission.subjective_items || []).findIndex(q => String(q.id) === String(questionId));
+                if (idx === -1) return;
+
+                submission.subjective_items[idx].awarded_marks = val;
+                submission.subjective_items[idx].graded = true;
+                submission.evaluation_saved = false;
+                submission.final_score = (submission.mcq_score || 0) + (submission.subjective_items || [])
+                    .filter(q => (q.candidate_answer || '').trim())
+                    .reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
+
+                App.saveEvaluationState();
+                App.loadCandidateResult();
+                App.renderEvaluatorView(submissionKey);
+
+                Swal.fire({ icon: 'success', title: 'Grade saved', timer: 1000, showConfirmButton: false });
+            },
+
+            saveFinalEvaluation: (submissionKey) => {
+                const submission = App.evaluationState.submissions[submissionKey];
+                if (!submission) return;
+
+                const answeredSub = (submission.subjective_items || []).filter(q => (q.candidate_answer || '').trim());
+                const pending = answeredSub.filter(q => !q.graded);
+                if (pending.length > 0) {
+                    Swal.fire('Pending grading', 'Please submit grades for all answered descriptive questions before saving evaluation.', 'warning');
+                    return;
+                }
+
+                submission.evaluation_saved = true;
+                submission.final_score = (submission.mcq_score || 0) + answeredSub.reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
+                App.saveEvaluationState();
+                App.loadCandidateResult();
+                App.activeEvaluatorSubmissionKey = submissionKey;
+                if (typeof window.switchResultView === 'function') {
+                    window.switchResultView('student');
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Evaluation Saved',
+                    text: 'Final score is updated in student score table.',
+                    timer: 1200,
+                    showConfirmButton: false
+                });
             },
 
             // --- Assign Questions Logic ---
@@ -9291,7 +11700,7 @@ if (!empty($Tests)) {
             addManualAssignQuestion: async (type) => {
                 let data = {
                     test_pack_id: document.querySelector('.assign_tp_id_input').value,
-                    type: type === 'MCQ' ? 'MCQ' : '2-Mark'
+                    type: type === 'MCQ' ? 'MCQ' : 'descriptive'
                 };
 
                 if (type === 'MCQ') {
@@ -9302,6 +11711,7 @@ if (!empty($Tests)) {
                     data.option_d = document.getElementById('mcq_opt_d').value;
                     data.correct_answer = document.getElementById('mcq_correct').value;
                     data.marks = 1;
+                    data.pedagogy = getPedagogyComboValue('assign_mcq_pedagogy');
 
                     if (!data.content || !data.option_a || !data.option_b || !data.correct_answer) {
                         Swal.fire('Incomplete Data', 'Please fill in the question, at least 2 options, and the correct answer.', 'warning');
@@ -9311,6 +11721,7 @@ if (!empty($Tests)) {
                     data.content = document.getElementById('m2_content').value;
                     data.correct_answer = document.getElementById('m2_correct').value;
                     data.marks = 2;
+                    data.pedagogy = getPedagogyComboValue('assign_m2_pedagogy');
 
                     if (!data.content || !data.correct_answer) {
                         Swal.fire('Incomplete Data', 'Please fill in both the question and the expected answer.', 'warning');
@@ -9334,9 +11745,11 @@ if (!empty($Tests)) {
                             document.getElementById('mcq_opt_c').value = '';
                             document.getElementById('mcq_opt_d').value = '';
                             document.getElementById('mcq_correct').value = '';
+                            resetPedagogyCombo('assign_mcq_pedagogy');
                         } else {
                             document.getElementById('m2_content').value = '';
                             document.getElementById('m2_correct').value = '';
+                            resetPedagogyCombo('assign_m2_pedagogy');
                         }
                     } else {
                         Swal.fire('Error', result.message || 'Failed to add question', 'error');
@@ -9381,7 +11794,7 @@ if (!empty($Tests)) {
                                     <div class="flex items-center justify-between mb-6 pb-2 border-b-2 border-slate-100">
                                         <div class="flex items-center gap-3">
                                             <div class="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center font-black text-sm shadow-sm">${sIdx + 1}</div>
-                                            <h3 class="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-0">${s.section_name || s.name || (targetType === 'mcq' ? 'Multiple Choice' : 'Short Answer')}</h3>
+                                            <h3 class="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-0">${s.section_name || s.name || (targetType === 'mcq' ? 'Multiple Choice' : 'Descriptive question')}</h3>
                                         </div>
                                         <div class="px-3 py-1 bg-slate-50 border border-slate-100 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                                             ${sectionQuestions.length} Questions • ${s.marks_per_question || s.marks || 1} Marks Each
@@ -9409,17 +11822,20 @@ if (!empty($Tests)) {
                                     sectionsHtml += `
                                     <div class="relative pl-10">
                                         <div class="absolute left-0 top-0 w-8 h-8 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-[11px] font-black border border-slate-100">${qIdx + 1}</div>
-                                        <div class="flex justify-between items-start mb-4">
+                                        <div class="flex justify-between items-start mb-4 gap-2">
                                             <p class="text-[14px] font-bold text-slate-800 leading-relaxed mb-0 pt-1">${q.question || q.content || 'No question text'}</p>
-                                            <span class="px-2 py-1 bg-white border border-slate-100 rounded text-[9px] font-black text-slate-400 uppercase tracking-tighter shrink-0 ml-4">${q.marks || 1} MARK</span>
+                                            <div class="flex flex-col items-end gap-1 shrink-0 ml-4">
+                                            ${(q.pedagogy || q.knowledge_type) ? `<span class="px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded text-[8px] font-black text-indigo-600 uppercase tracking-tighter">${escapeHtml(String(q.pedagogy || q.knowledge_type))}</span>` : ''}
+                                            <span class="px-2 py-1 bg-white border border-slate-100 rounded text-[9px] font-black text-slate-400 uppercase tracking-tighter">${q.marks || 1} MARK</span>
+                                            </div>
                                         </div>
                                         
                                         ${isMCQ ? `
                                             <div class="grid grid-cols-2 gap-3 mb-4">
                                                 ${optionsToRender.map(opt => `
-                                                    <div class="flex items-center gap-3 p-2.5 rounded-xl border ${q.correct_answer === opt.key ? 'border-emerald-100 bg-emerald-50/30' : 'border-slate-50 bg-slate-50/30'}">
-                                                        <div class="w-6 h-6 rounded ${q.correct_answer === opt.key ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-[10px] font-black uppercase">${opt.key}</div>
-                                                        <span class="text-[12px] ${q.correct_answer === opt.key ? 'text-emerald-800 font-bold' : 'text-slate-600 font-medium'}">${opt.value}</span>
+                                                    <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-50 bg-slate-50/30">
+                                                        <div class="w-6 h-6 rounded bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-black uppercase">${opt.key}</div>
+                                                        <span class="text-[12px] text-slate-600 font-medium">${opt.value}</span>
                                                     </div>
                                                 `).join('')}
                                             </div>
@@ -9542,18 +11958,22 @@ if (!empty($Tests)) {
             const btnEvaluator = document.getElementById('btn-view-evaluator');
             const viewStudent = document.getElementById('result-student-view');
             const viewEvaluator = document.getElementById('result-evaluator-view');
+            const overviewCards = document.getElementById('resultsOverviewCards');
 
             if (view === 'student') {
-                btnStudent.className = 'tab tab-active';
-                btnEvaluator.className = 'tab tab-idle';
-                viewStudent.classList.remove('hidden');
-                viewEvaluator.classList.add('hidden');
-                App.loadCandidateResult(1);
+                if (btnStudent) btnStudent.className = 'tab tab-active';
+                if (btnEvaluator) btnEvaluator.className = 'tab tab-idle';
+                if (viewStudent) viewStudent.classList.remove('hidden');
+                if (viewEvaluator) viewEvaluator.classList.add('hidden');
+                if (overviewCards) overviewCards.classList.remove('hidden');
+                App.loadCandidateResult();
             } else {
-                btnStudent.className = 'tab tab-idle';
-                btnEvaluator.className = 'tab tab-active';
-                viewStudent.classList.add('hidden');
-                viewEvaluator.classList.remove('hidden');
+                if (btnStudent) btnStudent.className = 'tab tab-idle';
+                if (btnEvaluator) btnEvaluator.className = 'tab tab-active';
+                if (viewStudent) viewStudent.classList.add('hidden');
+                if (viewEvaluator) viewEvaluator.classList.remove('hidden');
+                if (overviewCards) overviewCards.classList.add('hidden');
+                App.loadCandidateResult();
                 App.renderEvaluatorView();
             }
         }
@@ -9570,6 +11990,22 @@ if (!empty($Tests)) {
                 App.simulateViolation();
             }
         });
+
+        window.backFromResultsPage = () => {
+            const viewEvaluator = document.getElementById('result-evaluator-view');
+            const inEvaluator = viewEvaluator && !viewEvaluator.classList.contains('hidden');
+            if (inEvaluator && typeof switchResultView === 'function') {
+                switchResultView('student');
+                return;
+            }
+            if (typeof window.switchMainTab === 'function') {
+                window.switchMainTab('management');
+            }
+        };
+
+        window.switchMainTab = switchMainTab;
+        window.initTestsDataTable = initTestsDataTable;
+        window.inlineSectionTypeDisplayName = inlineSectionTypeDisplayName;
     </script>
 
     <!-- MODAL: QUICK BATCH CREATION (Full Screen Template) -->
@@ -9598,8 +12034,8 @@ if (!empty($Tests)) {
 
                             <div class="w-px h-6 bg-slate-100 mx-1" id="wizard_header_divider"></div>
 
-                            <button class="px-6 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100"
-                                onclick="closeQuickSetup()">Go Back</button>
+                            <button class="px-6 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center gap-2"
+                                onclick="closeQuickSetup()"><i class="bi bi-arrow-left text-[14px] font-black leading-none"></i>Back</button>
                         </div>
                     </div>
 
@@ -9965,19 +12401,17 @@ if (!empty($Tests)) {
                                 <!-- Unified Builder Container -->
                                 <div class="card border-0 shadow-sm rounded-3xl bg-white overflow-visible border border-slate-100">
                                                          <div class="p-8 space-y-8">
-                                        <!-- Top Configuration Row -->
-                                        <div class="flex items-start justify-between gap-10">
-                                            <!-- Left: Structure Action Zone -->
-                                            <div class="flex items-end gap-6">
-                                                <!-- 1. Template Identity -->
-                                                <div class="w-[300px]">
-                                                    <div class="flex items-center gap-3 mb-3">
-                                                        <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center shadow-sm border border-red-100">
+                                        <!-- Top Configuration Row: shared label height + controls aligned on one baseline -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-5 xl:gap-4 xl:items-end">
+                                                <!-- 1. Template Name -->
+                                                <div class="xl:col-span-4 flex flex-col min-w-0">
+                                                    <div class="flex items-start gap-3 mb-3 min-h-[3.25rem]">
+                                                        <div class="w-8 h-8 shrink-0 bg-red-50 text-red-600 rounded-lg flex items-center justify-center shadow-sm border border-red-100 mt-0.5">
                                                             <i class="bi bi-card-text text-sm"></i>
                                                         </div>
-                                                        <div>
-                                                            <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0">Template Identity</h4>
-                                                            <p class="text-[9px] text-slate-400 font-bold uppercase mb-0">Define evaluation name</p>
+                                                        <div class="min-w-0 pt-0.5">
+                                                            <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0 leading-tight">Template Name</h4>
+                                                            <p class="text-[9px] text-slate-400 font-bold uppercase mb-0 mt-0.5 leading-snug">Define template name</p>
                                                         </div>
                                                     </div>
                                                     <input id="builder_storage_name_inline"
@@ -9985,39 +12419,15 @@ if (!empty($Tests)) {
                                                         placeholder="e.g. Technical Skills 2024" />
                                                 </div>
 
-                                                <!-- 2. Add Section Button -->
-                                                <div class="">
-                                                    <button onclick="addNewSectionRowInline()" class="btn-red px-5 py-2.5 shadow-lg shadow-red-100 flex items-center gap-2 h-11 rounded-xl whitespace-nowrap">
-                                                        <i class="bi bi-plus-circle-fill text-base"></i>
-                                                        <span class="text-[11px] font-black uppercase tracking-widest">Add Section</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <!-- Center: Live Template Stats (Fills the Gap) -->
-                                            <div class="flex-1 flex justify-center pt-2">
-                                                <div class="flex items-center gap-8 px-8 py-3 bg-slate-50/50 rounded-2xl border border-slate-100/50">
-                                                    <div class="text-center">
-                                                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Questions</p>
-                                                        <p class="text-xl font-black text-slate-700" id="total_questions_display">0</p>
-                                                    </div>
-                                                    <div class="w-px h-8 bg-slate-200"></div>
-                                                    <div class="text-center">
-                                                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Marks</p>
-                                                        <p class="text-xl font-black text-red-600" id="total_marks_display">0</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Right: Question Bank Selection -->
-                                            <div id="builder_qb_selector_inline" class="w-[300px]">
-                                                <div class="flex items-center gap-3 mb-3">
-                                                    <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shadow-sm border border-indigo-100">
+                                            <!-- 2. Select Question Bank -->
+                                            <div id="builder_qb_selector_inline" class="xl:col-span-4 flex flex-col min-w-0">
+                                                <div class="flex items-start gap-3 mb-3 min-h-[3.25rem]">
+                                                    <div class="w-8 h-8 shrink-0 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shadow-sm border border-indigo-100 mt-0.5">
                                                         <i class="bi bi-database-fill text-sm"></i>
                                                     </div>
-                                                    <div>
-                                                        <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0">Select Question Bank</h4>
-                                                        <p class="text-[9px] text-slate-400 font-bold uppercase mb-0">Choose repository</p>
+                                                    <div class="min-w-0 pt-0.5">
+                                                        <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0 leading-tight">Select Question Bank</h4>
+                                                        <p class="text-[9px] text-slate-400 font-bold uppercase mb-0 mt-0.5 leading-snug">Choose repository</p>
                                                     </div>
                                                 </div>
                                                 
@@ -10042,35 +12452,80 @@ if (!empty($Tests)) {
                                                         <span class="text-[9px] font-black uppercase tracking-widest" id="qb_mapping_text">Bank mapped</span>
                                                     </div>
                                                 </div>
-
-
                                             </div>
 
+                                            <!-- 3. Template Pass Mark -->
+                                            <div class="xl:col-span-2 flex flex-col min-w-0">
+                                                <div class="flex items-start gap-3 mb-3 min-h-[3.25rem]">
+                                                    <div class="w-8 h-8 shrink-0 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shadow-sm border border-emerald-100 mt-0.5">
+                                                        <i class="bi bi-percent text-sm"></i>
+                                                    </div>
+                                                    <div class="min-w-0 pt-0.5">
+                                                        <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0 leading-tight">Pass Mark (%)</h4>
+                                                        <p class="text-[9px] text-slate-400 font-bold uppercase mb-0 mt-0.5 leading-snug">Minimum to pass</p>
+                                                    </div>
+                                                </div>
+                                                <input id="builder_pass_mark_visible" type="number" min="1" max="100" value="60"
+                                                    oninput="document.getElementById('builder_pass_mark_inline').value = this.value || 60"
+                                                    class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 focus:ring-2 focus:ring-emerald-100 focus:border-emerald-300 transition-all text-slate-700 shadow-inner"
+                                                    placeholder="e.g. 60" />
+                                            </div>
+
+                                            <!-- 4. Total Questions / Total Marks (same control height as inputs) -->
+                                            <div class="xl:col-span-2 flex flex-col min-w-0 xl:min-w-[11rem]">
+                                                <div class="flex items-start gap-3 mb-3 min-h-[3.25rem]">
+                                                    <div class="w-8 h-8 shrink-0 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center shadow-sm border border-slate-200 mt-0.5">
+                                                        <i class="bi bi-calculator text-sm"></i>
+                                                    </div>
+                                                    <div class="min-w-0 pt-0.5">
+                                                        <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0 leading-tight">Totals</h4>
+                                                        <p class="text-[9px] text-slate-400 font-bold uppercase mb-0 mt-0.5 leading-snug">From structure</p>
+                                                    </div>
+                                                </div>
+                                                <div class="h-11 w-full flex items-stretch rounded-xl border border-slate-100 bg-slate-50/80 overflow-hidden shadow-inner">
+                                                    <div class="flex-1 flex flex-col items-center justify-center px-2 min-w-0">
+                                                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Questions</p>
+                                                        <p class="text-base font-black text-slate-800 leading-none truncate" id="total_questions_display">0</p>
+                                                    </div>
+                                                    <div class="w-px self-stretch bg-slate-200 my-1.5 shrink-0"></div>
+                                                    <div class="flex-1 flex flex-col items-center justify-center px-2 min-w-0">
+                                                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Marks</p>
+                                                        <p class="text-base font-black text-red-600 leading-none truncate" id="total_marks_display">0</p>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <input type="hidden" id="builder_category_inline" value="General">
                                             <input type="hidden" id="builder_duration_inline" value="60">
                                             <input type="hidden" id="builder_pass_mark_inline" value="60">
                                             <input type="hidden" id="builder_attempts_inline" value="2">
-                                        </div>                 <hr class="border-slate-100">
+                                        </div>
+                                        <hr class="border-slate-100">
 
                                         <!-- 2. Blueprint Section -->
                                         <section class="w-full">
-                                            <div class="flex items-center gap-3 mb-4">
-                                                <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center shadow-sm border border-red-100">
-                                                    <i class="bi bi-grid-1x2-fill text-sm"></i>
+                                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+                                                <div class="flex items-center gap-3 min-w-0">
+                                                    <div class="w-8 h-8 shrink-0 bg-red-50 text-red-600 rounded-lg flex items-center justify-center shadow-sm border border-red-100">
+                                                        <i class="bi bi-grid-1x2-fill text-sm"></i>
+                                                    </div>
+                                                    <div class="min-w-0">
+                                                        <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0 leading-tight">Template Structure</h4>
+                                                        <p class="text-[9px] text-slate-400 font-bold uppercase mb-0 mt-0.5 leading-snug">Define sections for this paper</p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-0">Blueprint</h4>
-                                                    <p class="text-[9px] text-slate-400 font-bold uppercase mb-0">Structure definition</p>
-                                                </div>
+                                                <button type="button" onclick="addNewSectionRowInline()" class="btn-red px-5 py-2.5 shadow-lg shadow-red-100 inline-flex items-center justify-center gap-2 h-11 rounded-xl whitespace-nowrap shrink-0 self-start sm:self-auto">
+                                                    <i class="bi bi-plus-circle-fill text-base"></i>
+                                                    <span class="text-[11px] font-black uppercase tracking-widest">Add Section</span>
+                                                </button>
                                             </div>
 
                                             <div class="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
-                                                <div class="grid grid-cols-12 gap-0 bg-slate-50/50 border-b border-slate-100"
+                                                <div class="grid grid-cols-12 gap-0 bg-slate-50/50 border-b border-slate-100 items-center"
                                                     id="inline_builder_header" style="display: none;">
-                                                    <div class="col-span-4 py-2.5 pl-14 text-[8px] font-black text-slate-400 uppercase tracking-widest">Section / Type</div>
-                                                    <div class="col-span-2 py-2.5 px-2 text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Questions</div>
-                                                    <div class="col-span-2 py-2.5 px-2 text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Marks Each</div>
-                                                    <div class="col-span-4 py-2.5 px-3"></div>
+                                                    <div class="col-span-4 py-3 pl-4 sm:pl-14 pr-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">Section / Type</div>
+                                                    <div class="col-span-2 py-3 px-2 text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Questions</div>
+                                                    <div class="col-span-2 py-3 px-2 text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">Marks Each</div>
+                                                    <div class="col-span-4 py-3 px-3 text-right text-[8px] font-black text-slate-400 uppercase tracking-widest">Actions</div>
                                                 </div>
                                                 <div id="builder_sections_container_inline" class="divide-y divide-slate-100 flex-1">
                                                     <div class="empty-state py-16 text-center flex flex-col items-center justify-center h-full" id="builder_empty_state_inline">
@@ -10115,11 +12570,11 @@ if (!empty($Tests)) {
                                     </div>
 
                                     <!-- Action Footer -->
-                                    <div id="builder_template_footer" class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+                                    <div id="builder_template_footer" class="px-5 py-2.5 bg-white/95 backdrop-blur border-t border-slate-100 flex justify-end sticky bottom-0 z-40 shadow-[0_-4px_14px_rgba(15,23,42,0.04)]">
                                         <button
-                                            class="px-8 py-3 bg-[#dc2230] text-white font-black rounded-xl text-[12px] uppercase tracking-[0.15em] shadow-xl shadow-red-100 transition-all hover:bg-red-700 hover:scale-[1.02] active:scale-95 flex items-center gap-3"
+                                            class="h-10 px-6 bg-[#dc2230] text-white font-black rounded-lg text-[10px] uppercase tracking-[0.12em] shadow-lg shadow-red-100 transition-all hover:bg-red-700 hover:scale-[1.01] active:scale-95 inline-flex items-center gap-2"
                                             onclick="saveTemplateFromWizard()">
-                                            <i class="bi bi-check-lg text-xl"></i> Save Template
+                                            <i class="bi bi-check-lg text-sm"></i> Save Template
                                         </button>
                                     </div>
                                 </div>
@@ -10395,7 +12850,7 @@ if (!empty($Tests)) {
                             <select class="form-select h-[42px] rounded-[8px] border-[#e2e8f0] text-[13px] font-medium"
                                 id="manualQuestionType" onchange="App.onManualQuestionTypeChange(this.value)">
                                 <option value="MCQ">MCQ</option>
-                                <option value="2-Mark">2-Mark</option>
+                                <option value="descriptive">Descriptive question</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -10404,6 +12859,15 @@ if (!empty($Tests)) {
                             <input type="number"
                                 class="form-control h-[42px] rounded-[8px] border-[#e2e8f0] text-[14px] font-bold"
                                 id="manualQuestionMarks" value="2">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-[11px] font-bold text-[#64748b] text-uppercase tracking-wider mb-2">Pedagogy</label>
+                        <div class="pedagogy-combo relative w-full" data-pedagogy-base="manualQuestionPedagogy">
+                            <input type="hidden" class="pedagogy-combo-hidden" value="">
+                            <input type="text" class="pedagogy-combo-search form-control h-[42px] rounded-[8px] border-[#e2e8f0] text-[13px] font-medium w-full" autocomplete="off" spellcheck="false" placeholder="Search or type pedagogy...">
+                            <div class="pedagogy-combo-panel mt-0.5 max-h-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl hidden"></div>
                         </div>
                     </div>
 
@@ -10488,13 +12952,14 @@ if (!empty($Tests)) {
                         </div>
                     </div>
 
-                    <!-- 2-Mark / Short Answer Section -->
+                    <!-- Descriptive answer section -->
                     <div id="manualShortAnswerSection" class="d-none">
                         <label
                             class="form-label text-[11px] font-bold text-[#64748b] text-uppercase tracking-wider mb-2">Correct
-                            Answer (Short Answer)</label>
+                            answer (descriptive question)</label>
                         <input type="text" class="form-control rounded-[8px] border-[#e2e8f0] text-[13px] h-[42px]"
-                            placeholder="Enter the correct answer...">
+                            placeholder="Enter the correct answer..."
+                            id="manualShortCorrectAnswer">
                     </div>
 
                 </div>
@@ -10525,8 +12990,6 @@ if (!empty($Tests)) {
                     <div id="defaultPreviewFooter" class="d-flex gap-2">
                         <button type="button" class="btn btn-light px-4 rounded-[8px] font-bold"
                             data-bs-dismiss="modal">Close Preview</button>
-                        <button type="button" class="btn btn-primary-custom px-4 rounded-[8px] font-bold"
-                            onclick="window.print()">Print Paper</button>
                     </div>
                     <div id="selectionPreviewFooter" class="d-none d-flex gap-2">
                         <button type="button" class="btn btn-light px-4 rounded-[8px] font-bold"
@@ -10548,11 +13011,13 @@ if (!empty($Tests)) {
         // --- Global Helpers & Navigation ---
         // Restore tab on load
         window.addEventListener('DOMContentLoaded', () => {
+            const fn = window.switchMainTab;
+            if (typeof fn !== 'function') return;
             const savedTab = localStorage.getItem('activeTestTab');
             if (savedTab && document.getElementById('tab-content-' + savedTab)) {
-                switchMainTab(savedTab);
+                fn(savedTab);
             } else {
-                switchMainTab('management');
+                fn('management');
             }
         });
 
@@ -10679,8 +13144,12 @@ if (!empty($Tests)) {
             sectionCard.className = 'section-builder-card animate-fadeIn';
             sectionCard.dataset.type = type;
 
-            const displayName = name || `${type} Section`;
-            const displayMarks = marks !== null ? marks : (type === '2 Marks' ? 2 : 1);
+            const nt = typeof App !== 'undefined' && App.normalizeType ? App.normalizeType(type) : '';
+            const typeLabel = typeof window.inlineSectionTypeDisplayName === 'function'
+                ? window.inlineSectionTypeDisplayName(type)
+                : (nt === 'descriptive' ? 'Descriptive question' : type);
+            const displayName = name || `${typeLabel} Section`;
+            const displayMarks = marks !== null ? marks : (nt === 'descriptive' ? 2 : 1);
 
             sectionCard.innerHTML = `
             <div class="flex items-center justify-between mb-4">
@@ -10690,7 +13159,7 @@ if (!empty($Tests)) {
                     </div>
                     <div>
                         <input type="text" class="bg-transparent border-0 font-bold text-slate-800 p-0 focus:ring-0 text-sm" value="${displayName}">
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">${type} Component</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">${typeLabel} Component</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -10916,6 +13385,7 @@ if (!empty($Tests)) {
             document.getElementById('pack_lockdown').checked = true;
             App.manualQuestions = [];
             App.quickModePaperSource = null;
+            hasBuilderGeneratedPreview = false;
 
             // Initialize candidate storage for this test if it doesn't exist
             if (!App.selectedCandidates[currentTestIdForPack]) {
@@ -11007,6 +13477,7 @@ if (!empty($Tests)) {
             // Listen for modal close to remove quick-mode class
             const resetModal = () => {
                 modalEl.classList.remove('quick-mode');
+                modalEl.classList.remove('template-scroll-mode');
                 modalEl.removeEventListener('hidden.bs.modal', resetModal);
             };
             modalEl.addEventListener('hidden.bs.modal', resetModal);
@@ -11020,6 +13491,65 @@ if (!empty($Tests)) {
             if (configView) configView.classList.remove('hidden');
             if (paperSection) paperSection.classList.add('hidden');
             if (footer) footer.classList.remove('hidden');
+        }
+
+        function initGeneratedSectionPager(container) {
+            if (!container) return;
+            const cards = Array.from(container.querySelectorAll(':scope > .card'));
+            if (cards.length <= 1) return;
+
+            let current = 0;
+            cards.forEach((card, idx) => {
+                card.classList.toggle('hidden', idx !== current);
+            });
+
+            const nav = document.createElement('div');
+            nav.className = 'flex items-center justify-between mb-4 p-3 bg-white border border-slate-100 rounded-xl shadow-sm';
+            nav.innerHTML = `
+                <button type="button" class="w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-all flex items-center justify-center" data-dir="-1" data-nav-btn="true">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="text-center px-3">
+                    <div class="text-[12px] font-black text-slate-800 uppercase tracking-widest" id="generated_section_nav_title"></div>
+                    <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider" id="generated_section_nav_meta"></div>
+                </div>
+                <button type="button" class="w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-all flex items-center justify-center" data-dir="1" data-nav-btn="true">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            `;
+
+            const titleEl = nav.querySelector('#generated_section_nav_title');
+            const metaEl = nav.querySelector('#generated_section_nav_meta');
+
+            const update = () => {
+                cards.forEach((card, idx) => card.classList.toggle('hidden', idx !== current));
+                const active = cards[current];
+                if (titleEl) titleEl.textContent = active?.dataset.sectionTitle || `Section ${current + 1}`;
+                if (metaEl) metaEl.textContent = active?.dataset.sectionMeta || `${current + 1} / ${cards.length}`;
+
+                const isMcqSection = (active?.dataset.sectionType || '').toLowerCase() === 'mcq';
+                nav.querySelectorAll('[data-nav-btn="true"]').forEach((btn) => {
+                    if (isMcqSection) {
+                        btn.className = 'w-9 h-9 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all flex items-center justify-center';
+                    } else {
+                        btn.className = 'w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-all flex items-center justify-center';
+                    }
+                });
+            };
+
+            nav.querySelectorAll('button[data-dir]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const dir = parseInt(btn.getAttribute('data-dir') || '0', 10);
+                    if (!dir) return;
+                    current += dir;
+                    if (current < 0) current = cards.length - 1;
+                    if (current >= cards.length) current = 0;
+                    update();
+                });
+            });
+
+            container.prepend(nav);
+            update();
         }
 
 
@@ -11051,6 +13581,8 @@ if (!empty($Tests)) {
                 if (configView) configView.classList.add('hidden');
                 if (paperSection) paperSection.classList.remove('hidden');
             } else {
+                hasBuilderGeneratedPreview = false;
+                updateBuilderTemplateFooterVisibility();
                 const builderPreview = document.getElementById('builder_questions_section_inline');
                 if (builderPreview) builderPreview.classList.remove('hidden');
             }
@@ -11067,12 +13599,25 @@ if (!empty($Tests)) {
                     if (isBuilderMode) {
                         // In builder mode, we pull sections from the DOM
                         const sections = [];
-                        document.querySelectorAll('.section-builder-row-inline:not(.is-editing)').forEach(row => {
+                        document.querySelectorAll('#builder_sections_container_inline > div:not(.empty-state):not(.is-editing)').forEach(row => {
                             sections.push({
-                                name: row.querySelector('.sec-name-hidden-inline').value,
-                                type: row.dataset.type,
-                                count: parseInt(row.querySelector('.sec-count-inline').value) || 0,
-                                marks: parseInt(row.querySelector('.sec-marks-inline').value) || 0
+                                name: (
+                                    row.querySelector('.sec-name-hidden-inline')?.value ||
+                                    row.querySelector('input[type="text"]')?.value ||
+                                    row.querySelector('.sec-display-name')?.textContent ||
+                                    'Section'
+                                ),
+                                type: row.dataset.type || 'MCQ',
+                                count: parseInt(
+                                    row.querySelector('.sec-count-inline')?.value ||
+                                    row.querySelector('.sec-display-count')?.textContent ||
+                                    '0'
+                                ) || 0,
+                                marks: parseInt(
+                                    row.querySelector('.sec-marks-inline')?.value ||
+                                    row.querySelector('.sec-display-marks')?.textContent ||
+                                    '0'
+                                ) || 0
                             });
                         });
                         
@@ -11083,6 +13628,8 @@ if (!empty($Tests)) {
                         paper = await App.generatePaperFromBank(qbId, { sections });
                         if (paper && paper.questions) {
                             App.manualQuestions = paper.questions;
+                            hasBuilderGeneratedPreview = App.manualQuestions.length > 0;
+                            updateBuilderTemplateFooterVisibility();
                             // Update mapping status in builder
                             const statusEl = document.getElementById('qb_mapping_status');
                             const textEl = document.getElementById('qb_mapping_text');
@@ -11090,6 +13637,8 @@ if (!empty($Tests)) {
                             if (textEl) textEl.textContent = `${App.manualQuestions.length} Questions Mapped from Bank`;
                         }
                         if (!paper) {
+                            hasBuilderGeneratedPreview = false;
+                            updateBuilderTemplateFooterVisibility();
                             closeQuickPreview();
                             return;
                         }
@@ -11149,14 +13698,17 @@ if (!empty($Tests)) {
                             const targetType = App.normalizeType(type);
                             const marks = s.marks_per_question || s.marks || 0;
 
+                            const sectionTitle = s.section_name || s.name || (targetType === 'mcq' ? 'Multiple Choice' : 'Descriptive question');
+                            const sectionMeta = `${picked.length} of ${count} Questions • ${marks} Marks Each`;
+
                             groupedHtml += `
-                                <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white mb-6 animate-fadeIn" style="animation-delay: ${sIdx * 0.1}s">
+                                <div class="card border-0 shadow-sm rounded-2xl overflow-hidden bg-white mb-6 animate-fadeIn" style="animation-delay: ${sIdx * 0.1}s" data-section-title="${sectionTitle}" data-section-meta="${sectionMeta}" data-section-type="${targetType}">
                                     <div class="p-4 bg-slate-50/50 border-b border-slate-50 flex items-center justify-between">
                                         <div class="flex items-center gap-3">
                                             <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-800 font-black text-xs shadow-sm border border-slate-100">${sIdx + 1}</div>
                                             <div>
-                                                <h5 class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-0">${s.section_name || s.name || (targetType === 'mcq' ? 'Multiple Choice' : 'Short Answer')}</h5>
-                                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0">${picked.length} of ${count} Questions • ${marks} Marks Each</p>
+                                                <h5 class="text-[12px] font-black text-slate-800 uppercase tracking-widest mb-0">${sectionTitle}</h5>
+                                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0">${sectionMeta}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -11174,9 +13726,9 @@ if (!empty($Tests)) {
                                                 ${App.normalizeType(q.type || type) === 'mcq' ? `
                                                     <div class="grid grid-cols-2 gap-3">
                                                         ${['a', 'b', 'c', 'd'].map(opt => `
-                                                            <div class="flex items-center gap-3 p-2.5 rounded-xl border ${q.correct_answer === opt.toUpperCase() ? 'border-emerald-100 bg-emerald-50/30' : 'border-slate-50 bg-slate-50/20'}">
-                                                                <div class="w-6 h-6 rounded ${q.correct_answer === opt.toUpperCase() ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-[10px] font-black uppercase">${opt}</div>
-                                                                <span class="text-[12px] ${q.correct_answer === opt.toUpperCase() ? 'text-emerald-800 font-bold' : 'text-slate-600 font-medium'} whitespace-pre-wrap">${q['option_' + opt] || '---'}</span>
+                                                            <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-50 bg-slate-50/20">
+                                                                <div class="w-6 h-6 rounded bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-black uppercase">${opt}</div>
+                                                                <span class="text-[12px] text-slate-600 font-medium whitespace-pre-wrap">${q['option_' + opt] || '---'}</span>
                                                             </div>
                                                         `).join('')}
                                                     </div>
@@ -11208,6 +13760,9 @@ if (!empty($Tests)) {
                     }
 
                     container.innerHTML = groupedHtml;
+                    if (isBuilderMode && paper.grouped && paper.grouped.length > 1) {
+                        initGeneratedSectionPager(container);
+                    }
 
                     // Scroll to paper section
                     setTimeout(() => {
@@ -11215,6 +13770,10 @@ if (!empty($Tests)) {
                         if (targetScroll) targetScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }, 100);
                 } catch (error) {
+                    if (isBuilderMode) {
+                        hasBuilderGeneratedPreview = false;
+                        updateBuilderTemplateFooterVisibility();
+                    }
                     console.error("Preview Generation Error:", error);
                     container.innerHTML = '<div class="text-center py-12 text-red-500 font-bold">An error occurred while generating the paper preview. Check console for details.</div>';
                 }
@@ -11380,7 +13939,7 @@ if (!empty($Tests)) {
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "2mark_template.csv");
+            link.setAttribute("download", "descriptive_question_template.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -11426,6 +13985,7 @@ if (!empty($Tests)) {
                 type: type,
                 marks: marks,
                 question: '',
+                pedagogy: '',
                 option_a: '',
                 option_b: '',
                 option_c: '',
@@ -11441,6 +14001,24 @@ if (!empty($Tests)) {
             if (q) {
                 q[field] = value;
             }
+        };
+
+        App.saveManualQuestionRow = (id) => {
+            const q = App.manualQuestions.find(item => item.id === id);
+            if (!q) return;
+
+            if (!String(q.question || '').trim()) {
+                Swal.fire('Required', 'Please enter question text before saving.', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Question Saved',
+                text: 'Question changes stored in template draft.',
+                timer: 900,
+                showConfirmButton: false
+            });
         };
 
         App.currentTargetSectionIdx = null;
@@ -11467,7 +14045,7 @@ if (!empty($Tests)) {
                 });
             } else if (cleanType.includes('true/false')) {
                 if (tfSec) tfSec.classList.remove('d-none');
-            } else if (cleanType.includes('short answer') || cleanType.includes('2-mark') || cleanType.includes('marks')) {
+            } else if (cleanType.includes('short answer') || cleanType.includes('descriptive')) {
                 if (shortSec) shortSec.classList.remove('d-none');
             }
         };
@@ -11537,7 +14115,7 @@ if (!empty($Tests)) {
                 if (sections.length === 0) {
                     Swal.fire({
                         title: 'Empty Structure',
-                        text: 'Please add at least one section (e.g., MCQ or 2 Marks) to your template before downloading.',
+                        text: 'Please add at least one section (e.g., MCQ or descriptive question) to your template before downloading.',
                         icon: 'warning',
                         confirmButtonColor: '#ef4444'
                     });
@@ -11605,11 +14183,19 @@ if (!empty($Tests)) {
                 options = [{ text: 'True' }, { text: 'False' }];
                 const tfRadios = document.getElementsByName('manualTF');
                 tfRadios.forEach(r => { if (r.checked) correct_answer = r.value; });
+            } else if (typeof App !== 'undefined' && App.normalizeType && App.normalizeType(type) === 'descriptive') {
+                const saEl = document.getElementById('manualShortCorrectAnswer');
+                correct_answer = saEl ? String(saEl.value || '').trim() : '';
             }
+
+            const storedType = type === 'MCQ' ? 'MCQ'
+                : (typeof App !== 'undefined' && App.normalizeType && App.normalizeType(type) === 'descriptive'
+                    ? 'Short Answer'
+                    : type);
 
             const qData = {
                 question: text,
-                type: type,
+                type: storedType,
                 marks: marks,
                 option_a: options[0] ? options[0].text : '',
                 option_b: options[1] ? options[1].text : '',
@@ -11618,7 +14204,8 @@ if (!empty($Tests)) {
                 correct_answer: correct_answer,
                 category: 'Manual',
                 id: 'm' + Date.now(),
-                sectionIdx: App.currentTargetSectionIdx
+                sectionIdx: App.currentTargetSectionIdx,
+                pedagogy: getPedagogyComboValue('manualQuestionPedagogy')
             };
 
             App.manualQuestions.push(qData);
@@ -11632,6 +14219,7 @@ if (!empty($Tests)) {
             // Reset form
             document.getElementById('manualQuestionText').value = '';
             document.querySelectorAll('#manualOptionsSection input[type="text"]').forEach(i => i.value = '');
+            resetPedagogyCombo('manualQuestionPedagogy');
 
             Swal.fire({ title: 'Added!', text: 'Question added to section', icon: 'success', timer: 1000, showConfirmButton: false });
         };
@@ -11657,12 +14245,15 @@ if (!empty($Tests)) {
             <div class="bg-slate-50/50 rounded-xl overflow-hidden border border-slate-100">
                 <div class="grid grid-cols-12 gap-0 bg-slate-100/80 border-b border-slate-200">
                     <div class="col-span-1 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">#</div>
-                    <div class="col-span-10 py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Question Content</div>
+                    <div class="col-span-2 py-2 px-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">Pedagogy</div>
+                    <div class="col-span-4 py-2 px-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">Question</div>
+                    <div class="col-span-4 py-2 px-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">Options / expected</div>
                     <div class="col-span-1 py-2 px-3 text-right"></div>
                 </div>
                 <div class="divide-y divide-slate-100">
                     ${questions.map((q, qIdx) => {
                 const isMCQ = (q.type || '').toLowerCase().includes('mcq') || (q.type || '').toLowerCase().includes('multiple choice');
+                const pedRowBase = 'tmpl_ped_' + String(q.id).replace(/[^a-zA-Z0-9_-]/g, '_');
 
                 return `
                             <div class="grid grid-cols-12 gap-0 bg-white hover:bg-slate-50/50 transition-colors animate-fadeIn border-b border-slate-50 last:border-0">
@@ -11670,13 +14261,16 @@ if (!empty($Tests)) {
                                     <span class="w-5 h-5 bg-slate-800 text-white rounded-lg flex items-center justify-center text-[8px] font-black">${qIdx + 1}</span>
                                     <span class="px-1 py-0.5 bg-blue-50 text-blue-600 rounded text-[7px] font-black uppercase">${q.marks}M</span>
                                 </div>
-                                <div class="${isMCQ ? 'col-span-5' : 'col-span-10'} py-3 px-2">
+                                <div class="col-span-2 py-3 px-2 flex items-start">
+                                    ${pedagogyComboHtml(pedRowBase, q.pedagogy || '', { manualQuestionId: q.id, searchClass: 'w-full bg-slate-50 border border-slate-100 rounded-lg px-1.5 py-1.5 text-[10px] font-bold text-slate-700' })}
+                                </div>
+                                <div class="col-span-4 py-3 px-2">
                                     <textarea oninput="App.updateManualQuestion('${q.id}', 'question', this.value)" 
                                               class="w-full bg-slate-50 border-0 rounded-lg p-2 text-[11px] font-medium text-slate-700 focus:ring-2 focus:ring-red-100 transition-all" 
                                               rows="2" placeholder="Type your question here...">${q.question || ''}</textarea>
                                  </div>
                                  ${isMCQ ? `
-                                 <div class="col-span-5 py-3 px-2">
+                                 <div class="col-span-4 py-3 px-2">
                                      <div class="grid grid-cols-2 gap-2">
                                          ${['a', 'b', 'c', 'd'].map(opt => {
                     const isCorrect = q.correct_answer === opt.toUpperCase();
@@ -11695,12 +14289,26 @@ if (!empty($Tests)) {
                 }).join('')}
                                      </div>
                                  </div>
-                                 ` : ''}
-                                 <div class="col-span-1 py-3 px-3 flex items-start justify-center">
-                                     <button class="w-7 h-7 rounded-lg bg-slate-50 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center" 
-                                             onclick="App.removeManualQuestion('${q.id}', ${idx})">
-                                         <i class="bi bi-trash-fill text-[10px]"></i>
-                                     </button>
+                                 ` : `
+                                 <div class="col-span-4 py-3 px-2">
+                                     <textarea oninput="App.updateManualQuestion('${q.id}', 'correct_answer', this.value)"
+                                               class="w-full bg-slate-50 border border-slate-100 rounded-lg p-2 text-[10px] font-medium text-slate-700 focus:ring-2 focus:ring-blue-100 transition-all"
+                                               rows="2" placeholder="Expected answer / reference...">${q.correct_answer || ''}</textarea>
+                                 </div>
+                                 `}
+                                <div class="col-span-1 py-3 px-3 flex items-start justify-center">
+                                    <div class="flex flex-col gap-1">
+                                        <button class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center" 
+                                                onclick="App.saveManualQuestionRow('${q.id}')"
+                                                title="Save Question">
+                                            <i class="bi bi-floppy-fill text-[10px]"></i>
+                                        </button>
+                                        <button class="w-7 h-7 rounded-lg bg-slate-50 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center" 
+                                                onclick="App.removeManualQuestion('${q.id}', ${idx})"
+                                                title="Delete Question">
+                                            <i class="bi bi-trash-fill text-[10px]"></i>
+                                        </button>
+                                    </div>
                                  </div>
                             </div>
                         `;
@@ -11771,7 +14379,8 @@ if (!empty($Tests)) {
                             option_c: data.option_c || '',
                             option_d: data.option_d || '',
                             correct_answer: data.correct_answer || '',
-                            category: 'Bulk'
+                            category: 'Bulk',
+                            pedagogy: (data.pedagogy || '').trim()
                         };
                         App.manualQuestions.push(qData);
                         addedCount++;
@@ -11833,7 +14442,7 @@ if (!empty($Tests)) {
                     </div>
 
                     <div class="d-flex align-items-center gap-2 mb-4 text-slate-500 text-[12px] font-semibold">
-                        <i class="bi bi-info-circle text-primary"></i> Question Type: ${qs[0].type === 'MCQ' ? 'Multiple Choice' : (qs[0].type === '2-Mark' ? 'Short Answer' : qs[0].type)}
+                        <i class="bi bi-info-circle text-primary"></i> Question Type: ${qs[0].type === 'MCQ' ? 'Multiple Choice' : (App.normalizeType(qs[0].type) === 'descriptive' ? 'Descriptive question' : qs[0].type)}
                     </div>
                     
                     <div class="space-y-6">
@@ -11846,7 +14455,7 @@ if (!empty($Tests)) {
                                 <div class="fw-bold text-slate-800 text-[15px] mb-4">${q.text}</div>
                                 
                                 <div class="ps-2">
-                                    ${q.type === '2-Mark' ? `
+                                    ${App.normalizeType(q.type) === 'descriptive' ? `
                                         <div class="border border-1 border-slate-200 rounded-xl p-6 text-slate-300 text-[12px] bg-slate-50/30">
                                             Student response area...
                                         </div>
@@ -11948,7 +14557,7 @@ if (!empty($Tests)) {
             }
 
             if (!t) {
-                const templates = <?= json_encode($templates) ?>;
+                const templates = <?= workflow_view_json($templates ?? []) ?>;
                 t = templates.find(item => item.id == id);
             }
 
@@ -11980,7 +14589,7 @@ if (!empty($Tests)) {
                     </div>
 
                     <div class="d-flex align-items-center gap-2 mb-4 text-slate-500 text-[12px] font-semibold">
-                        <i class="bi bi-info-circle text-primary"></i> Question Type: ${s.marks_type}
+                        <i class="bi bi-info-circle text-primary"></i> Question Type: ${(typeof App !== 'undefined' && App.normalizeType && App.normalizeType(s.marks_type || '') === 'descriptive') ? 'Descriptive question' : (String(s.marks_type || '').toUpperCase() === 'MCQ' || (typeof App !== 'undefined' && App.normalizeType && App.normalizeType(s.marks_type || '') === 'mcq') ? 'Multiple Choice' : s.marks_type)}
                     </div>
                     
                     <div class="space-y-6">
@@ -11993,7 +14602,7 @@ if (!empty($Tests)) {
                                 <div class="fw-bold text-slate-800 text-[15px] mb-4">[Sample Question Text for ${s.section_name}]</div>
                                 
                                 <div class="ps-2">
-                                    ${s.marks_type === 'Short Answer' || s.marks_type === '2-Mark' ? `
+                                    ${(typeof App !== 'undefined' && App.normalizeType && App.normalizeType(s.marks_type || '') === 'descriptive') ? `
                                         <div class="border border-1 border-slate-200 rounded-xl p-6 text-slate-300 text-[12px] bg-slate-50/30">
                                             Candidate response area...
                                         </div>
@@ -12096,15 +14705,15 @@ if (!empty($Tests)) {
         window.cloneTemplate = function (id, event) {
             if (event) event.stopPropagation();
 
-            // Check if we are in discovery or sidebar
-            const isDiscovery = event.target.closest('.template-card') !== null;
+            const quickModal = document.getElementById('createPackModal');
+            const isQuickSetupContext = !!(quickModal && quickModal.classList.contains('show'));
 
-            if (isDiscovery) {
-                // In Batch Wizard Discovery
-                selectTemplate(id, true); // true = clear questions
+            if (isQuickSetupContext) {
+                // In Quick Setup discovery: open clone in editable create-mode builder.
+                openTemplateCloneBuilderInline(id);
                 Swal.fire({
                     title: 'Template Cloned!',
-                    text: 'Structure loaded. Questions bank has been cleared for new entry.',
+                    text: 'Structure copied. Select a Question Bank and save as a new template.',
                     icon: 'success',
                     toast: true,
                     position: 'top-end',
@@ -12112,7 +14721,7 @@ if (!empty($Tests)) {
                     timer: 3000
                 });
             } else {
-                // In Sidebar Builder
+                // In standalone sidebar builder
                 loadTemplateToBuilder(id, null, true); // true = isClone
             }
         };
@@ -12209,7 +14818,9 @@ if (!empty($Tests)) {
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
-            initTestsDataTable();
+            if (typeof window.initTestsDataTable === 'function') window.initTestsDataTable();
+            if (typeof App.loadEvaluationState === 'function') App.loadEvaluationState();
+            if (typeof App.loadCandidateResult === 'function') App.loadCandidateResult();
 
             const previewModal = document.getElementById('paperPreviewModal');
             if (previewModal) {
@@ -12391,7 +15002,7 @@ if (!empty($Tests)) {
         }
 
         // --- Legacy Actions Support ---
-        window.startExecutionMode = () => switchMainTab('execution');
+        window.startExecutionMode = () => window.switchMainTab('execution');
         window.changeQuestion = (dir) => {
             if (dir > 0) App.nextQuestion();
             else App.prevQuestion();
@@ -12400,6 +15011,103 @@ if (!empty($Tests)) {
         window.confirmSubmitTest = () => App.confirmSubmit();
 
         let currentEditTestId = null;
+        let testIntroVideoFrozen = false;
+
+        let assIntroVideoUrls = [];
+        let assIntroVideoFiles = [];
+
+        function parseTestIntroVideosRow(data) {
+            if (!data || data.intro_videos == null) return [];
+            if (Array.isArray(data.intro_videos)) return data.intro_videos;
+            if (typeof data.intro_videos === 'string') {
+                try {
+                    const p = JSON.parse(data.intro_videos);
+                    return Array.isArray(p) ? p : [];
+                } catch (e) { return []; }
+            }
+            return [];
+        }
+
+        function syncIntroVideoUploadColumn() {
+            const sel = document.getElementById('ass_add_video');
+            const col = document.getElementById('ass_intro_upload_col');
+            if (!sel || !col) return;
+            const yes = sel.value === 'Yes';
+            col.classList.toggle('hidden', !yes);
+            if (!yes && !testIntroVideoFrozen) {
+                assIntroVideoFiles = [];
+                const fi = document.getElementById('ass_intro_video_input');
+                if (fi) fi.value = '';
+            }
+            renderAssIntroVideoChips();
+        }
+
+        function setIntroVideoUploaderFrozen(frozen) {
+            testIntroVideoFrozen = !!frozen;
+            const sel = document.getElementById('ass_add_video');
+            const fi = document.getElementById('ass_intro_video_input');
+            const browse = document.getElementById('ass_intro_video_browse_btn');
+            const grp = document.getElementById('ass_intro_upload_col');
+            if (sel) {
+                sel.disabled = testIntroVideoFrozen;
+                sel.classList.toggle('opacity-60', testIntroVideoFrozen);
+                sel.classList.toggle('cursor-not-allowed', testIntroVideoFrozen);
+                sel.setAttribute('aria-disabled', testIntroVideoFrozen ? 'true' : 'false');
+            }
+            if (fi) fi.disabled = testIntroVideoFrozen;
+            if (browse) {
+                browse.disabled = testIntroVideoFrozen;
+                browse.classList.toggle('opacity-50', testIntroVideoFrozen);
+                browse.classList.toggle('pointer-events-none', testIntroVideoFrozen);
+            }
+            if (grp) grp.classList.toggle('opacity-80', testIntroVideoFrozen && sel && sel.value === 'Yes');
+            renderAssIntroVideoChips();
+        }
+
+        function renderAssIntroVideoChips() {
+            const wrap = document.getElementById('ass_intro_video_chips');
+            const cnt = document.getElementById('ass_intro_video_count');
+            const n = assIntroVideoUrls.length + assIntroVideoFiles.length;
+            if (cnt) cnt.textContent = n + ' / 5';
+            if (!wrap) return;
+            let html = '';
+            assIntroVideoUrls.forEach((url, i) => {
+                const rm = testIntroVideoFrozen ? '' :
+                    '<button type="button" class="border-0 bg-transparent text-red-500 p-0 ms-1" onclick="removeAssIntroUrl(' + i + ')">&times;</button>';
+                html += '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-[9px] font-bold text-slate-700 max-w-[140px] truncate" title="Saved video">' +
+                    'Saved ' + (i + 1) + rm + '</span>';
+            });
+            assIntroVideoFiles.forEach((f, i) => {
+                const nm = String(f.name || 'file').replace(/</g, '&lt;');
+                const rm = testIntroVideoFrozen ? '' :
+                    '<button type="button" class="border-0 bg-transparent text-red-500 p-0 ms-1" onclick="removeAssIntroFile(' + i + ')">&times;</button>';
+                html += '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-50 text-[9px] font-bold text-red-700 max-w-[140px] truncate">' + nm + rm + '</span>';
+            });
+            wrap.innerHTML = html || '<span class="text-[9px] text-slate-400">No files yet</span>';
+        }
+
+        function removeAssIntroUrl(idx) {
+            if (testIntroVideoFrozen) return;
+            assIntroVideoUrls.splice(idx, 1);
+            renderAssIntroVideoChips();
+        }
+
+        function removeAssIntroFile(idx) {
+            if (testIntroVideoFrozen) return;
+            assIntroVideoFiles.splice(idx, 1);
+            renderAssIntroVideoChips();
+        }
+
+        function onAssIntroVideoFilesChange(input) {
+            if (testIntroVideoFrozen) return;
+            const picked = Array.from(input.files || []);
+            if (input) input.value = '';
+            const maxTotal = 5;
+            const room = maxTotal - assIntroVideoUrls.length - assIntroVideoFiles.length;
+            if (room <= 0) return;
+            assIntroVideoFiles.push(...picked.slice(0, room));
+            renderAssIntroVideoChips();
+        }
 
         function toggleEnovaFields(category) {
             const enovaFields = document.getElementById('enova_extra_fields');
@@ -12620,31 +15328,61 @@ if (!empty($Tests)) {
             } catch (e) { Swal.fire('Error', 'Failed to save Test.', 'error'); }
         }
 
+        function resetCreateTestExamConfigDefaults() {
+            const map = [['test_form_proctored', true], ['test_form_lockdown', false], ['test_form_show_results', false], ['test_form_backtrack', false]];
+            map.forEach(([id, on]) => {
+                const el = document.getElementById(id);
+                if (el) el.checked = on;
+            });
+            const vid = document.getElementById('ass_add_video');
+            if (vid) vid.value = 'No';
+        }
+
         function openCreateTest() {
+            currentEditTestId = null;
+            setIntroVideoUploaderFrozen(false);
+
             document.querySelectorAll('#TestModal input, #TestModal select, #TestModal textarea').forEach(el => {
                 if (el.type === 'checkbox') el.checked = false;
-                else if (el.tagName === 'SELECT') el.selectedIndex = 0;
-                else el.value = '';
+                else if (el.tagName === 'SELECT') {
+                    el.selectedIndex = 0;
+                } else el.value = '';
             });
 
             // Reset custom multiselect
-            document.querySelectorAll('#multiselect_options input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('#multiselect_options input[type="checkbox"]').forEach(cb => { cb.checked = false; });
             updateMultiselectLabel();
+
+            // Exam toggles / Add Video (after generic reset clears checkboxes / first select option)
+            resetCreateTestExamConfigDefaults();
+            const passMarkInput = document.getElementById('ass_pass_mark');
+            if (passMarkInput) passMarkInput.value = '60';
+            assIntroVideoUrls = [];
+            assIntroVideoFiles = [];
+            renderAssIntroVideoChips();
+            syncIntroVideoUploadColumn();
 
             // Reset titles for Create mode
             document.querySelector('#TestModal h3').textContent = 'Create New Test';
+            const sub = document.getElementById('test_form_subtitle');
+            if (sub) sub.textContent = 'Configure your assessment basic details';
             const submitBtn = document.querySelector('#TestModal button[onclick^="createTest"], #TestModal button[onclick^="updateTest"]');
             if (submitBtn) {
                 submitBtn.innerHTML = 'Create Test <i class="bi bi-rocket-takeoff"></i>';
                 submitBtn.setAttribute('onclick', 'createTest()');
             }
 
-            // Initial toggle
             toggleEnovaFields(document.getElementById('ass_category').value);
 
             clearValidationErrors();
             openModal('TestModal');
         }
+
+        function editTestById(id) {
+            const data = App.Tests.find(t => String(t.id) === String(id));
+            if (data) editTest(data);
+        }
+        window.editTestById = editTestById;
 
         function editTest(data) {
             currentEditTestId = data.id;
@@ -12663,9 +15401,32 @@ if (!empty($Tests)) {
                 });
                 updateMultiselectLabel();
             }
-            document.getElementById('ass_desc').value = data.description || '';
+            const rawInstr = data.instructions != null && String(data.instructions).length ? data.instructions : '';
+            document.getElementById('ass_desc').value = rawInstr || data.description || '';
+
+            const yn = (v) => v === true || v === 1 || v === '1' || v === 'true';
+            const p = document.getElementById('test_form_proctored');
+            const l = document.getElementById('test_form_lockdown');
+            const sr = document.getElementById('test_form_show_results');
+            const bt = document.getElementById('test_form_backtrack');
+            if (p) p.checked = yn(data.proctored_exam);
+            if (l) l.checked = yn(data.browser_lockdown);
+            if (sr) sr.checked = yn(data.show_results);
+            if (bt) bt.checked = yn(data.allow_backtracking);
+            const av = document.getElementById('ass_add_video');
+            if (av) av.value = yn(data.add_video) ? 'Yes' : 'No';
+            const pm = document.getElementById('ass_pass_mark');
+            if (pm) pm.value = (data.pass_mark ?? 60);
+
+            assIntroVideoUrls = parseTestIntroVideosRow(data);
+            assIntroVideoFiles = [];
+            renderAssIntroVideoChips();
+            syncIntroVideoUploadColumn();
+            setIntroVideoUploaderFrozen(true);
 
             document.querySelector('#TestModal h3').textContent = 'Edit Test';
+            const sub = document.getElementById('test_form_subtitle');
+            if (sub) sub.textContent = 'Update your assessment details';
             const submitBtn = document.querySelector('#TestModal button[onclick^="createTest"], #TestModal button[onclick^="updateTest"]');
             if (submitBtn) {
                 submitBtn.innerHTML = 'Update Test <i class="bi bi-pencil-square"></i>';
@@ -12679,12 +15440,7 @@ if (!empty($Tests)) {
         async function updateTest() {
             if (!validateTestForm()) return;
 
-            // Hide modal immediately
-            const modalEl = document.getElementById('TestModal');
-            if (modalEl) {
-                const inst = bootstrap.Modal.getInstance(modalEl);
-                if (inst) inst.hide();
-            }
+            closeModal('TestModal');
 
             const id = currentEditTestId;
             const name = document.getElementById('ass_name').value;
@@ -12693,7 +15449,10 @@ if (!empty($Tests)) {
             const type = document.getElementById('ass_type') ? document.getElementById('ass_type').value : null;
             const assignedSelect = document.getElementById('ass_assigned');
             const assigned = assignedSelect ? Array.from(assignedSelect.selectedOptions).map(o => o.value).join(',') : null;
-            const desc = document.getElementById('ass_desc').value;
+            const desc = document.getElementById('ass_desc').value.trim();
+            const addVideoEl = document.getElementById('ass_add_video');
+            const addVideo = addVideoEl && addVideoEl.value === 'Yes';
+            const g = (id) => { const e = document.getElementById(id); return e ? e.checked : false; };
 
             Swal.fire({
                 title: 'Updating...',
@@ -12703,11 +15462,30 @@ if (!empty($Tests)) {
             });
 
             try {
+                if (!testIntroVideoFrozen && assIntroVideoFiles.length > 0) {
+                    const fd = new FormData();
+                    assIntroVideoFiles.forEach(f => fd.append('videos[]', f));
+                    const up = await fetch(`Test/uploadIntroVideos/${id}`, { method: 'POST', body: fd });
+                    const uj = await up.json().catch(() => ({}));
+                    if (uj.status === 'success' && Array.isArray(uj.intro_videos)) {
+                        assIntroVideoUrls = uj.intro_videos;
+                        assIntroVideoFiles = [];
+                    }
+                }
+
                 const response = await fetch(`/Test/updateTest/${id}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        name, code, category, assessment_type: type, assigned_to: assigned, description: desc
+                        name, code, category, assessment_type: type, assigned_to: assigned,
+                        description: desc.substring(0, 500),
+                        instructions: desc,
+                        proctored_exam: g('test_form_proctored'),
+                        browser_lockdown: g('test_form_lockdown'),
+                        show_results: g('test_form_show_results'),
+                        allow_backtracking: g('test_form_backtrack'),
+                        add_video: addVideo,
+                        intro_videos: addVideo ? assIntroVideoUrls : []
                     })
                 });
                 if (response.ok) {
@@ -12737,12 +15515,7 @@ if (!empty($Tests)) {
         async function createTest() {
             if (!validateTestForm()) return;
 
-            // Hide modal immediately
-            const modalEl = document.getElementById('TestModal');
-            if (modalEl) {
-                const inst = bootstrap.Modal.getInstance(modalEl);
-                if (inst) inst.hide();
-            }
+            closeModal('TestModal');
 
             const name = document.getElementById('ass_name').value;
             const code = document.getElementById('ass_code').value;
@@ -12750,7 +15523,10 @@ if (!empty($Tests)) {
             const type = category === 'Enova' ? document.getElementById('ass_type').value : null;
             const assignedSelect = document.getElementById('ass_assigned');
             const assigned = category === 'Enova' ? Array.from(assignedSelect.selectedOptions).map(o => o.value).join(',') : null;
-            const desc = document.getElementById('ass_desc').value;
+            const desc = document.getElementById('ass_desc').value.trim();
+            const addVideoEl = document.getElementById('ass_add_video');
+            const addVideo = addVideoEl && addVideoEl.value === 'Yes';
+            const g = (id) => { const e = document.getElementById(id); return e ? e.checked : false; };
 
             Swal.fire({
                 title: 'Creating...',
@@ -12767,16 +15543,35 @@ if (!empty($Tests)) {
                         name, code, category,
                         assessment_type: type,
                         assigned_to: assigned,
-                        description: desc
+                        description: desc.substring(0, 500),
+                        instructions: desc,
+                        proctored_exam: g('test_form_proctored'),
+                        browser_lockdown: g('test_form_lockdown'),
+                        show_results: g('test_form_show_results'),
+                        allow_backtracking: g('test_form_backtrack'),
+                        add_video: addVideo
                     })
                 });
-                if (response.ok) {
-                    Swal.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
-                } else {
-                    throw new Error();
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || result.status !== 'success') {
+                    throw new Error(result.message || 'Server rejected create request');
                 }
+
+                const newId = result.id;
+                if (newId && assIntroVideoFiles.length > 0) {
+                    const fd = new FormData();
+                    assIntroVideoFiles.forEach(f => fd.append('videos[]', f));
+                    const up = await fetch(`Test/uploadIntroVideos/${newId}`, { method: 'POST', body: fd });
+                    const uj = await up.json().catch(() => ({}));
+                    if (uj.status !== 'success') {
+                        Swal.fire({ title: 'Partial save', text: 'Test was created but intro video upload failed. You can edit the test to retry.', icon: 'warning', timer: 3500, showConfirmButton: false }).then(() => location.reload());
+                        return;
+                    }
+                }
+
+                Swal.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
             } catch (e) {
-                Swal.fire('Error', 'Failed to create Test.', 'error');
+                Swal.fire('Error', e.message || 'Failed to create Test.', 'error');
             }
         }
 
@@ -12820,7 +15615,7 @@ if (!empty($Tests)) {
         function setTestAndRedirect(id) {
             const sel = document.getElementById('main_Test_select');
             if (sel) sel.value = id;
-            switchMainTab('test-creation');
+            if (typeof window.switchMainTab === 'function') window.switchMainTab('test-creation');
             openPackWizard();
         }
 
@@ -12936,7 +15731,7 @@ if (!empty($Tests)) {
                 return;
             }
 
-            const initialPacks = <?= json_encode($allPacks) ?>;
+            const initialPacks = <?= workflow_view_json($allPacks ?? []) ?>;
 
             packsDataTable = $('#TestPacksTable').DataTable({
                 data: initialPacks,
@@ -12997,9 +15792,10 @@ if (!empty($Tests)) {
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            if (typeof syncIntroVideoUploadColumn === 'function') syncIntroVideoUploadColumn();
             const resultsTab = document.getElementById('tab-content-results');
             if (resultsTab && !resultsTab.classList.contains('hidden')) {
-                if (typeof App !== 'undefined' && App.loadCandidateResult) App.loadCandidateResult(1);
+                if (typeof App !== 'undefined' && App.loadCandidateResult) App.loadCandidateResult();
             }
         });
         function toggleMultiselect() {
@@ -13045,6 +15841,10 @@ if (!empty($Tests)) {
             if (container && options && !container.contains(e.target)) {
                 options.classList.remove('show');
             }
+
+            if (!e.target.closest('.candidate-selector-wrapper')) {
+                closeAllBatchCandidateDropdowns();
+            }
         });
 
         function clearValidationErrors() {
@@ -13083,6 +15883,20 @@ if (!empty($Tests)) {
 
             if (!desc || !desc.value.trim()) { showError('ass_desc', true); isValid = false; } else { showError('ass_desc', false); }
 
+            const addV = document.getElementById('ass_add_video');
+            if (addV && addV.value === 'Yes') {
+                const n = (typeof assIntroVideoUrls !== 'undefined' ? assIntroVideoUrls.length : 0)
+                    + (typeof assIntroVideoFiles !== 'undefined' ? assIntroVideoFiles.length : 0);
+                if (n < 1) {
+                    showError('err_ass_intro_videos', true, 'ass_intro_upload_col');
+                    isValid = false;
+                } else {
+                    showError('err_ass_intro_videos', false, 'ass_intro_upload_col');
+                }
+            } else {
+                showError('err_ass_intro_videos', false, 'ass_intro_upload_col');
+            }
+
             return isValid;
         }
 
@@ -13097,6 +15911,71 @@ if (!empty($Tests)) {
                 if (errorSpan) errorSpan.classList.add('hidden');
             }
         }
+
+        function inferIconTooltip(iconEl) {
+            if (!iconEl) return 'Action';
+            const className = iconEl.className || '';
+            const rules = [
+                { key: 'bi-trash', label: 'Delete' },
+                { key: 'bi-pencil', label: 'Edit' },
+                { key: 'bi-eye', label: 'View' },
+                { key: 'bi-download', label: 'Download' },
+                { key: 'bi-floppy', label: 'Save' },
+                { key: 'bi-plus', label: 'Add' },
+                { key: 'bi-copy', label: 'Clone' },
+                { key: 'bi-send-check', label: 'Publish' },
+                { key: 'bi-send', label: 'Submit' },
+                { key: 'bi-search', label: 'Search' },
+                { key: 'bi-arrow-left', label: 'Back' },
+                { key: 'bi-chevron-left', label: 'Previous' },
+                { key: 'bi-chevron-right', label: 'Next' },
+                { key: 'bi-lock', label: 'Locked' },
+                { key: 'bi-journal', label: 'Open' },
+                { key: 'bi-file-earmark', label: 'Open Details' }
+            ];
+            const match = rules.find(rule => className.includes(rule.key));
+            return match ? match.label : 'Action';
+        }
+
+        function initGlobalIconTooltips(root = document) {
+            const targets = root.querySelectorAll('button, a, [role="button"], .batch-action-btn');
+            targets.forEach((el) => {
+                if (el.hasAttribute('title') || el.hasAttribute('data-bs-title') || el.getAttribute('aria-label')) return;
+                const icon = el.querySelector('i.bi');
+                if (!icon) return;
+
+                const textClone = el.cloneNode(true);
+                textClone.querySelectorAll('i.bi').forEach((node) => node.remove());
+                const visibleText = (textClone.textContent || '').trim();
+                if (visibleText) return;
+
+                const tooltipText = inferIconTooltip(icon);
+                el.setAttribute('title', tooltipText);
+                el.setAttribute('data-bs-title', tooltipText);
+                el.setAttribute('data-bs-toggle', 'tooltip');
+
+                if (window.bootstrap?.Tooltip) {
+                    const existing = window.bootstrap.Tooltip.getInstance(el);
+                    if (existing) existing.dispose();
+                    new window.bootstrap.Tooltip(el, { trigger: 'hover focus', container: 'body' });
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initGlobalIconTooltips(document);
+
+            if (window.MutationObserver) {
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        mutation.addedNodes.forEach((node) => {
+                            if (node.nodeType === 1) initGlobalIconTooltips(node);
+                        });
+                    });
+                });
+                observer.observe(document.body, { childList: true, subtree: true });
+            }
+        });
 
         // Live Validation Listeners
         document.addEventListener('DOMContentLoaded', () => {
@@ -13165,7 +16044,7 @@ if (!empty($Tests)) {
                         <select id="manual_q_type"
                             class="w-full bg-slate-50 border-0 rounded-xl h-12 px-4 text-[13px] font-bold text-slate-700 focus:ring-2 focus:ring-indigo-100 transition-all">
                             <option value="MCQ">Multiple Choice (MCQ)</option>
-                            <option value="Short Answer">Short Answer</option>
+                            <option value="Short Answer">Descriptive question</option>
                             <option value="Practical">Practical / Coding</option>
                         </select>
                     </div>

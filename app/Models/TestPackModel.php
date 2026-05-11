@@ -8,6 +8,6 @@ class TestPackModel extends Model {
         'scheduled_date', 'start_time', 'end_time', 'candidates', 'candidates_type', 
         'status', 'instructions', 'pass_mark', 'max_attempts', 'shuffle_questions', 
         'shuffle_options', 'proctored_exam', 'browser_lockdown', 'show_results', 
-        'allow_backtracking'
+        'allow_backtracking', 'results_published'
     ];
 }
