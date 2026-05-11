@@ -1231,7 +1231,14 @@ if (!empty($Tests)) {
         .nav-center {
             display: flex;
             align-items: center;
-            gap: 2rem;
+            gap: 1.75rem;
+        }
+
+        .nav-right-divider {
+            width: 1px;
+            height: 32px;
+            background: #e2e8f0;
+            margin: 0 0.25rem;
         }
 
         .nav-item {
@@ -1458,6 +1465,49 @@ if (!empty($Tests)) {
             align-items: center;
             gap: 0.5rem;
             transition: all 0.2s;
+        }
+
+        .btn-step-circle {
+            width: 22px;
+            height: 22px;
+            min-width: 22px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-variant-numeric: tabular-nums;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .btn-red-rounded:hover .btn-step-circle {
+            background: #ffffff;
+            color: var(--brand);
+            border-color: #ffffff;
+        }
+
+        .btn-red-rounded.is-active {
+            background: #ffffff;
+            color: var(--brand);
+            border: 1px solid var(--brand);
+            box-shadow: inset 0 0 0 2px rgba(220, 34, 48, 0.08), 0 4px 12px -4px rgba(220, 34, 48, 0.25);
+        }
+
+        .btn-red-rounded.is-active .btn-step-circle {
+            background: var(--brand);
+            color: #fff;
+            border-color: var(--brand);
+        }
+
+        .btn-red-rounded.is-active:hover {
+            background: #fef2f2;
+            color: var(--brand);
         }
 
         .btn-red-rounded:hover {
@@ -2212,6 +2262,121 @@ if (!empty($Tests)) {
         .form-control:focus {
             border-color: #dc2230;
             box-shadow: 0 0 0 3px rgba(220, 34, 48, 0.1);
+        }
+
+        /* ============================================
+           MODERN GLOBAL FOCUS STYLE — Red Brand Ring
+           ============================================ */
+        .input,
+        .select,
+        textarea,
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="number"],
+        input[type="search"],
+        input[type="tel"],
+        input[type="url"],
+        input[type="date"],
+        input[type="time"],
+        input[type="datetime-local"],
+        input[type="month"],
+        input[type="week"],
+        input[type="file"],
+        select {
+            outline: none !important;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+        }
+
+        .input:focus,
+        .input:focus-visible,
+        .select:focus,
+        .select:focus-visible,
+        textarea:focus,
+        textarea:focus-visible,
+        input[type="text"]:focus,
+        input[type="text"]:focus-visible,
+        input[type="email"]:focus,
+        input[type="email"]:focus-visible,
+        input[type="password"]:focus,
+        input[type="password"]:focus-visible,
+        input[type="number"]:focus,
+        input[type="number"]:focus-visible,
+        input[type="search"]:focus,
+        input[type="search"]:focus-visible,
+        input[type="tel"]:focus,
+        input[type="tel"]:focus-visible,
+        input[type="url"]:focus,
+        input[type="url"]:focus-visible,
+        input[type="date"]:focus,
+        input[type="date"]:focus-visible,
+        input[type="time"]:focus,
+        input[type="time"]:focus-visible,
+        input[type="datetime-local"]:focus,
+        input[type="datetime-local"]:focus-visible,
+        input[type="month"]:focus,
+        input[type="month"]:focus-visible,
+        input[type="week"]:focus,
+        input[type="week"]:focus-visible,
+        input[type="file"]:focus,
+        input[type="file"]:focus-visible,
+        select:focus,
+        select:focus-visible {
+            outline: none !important;
+            border-color: #dc2230 !important;
+            background-color: #ffffff !important;
+            box-shadow:
+                0 0 0 4px rgba(220, 34, 48, 0.12),
+                0 1px 3px rgba(220, 34, 48, 0.08) !important;
+        }
+
+        /* Bootstrap form-control / form-select polish */
+        .form-control,
+        .form-select {
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+
+        .form-control:focus,
+        .form-control:focus-visible,
+        .form-select:focus,
+        .form-select:focus-visible {
+            outline: none !important;
+            border-color: #dc2230 !important;
+            box-shadow:
+                0 0 0 4px rgba(220, 34, 48, 0.12),
+                0 1px 3px rgba(220, 34, 48, 0.08) !important;
+        }
+
+        /* Kill the default blue browser autofill focus */
+        input:-webkit-autofill:focus,
+        textarea:-webkit-autofill:focus,
+        select:-webkit-autofill:focus {
+            box-shadow:
+                0 0 0 30px #ffffff inset,
+                0 0 0 4px rgba(220, 34, 48, 0.12) !important;
+            -webkit-text-fill-color: #0f172a !important;
+        }
+
+        /* Invalid focus state stays red but darker */
+        .input.is-invalid:focus,
+        .form-control.is-invalid:focus,
+        input.is-invalid:focus,
+        textarea.is-invalid:focus,
+        select.is-invalid:focus {
+            border-color: #b91c1c !important;
+            box-shadow:
+                0 0 0 4px rgba(185, 28, 28, 0.15),
+                0 1px 3px rgba(185, 28, 28, 0.1) !important;
+        }
+
+        /* Opt-out: inputs inside their own styled wrappers shouldn't get the red ring */
+        .no-focus-ring,
+        .no-focus-ring:focus,
+        .no-focus-ring:focus-visible {
+            outline: none !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+            background-color: transparent !important;
         }
 
         /* Premium Execution View Styles */
@@ -4255,42 +4420,44 @@ if (!empty($Tests)) {
             </div>
         </div>
 
-        <div class="nav-center">
-            <div class="nav-item active">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-                HOME
-            </div>
-            <div class="nav-item">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                    <polyline points="10 9 9 9 8 9" />
-                </svg>
-                TICKETS
-            </div>
-            <div class="nav-item">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                </svg>
-                TIMESHIFT
-            </div>
-            <div class="nav-item">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <circle cx="12" cy="12" r="1" />
-                    <circle cx="19" cy="12" r="1" />
-                    <circle cx="5" cy="12" r="1" />
-                </svg>
-                MORE
-            </div>
-        </div>
-
         <div class="nav-right">
+            <div class="nav-center">
+                <div class="nav-item active">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    HOME
+                </div>
+                <div class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    TICKETS
+                </div>
+                <div class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    TIMESHIFT
+                </div>
+                <div class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="1" />
+                        <circle cx="19" cy="12" r="1" />
+                        <circle cx="5" cy="12" r="1" />
+                    </svg>
+                    MORE
+                </div>
+            </div>
+
+            <div class="nav-right-divider"></div>
+
             <div class="dropdown">
                 <div class="user-profile dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown"
                     aria-expanded="false">
@@ -4365,16 +4532,16 @@ if (!empty($Tests)) {
                 </div>
                 <div class="flex gap-3">
 
-                    <button class="btn-red-rounded px-6 inline-flex items-center gap-2" onclick="openCreateTest()">
-                        <span class="text-xs font-bold leading-none shrink-0 tabular-nums">1)</span>
-                        New Test Name
+                    <button id="btn_new_test_toggle" class="btn-red-rounded px-6 inline-flex items-center gap-2" onclick="toggleCreateTest()">
+                        <span class="btn-step-circle">1</span>
+                        <span id="btn_new_test_label">New Test Name</span>
                     </button>
                     <button class="btn-red-rounded px-6 inline-flex items-center gap-2" onclick="window.openQuestionBankModal()">
-                        <span class="text-xs font-bold leading-none shrink-0 tabular-nums">2)</span>
+                        <span class="btn-step-circle">2</span>
                         Question Bank
                     </button>
                     <button class="btn-red-rounded px-6 inline-flex items-center gap-2" onclick="openQuickTemplateModal()">
-                        <span class="text-xs font-bold leading-none shrink-0 tabular-nums">3)</span>
+                        <span class="btn-step-circle">3</span>
                         Create Template
                     </button>
                 </div>
@@ -4595,7 +4762,7 @@ if (!empty($Tests)) {
                             class="flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm w-[250px]">
                             <i class="bi bi-search text-slate-400 text-[10px]"></i>
                             <input type="text"
-                                class="text-[10px] font-black text-slate-500 border-0 focus:ring-0 p-0 w-full placeholder:text-slate-300 uppercase tracking-wider"
+                                class="no-focus-ring text-[10px] font-black text-slate-500 border-0 focus:ring-0 p-0 w-full placeholder:text-slate-300 uppercase tracking-wider"
                                 placeholder="Search tests..." oninput="searchTests(this.value)">
                         </div>
                     </div>
@@ -13433,10 +13600,16 @@ if (!empty($Tests)) {
             if (id === 'createPackModal') { openPackWizard(); return; }
             const el = document.getElementById(id);
             if (el) el.classList.add('open');
+            if (id === 'TestModal' && typeof updateNewTestButtonState === 'function') {
+                updateNewTestButtonState(true);
+            }
         }
         function closeModal(id) {
             const el = document.getElementById(id);
             if (el) el.classList.remove('open');
+            if (id === 'TestModal' && typeof updateNewTestButtonState === 'function') {
+                updateNewTestButtonState(false);
+            }
         }
 
         /* Template Builder */
@@ -15749,6 +15922,30 @@ if (!empty($Tests)) {
             });
             const vid = document.getElementById('ass_add_video');
             if (vid) vid.value = 'No';
+        }
+
+        function toggleCreateTest() {
+            const panel = document.getElementById('TestModal');
+            if (panel && panel.classList.contains('open')) {
+                closeModal('TestModal');
+                updateNewTestButtonState(false);
+                return;
+            }
+            openCreateTest();
+            updateNewTestButtonState(true);
+        }
+
+        function updateNewTestButtonState(isOpen) {
+            const btn = document.getElementById('btn_new_test_toggle');
+            const label = document.getElementById('btn_new_test_label');
+            if (!btn || !label) return;
+            if (isOpen) {
+                btn.classList.add('is-active');
+                label.textContent = 'Close New Test';
+            } else {
+                btn.classList.remove('is-active');
+                label.textContent = 'New Test Name';
+            }
         }
 
         function openCreateTest() {
