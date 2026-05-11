@@ -321,6 +321,7 @@ if (!empty($Tests)) {
         .batch-action-btn {
             width: 32px;
             height: 32px;
+            flex-shrink: 0;
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -5358,10 +5359,6 @@ if (!empty($Tests)) {
                         <button class="btn btn-nav-prev-custom" onclick="App.prevQuestion()">
                             <i class="bi bi-chevron-left me-2"></i> Previous Question
                         </button>
-                        <div class="save-status-custom">
-                            <div class="save-dot-custom"></div>
-                            <span>Last saved: just now</span>
-                        </div>
                         <button class="btn btn-nav-next-custom" id="nextQBtn" onclick="App.nextQuestion()">
                             Next Question <i class="bi bi-chevron-right ms-2"></i>
                         </button>
@@ -7423,7 +7420,7 @@ if (!empty($Tests)) {
                             badgeClass = 'badge-red';
                             primaryAction = `<span class="text-slate-300 text-[10px] font-black uppercase tracking-widest">Closed</span>`;
                         }
-                        const action = `<div class="flex items-center justify-end gap-2">${primaryAction}</div>`;
+                        const action = `<div class="flex items-center justify-center gap-2">${primaryAction}</div>`;
 
                         html += `
                         <tr class="hover:bg-slate-50/50 transition-colors border-b border-slate-50">
@@ -7453,7 +7450,7 @@ if (!empty($Tests)) {
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-right">${action}</td>
+                            <td class="px-6 py-4 text-center">${action}</td>
                         </tr>
                     `;
                     });
@@ -7722,10 +7719,6 @@ if (!empty($Tests)) {
 
                             return `
                                 <div class="candidate-selector-wrapper">
-                                    <div class="readonly-view px-3 py-2 text-xs font-bold text-slate-600">
-                                        <i class="bi bi-people text-slate-400"></i>
-                                        <span>${display}</span>
-                                    </div>
                                     <div class="edit-view">
                                         <div class="batch-candidate-inline">
                                             <button type="button" class="batch-candidate-trigger" onclick="toggleBatchCandidateDropdown(this)" ${isPublished ? 'disabled' : ''}>
@@ -7799,7 +7792,7 @@ if (!empty($Tests)) {
                     },
                     {
                         data: null,
-                        className: 'text-right px-6',
+                        className: 'text-right px-4 py-3 whitespace-nowrap',
                         width: '15%',
                         render: (data, type, row) => {
                             const isPublished = row.status === 'published';
@@ -7807,7 +7800,7 @@ if (!empty($Tests)) {
                             const resultsPublished = Number(row.results_published) === 1 || row.results_published === true || row.results_published === '1';
                             const canPublishResults = isPublished && stats.total > 0 && stats.completed === stats.total && stats.subjectivePending === 0 && !resultsPublished;
                             return `
-                            <div class="flex items-center justify-end gap-1.5 flex-wrap" data-batch-id="${row.id}">
+                            <div class="flex flex-nowrap items-center justify-end gap-1" data-batch-id="${row.id}">
                                 ${!isPublished ? `
                                     <button class="batch-action-btn bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white" onclick="saveBatchInline(this, '${row.id}', '${testId}')" title="Save Changes" data-action="save">
                                         <i class="bi bi-floppy-fill"></i>
@@ -10247,9 +10240,13 @@ if (!empty($Tests)) {
                     const totalDuration = `${duration} Mins`;
 
                     // Update UI
-                    document.getElementById('execTotalMarks').textContent = `${totalMarks} Marks`;
-                    document.getElementById('execPassMark').textContent = `${pack ? (pack.pass_mark || 70) : 70}%`;
-                    document.getElementById('execTotalDuration').textContent = totalDuration;
+                    const totalEl = document.getElementById('execTotalMarks');
+                    const passEl = document.getElementById('execPassMark');
+                    const durEl = document.getElementById('execTotalDuration');
+
+                    if (totalEl) totalEl.textContent = `${totalMarks} Marks`;
+                    if (passEl) passEl.textContent = `${pack ? (pack.pass_mark || 70) : 70}%`;
+                    if (durEl) durEl.textContent = totalDuration;
 
                     const headerLogo = document.getElementById('execHeaderLogo');
                     if (headerLogo) {
