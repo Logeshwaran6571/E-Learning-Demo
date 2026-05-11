@@ -103,46 +103,211 @@ if (!empty($Tests)) {
             height: 32px !important;
         }
 
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 4px 12px !important;
+        /* ============================================
+           MODERN RED PAGINATION (Bootstrap 5 DataTables)
+           Targets: .dataTables_paginate ul.pagination > li.page-item > a.page-link
+           ============================================ */
+        .dataTables_wrapper .dataTables_info {
             font-size: 11px !important;
-            margin: 0 2px !important;
-            border-radius: 8px !important;
-            border: 1px solid #e2e8f0 !important;
-            background: #f8fafc !important;
-            color: #64748b !important;
             font-weight: 700 !important;
-            transition: all 0.2s ease !important;
-            cursor: pointer !important;
-            display: inline-block !important;
+            color: #64748b !important;
+            letter-spacing: 0.02em;
+            padding-top: 14px !important;
         }
 
-        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-            background: #f1f5f9 !important;
-            border-color: #cbd5e1 !important;
-            color: var(--brand) !important;
+        .dataTables_wrapper .dataTables_info::first-letter {
+            color: #dc2230;
+        }
+
+        /* Pagination outer wrapper */
+        .dataTables_wrapper .dataTables_paginate {
+            padding-top: 10px !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate ul.pagination {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item {
+            margin: 0 !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item .page-link {
+            min-width: 36px !important;
+            height: 36px !important;
+            padding: 0 12px !important;
+            font-size: 11.5px !important;
+            font-weight: 800 !important;
+            border-radius: 10px !important;
+            border: 1px solid transparent !important;
+            background: transparent !important;
+            color: #64748b !important;
+            letter-spacing: 0.03em !important;
+            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            cursor: pointer !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            position: relative !important;
+            outline: none !important;
+            box-shadow: none !important;
             text-decoration: none !important;
         }
 
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background: var(--brand) !important;
-            color: white !important;
-            border-color: var(--brand) !important;
-            box-shadow: 0 4px 10px -2px rgba(220, 34, 48, 0.3) !important;
+        /* Hover: light red wash + lift */
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item:not(.active):not(.disabled) .page-link:hover,
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item:not(.active):not(.disabled) .page-link:focus {
+            background: #fef2f2 !important;
+            border-color: #fecaca !important;
+            color: #dc2230 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 10px -4px rgba(220, 34, 48, 0.22) !important;
         }
 
-        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
-            opacity: 0.5 !important;
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item .page-link:active {
+            transform: translateY(0) scale(0.97) !important;
+        }
+
+        /* ACTIVE page: bold red gradient */
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.active .page-link,
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.active .page-link:hover,
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.active .page-link:focus {
+            background: linear-gradient(135deg, #dc2230 0%, #b91c1c 100%) !important;
+            color: #ffffff !important;
+            border-color: transparent !important;
+            box-shadow:
+                0 6px 14px -4px rgba(220, 34, 48, 0.5),
+                0 2px 4px -2px rgba(220, 34, 48, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+            transform: translateY(-1px) !important;
+            z-index: 1 !important;
+        }
+
+        /* Disabled */
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.disabled .page-link,
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.disabled .page-link:hover {
+            opacity: 0.45 !important;
             cursor: not-allowed !important;
             background: #f8fafc !important;
-            color: #94a3b8 !important;
+            border-color: #f1f5f9 !important;
+            color: #cbd5e1 !important;
+            transform: none !important;
+            box-shadow: none !important;
         }
 
-        .dataTables_paginate {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 4px;
+        /* Previous / Next pills with chevron icons */
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.previous .page-link,
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.next .page-link,
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.first .page-link,
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.last .page-link {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #475569 !important;
+            font-weight: 800 !important;
+            padding: 0 14px !important;
+            gap: 4px !important;
+            text-transform: capitalize !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.previous:not(.disabled) .page-link:hover,
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.next:not(.disabled) .page-link:hover,
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.first:not(.disabled) .page-link:hover,
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.last:not(.disabled) .page-link:hover {
+            background: linear-gradient(135deg, #dc2230 0%, #b91c1c 100%) !important;
+            border-color: transparent !important;
+            color: #ffffff !important;
+            box-shadow: 0 6px 14px -4px rgba(220, 34, 48, 0.42) !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.previous .page-link::before {
+            content: "\F284";
+            font-family: "bootstrap-icons";
+            font-size: 11px;
+            margin-right: 4px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.next .page-link::after {
+            content: "\F285";
+            font-family: "bootstrap-icons";
+            font-size: 11px;
+            margin-left: 4px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.first .page-link::before {
+            content: "\F282";
+            font-family: "bootstrap-icons";
+            font-size: 11px;
+            margin-right: 4px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.last .page-link::after {
+            content: "\F286";
+            font-family: "bootstrap-icons";
+            font-size: 11px;
+            margin-left: 4px;
+        }
+
+        /* Ellipsis */
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item .page-link.ellipsis,
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.disabled .page-link[data-dt-idx*="ellipsis"] {
+            color: #cbd5e1 !important;
+            font-weight: 900 !important;
+            padding: 0 6px !important;
+            letter-spacing: 1px !important;
+            background: transparent !important;
+            border-color: transparent !important;
+        }
+
+        /* Kill Bootstrap focus blue ring entirely */
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item .page-link:focus {
+            box-shadow: 0 0 0 3px rgba(220, 34, 48, 0.15) !important;
+        }
+        .dataTables_wrapper .dataTables_paginate ul.pagination li.page-item.active .page-link:focus {
+            box-shadow:
+                0 6px 14px -4px rgba(220, 34, 48, 0.5),
+                0 2px 4px -2px rgba(220, 34, 48, 0.3),
+                0 0 0 3px rgba(220, 34, 48, 0.2) !important;
+        }
+
+        /* Length / dropdown selector */
+        .dataTables_wrapper .dataTables_length select {
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 10px !important;
+            padding: 4px 28px 4px 12px !important;
+            font-size: 11.5px !important;
+            font-weight: 800 !important;
+            color: #475569 !important;
+            background-color: #fff !important;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%23dc2230' d='M3.204 5L8 10.5 12.796 5z'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 8px center !important;
+            background-size: 12px !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease;
+        }
+
+        .dataTables_wrapper .dataTables_length select:focus {
+            border-color: var(--brand) !important;
+            box-shadow: 0 0 0 3px rgba(220, 34, 48, 0.12) !important;
+            outline: none !important;
+        }
+
+        .dataTables_wrapper .dataTables_length label {
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            color: #64748b !important;
+            letter-spacing: 0.02em;
         }
 
         #TestPacksTable_wrapper {
@@ -1864,8 +2029,33 @@ if (!empty($Tests)) {
 
         /* Wizard Styles */
         .modal-backdrop.show {
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             background: rgba(15, 23, 42, 0.5);
+        }
+
+        /* Strong blur on background content when result modal opens */
+        body.result-modal-open > nav,
+        body.result-modal-open > #main-content-area,
+        body.result-modal-open > header,
+        body.result-modal-open > main,
+        body.result-modal-open > footer {
+            filter: blur(8px) saturate(105%) !important;
+            -webkit-filter: blur(8px) saturate(105%) !important;
+            transition: filter 0.25s ease !important;
+            pointer-events: none !important;
+            user-select: none !important;
+        }
+
+        body.result-modal-open .modal-backdrop.show {
+            -webkit-backdrop-filter: blur(10px) saturate(140%);
+            backdrop-filter: blur(10px) saturate(140%);
+            background: rgba(15, 23, 42, 0.55) !important;
+        }
+
+        #studentResultSummaryModal .modal-content {
+            box-shadow: 0 30px 80px -20px rgba(15, 23, 42, 0.45),
+                        0 12px 30px -10px rgba(220, 34, 48, 0.18) !important;
         }
 
         .modal-content {
@@ -3844,15 +4034,22 @@ if (!empty($Tests)) {
             width: 30px;
             height: 30px;
             border-radius: 8px;
-            background: #f8fafc;
-            color: #94a3b8;
-            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: var(--brand);
+            border: 1px solid #f1f5f9;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 14px;
             transition: all 0.2s;
             flex-shrink: 0;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        .qb-bank-card:hover .bank-icon {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: var(--brand);
         }
 
         .qb-bank-main {
@@ -4324,7 +4521,7 @@ if (!empty($Tests)) {
                                         </div>
                                     </div>
                                     <div class="test-exam-config-card">
-                                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-600 shrink-0 shadow-sm">
+                                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-red-500 shrink-0 shadow-sm">
                                             <i class="bi bi-lock-fill text-lg"></i>
                                         </div>
                                         <div class="flex-1 min-w-0">
@@ -4336,7 +4533,7 @@ if (!empty($Tests)) {
                                         </div>
                                     </div>
                                     <div class="test-exam-config-card">
-                                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-600 shrink-0 shadow-sm">
+                                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-red-500 shrink-0 shadow-sm">
                                             <i class="bi bi-eye-fill text-lg"></i>
                                         </div>
                                         <div class="flex-1 min-w-0">
@@ -4348,7 +4545,7 @@ if (!empty($Tests)) {
                                         </div>
                                     </div>
                                     <div class="test-exam-config-card">
-                                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-600 shrink-0 shadow-sm">
+                                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-red-500 shrink-0 shadow-sm">
                                             <i class="bi bi-skip-backward-fill text-lg"></i>
                                         </div>
                                         <div class="flex-1 min-w-0">
@@ -5450,7 +5647,7 @@ if (!empty($Tests)) {
             <p class="text-center text-slate-300 small mb-4 mb-md-5">Orientation screen is shown before the test starts. Click the button below when you're ready to begin.</p>
             <div id="execIntroVideosMount" class="d-flex flex-column gap-4 mb-4"></div>
             <div class="text-center pb-5">
-                <button type="button" id="execIntroCompleteBtn" class="btn btn-lg btn-light fw-bold px-5 rounded-pill shadow"
+                <button type="button" id="execIntroCompleteBtn" class="btn btn-lg btn-danger fw-bold px-5 rounded-pill shadow"
                     style="min-width:260px;" onclick="App.completeIntroGate()">
                     I've completed watching — Begin test
                 </button>
@@ -7552,7 +7749,8 @@ if (!empty($Tests)) {
                     `
                     }
                 ],
-                pageLength: 10,
+                pageLength: 7,
+                lengthChange: false,
                 dom: 'rt<"px-6 py-4 flex justify-between items-center"ip>',
                 language: {
                     emptyTable: "No tests found matching your criteria"
@@ -7598,7 +7796,7 @@ if (!empty($Tests)) {
             let packs = d.test_packs || [];
 
             let html = `
-            <div class="bg-slate-50/50 p-6 border-y border-slate-100 child-table-container">
+            <div class="bg-slate-50/50 py-6 px-4 border-y border-slate-100 child-table-container">
                 <div class="flex items-center justify-between mb-6 px-2">
                     <div>
                         <h5 class="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em] mb-1">Assigned Batches</h5>
@@ -8727,13 +8925,16 @@ if (!empty($Tests)) {
 
             const builderView = document.getElementById('templateBuilderInlineView');
             const isBuilderVisible = builderView && !builderView.classList.contains('hidden');
-            if (isBuilderVisible) {
-                footer.classList.add('hidden');
-                return;
-            }
-
             const selectedTemplateId = document.getElementById('baseTemplateSelect')?.value || '';
-            footer.classList.toggle('hidden', !!selectedTemplateId);
+            const shouldHide = isBuilderVisible || !!selectedTemplateId;
+
+            if (shouldHide) {
+                footer.classList.add('hidden');
+                footer.style.setProperty('display', 'none', 'important');
+            } else {
+                footer.classList.remove('hidden');
+                footer.style.setProperty('display', 'flex', 'important');
+            }
         }
 
         function ensureBuilderQuestionScrollWorks() {
@@ -9675,18 +9876,83 @@ if (!empty($Tests)) {
             document.getElementById(`question_mode_${mode}`).classList.remove('hidden');
         }
 
+        function formatTemplateDate(raw) {
+            if (!raw) return '--';
+            const d = new Date(String(raw).replace(' ', 'T'));
+            if (isNaN(d.getTime())) return String(raw);
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function renderActiveTemplateMeta(template) {
+            const createdEl = document.getElementById('active_template_created_date');
+            const summaryEl = document.getElementById('active_template_usage_summary');
+            const listEl = document.getElementById('active_template_usage_list');
+            const btn = document.getElementById('active_template_usage_btn');
+            const dropdown = document.getElementById('active_template_usage_dropdown');
+
+            if (createdEl) createdEl.textContent = formatTemplateDate(template.created_at);
+
+            const usage = Array.isArray(template.usage) ? template.usage : [];
+            if (summaryEl) {
+                if (usage.length === 0) {
+                    summaryEl.textContent = 'Not used yet';
+                } else if (usage.length === 1) {
+                    summaryEl.textContent = usage[0].pack_name || usage[0].assessment_name || '1 batch';
+                } else {
+                    summaryEl.textContent = usage.length + ' batches';
+                }
+            }
+
+            if (listEl) {
+                if (usage.length === 0) {
+                    listEl.innerHTML = '<div class="text-[10px] text-slate-400 font-medium px-2 py-3 text-center">This template has not been used in any batch yet.</div>';
+                } else {
+                    listEl.innerHTML = usage.map(u => `
+                        <div class="flex items-start gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                            <div class="w-5 h-5 bg-red-50 text-red-600 rounded-md flex items-center justify-center text-[9px] flex-shrink-0">
+                                <i class="bi bi-collection"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-[11px] font-bold text-slate-700 truncate">${escapeHtml(u.pack_name || 'Unnamed Batch')}</div>
+                                <div class="text-[9px] text-slate-400 font-medium truncate">${escapeHtml(u.assessment_name || '')}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            if (btn && dropdown && !btn.dataset.bound) {
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('hidden');
+                });
+                document.addEventListener('click', (e) => {
+                    if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+                        dropdown.classList.add('hidden');
+                    }
+                });
+            }
+            if (dropdown) dropdown.classList.add('hidden');
+        }
+
         function updateTemplateDetails(templateId, clearQuestions = false) {
             const template = App.templates.find(t => t.id == templateId);
             const placeholder = document.getElementById('template_details_placeholder');
             const activeView = document.getElementById('template_details_active');
             const deleteBtn = document.getElementById('active_template_delete_btn');
             const questionPreview = document.getElementById('active_template_questions');
+            const metaBox = document.getElementById('active_template_meta');
 
             if (!template) {
                 placeholder.classList.remove('hidden');
                 activeView.classList.add('hidden');
                 if (deleteBtn) deleteBtn.classList.add('hidden');
                 if (questionPreview) questionPreview.innerHTML = '';
+                if (metaBox) {
+                    metaBox.classList.add('hidden');
+                    metaBox.classList.remove('flex');
+                }
                 updateQuickModeFooterVisibility();
                 return;
             }
@@ -9694,6 +9960,11 @@ if (!empty($Tests)) {
             placeholder.classList.add('hidden');
             activeView.classList.remove('hidden');
             if (deleteBtn) deleteBtn.classList.remove('hidden');
+            if (metaBox) {
+                metaBox.classList.remove('hidden');
+                metaBox.classList.add('flex');
+            }
+            renderActiveTemplateMeta(template);
             updateQuickModeFooterVisibility();
 
             document.getElementById('active_template_name').value = template.name;
@@ -10041,7 +10312,12 @@ if (!empty($Tests)) {
                         const p = JSON.parse(raw);
                         return Array.isArray(p) ? p.filter(Boolean) : [];
                     } catch (e) {
-                        return [];
+                        // Backward compatibility: older rows may store one plain URL
+                        // or a comma/newline separated list rather than JSON.
+                        return raw
+                            .split(/[\n,]/)
+                            .map(x => String(x || '').trim())
+                            .filter(Boolean);
                     }
                 }
                 return [];
@@ -10050,14 +10326,90 @@ if (!empty($Tests)) {
             _resolveIntroVideoSrc: (url) => {
                 if (!url) return '';
                 const s = String(url).trim();
-                const pathMatch = s.match(/(\/uploads\/assessment_intro\/[^?#]+)/);
-                if (pathMatch && typeof window.__APP_BASE__ === 'string' && window.__APP_BASE__) {
-                    return window.__APP_BASE__ + pathMatch[1];
+                const appBaseRaw = (typeof window.__APP_BASE__ === 'string' ? window.__APP_BASE__ : '').trim();
+                const appBase = appBaseRaw.replace(/\/index\.php\/?$/i, '');
+
+                let path = s;
+                if (/^https?:\/\//i.test(s)) {
+                    try {
+                        path = new URL(s).pathname || s;
+                    } catch (_) {
+                        path = s;
+                    }
                 }
+
+                // Remove accidental front-controller segment.
+                path = path.replace(/\/index\.php(?=\/)/i, '');
+
+                // Keep only the uploads/assessment_intro tail if present.
+                const good = path.match(/\/uploads\/assessment_intro\/[^?#]+/i);
+                if (good) {
+                    const clean = good[0];
+                    return appBase ? appBase + clean : `${window.location.origin}${clean}`;
+                }
+
+                // Legacy rows may store /assessment_intro/... without uploads segment.
+                const legacy = path.match(/\/assessment_intro\/[^?#]+/i);
+                if (legacy) {
+                    const clean = '/uploads' + legacy[0];
+                    return appBase ? appBase + clean : `${window.location.origin}${clean}`;
+                }
+
+                // Relative fallbacks.
+                if (s.startsWith('uploads/assessment_intro/')) {
+                    return (appBase || window.location.origin) + '/' + s;
+                }
+                if (s.startsWith('assessment_intro/')) {
+                    return (appBase || window.location.origin) + '/uploads/' + s;
+                }
+
                 if (/^https?:\/\//i.test(s)) return s;
-                const base = typeof window.__APP_BASE__ === 'string' ? window.__APP_BASE__ : '';
-                if (!base) return s;
-                return base + (s.startsWith('/') ? s : '/' + s);
+                if (!appBase) return s;
+                return appBase + (s.startsWith('/') ? s : '/' + s);
+            },
+            _resolveIntroVideoCandidates: (url) => {
+                const s = String(url || '').trim();
+                if (!s) return [];
+                const appBaseRaw = (typeof window.__APP_BASE__ === 'string' ? window.__APP_BASE__ : '').trim();
+                const appBase = appBaseRaw.replace(/\/index\.php\/?$/i, '');
+                const origin = window.location.origin;
+                const out = [];
+                const seen = new Set();
+                const add = (u) => {
+                    const n = String(u || '').trim();
+                    if (!n || seen.has(n)) return;
+                    seen.add(n);
+                    out.push(n);
+                };
+
+                // Primary normalized URL.
+                add(App._resolveIntroVideoSrc(s));
+
+                // Extract a robust upload path candidate and fan out absolute variants.
+                let path = s.replace(/\/index\.php(?=\/)/i, '');
+                const uploadPath = path.match(/\/uploads\/assessment_intro\/[^?#]+/i)
+                    || path.match(/\/assessment_intro\/[^?#]+/i);
+                if (uploadPath) {
+                    let p = uploadPath[0];
+                    if (!/^\/uploads\//i.test(p)) p = '/uploads' + p;
+                    add(p);
+                    add(origin + p);
+                    if (appBase) add(appBase + p);
+                }
+
+                // Relative fallbacks.
+                if (s.startsWith('uploads/assessment_intro/')) {
+                    add('/' + s);
+                    add(origin + '/' + s);
+                    if (appBase) add(appBase + '/' + s);
+                } else if (s.startsWith('assessment_intro/')) {
+                    const p = '/uploads/' + s;
+                    add(p);
+                    add(origin + p);
+                    if (appBase) add(appBase + p);
+                }
+
+                return out;
             },
 
             resolveIntroConfig: async (testId, testMeta) => {
@@ -10116,7 +10468,8 @@ if (!empty($Tests)) {
                 mount.innerHTML = '';
                 App.introGateTotal = urls.length;
                 App.introGateEnded = new Set();
-                btn.disabled = false;
+                btn.disabled = true;
+                btn.title = 'Watch all orientation videos to continue';
                 urls.forEach((url, idx) => {
                     const box = document.createElement('div');
                     box.className = 'bg-white rounded-3 p-3 shadow-sm';
@@ -10125,12 +10478,24 @@ if (!empty($Tests)) {
                     v.controls = true;
                     v.setAttribute('playsinline', '');
                     v.preload = 'metadata';
-                    const src = App._resolveIntroVideoSrc(url);
-                    v.src = src;
+                    const candidates = App._resolveIntroVideoCandidates(url);
+                    let candidateIdx = 0;
+                    const tryLoadNext = () => {
+                        if (candidateIdx >= candidates.length) {
+                            console.warn('Intro video failed to load for all URL candidates:', url, candidates);
+                            return;
+                        }
+                        const src = candidates[candidateIdx++];
+                        v.src = src;
+                        v.load();
+                    };
+                    // Show video only (no poster/image fallback).
+                    v.removeAttribute('poster');
                     v.addEventListener('ended', () => App.markIntroVideoEnded(idx));
                     v.addEventListener('error', () => {
-                        console.warn('Intro video failed to load:', src);
+                        tryLoadNext();
                     });
+                    tryLoadNext();
                     box.appendChild(v);
                     mount.appendChild(box);
                 });
@@ -10141,10 +10506,20 @@ if (!empty($Tests)) {
                 if (!App.introGateEnded) App.introGateEnded = new Set();
                 App.introGateEnded.add(idx);
                 const btn = document.getElementById('execIntroCompleteBtn');
-                if (btn) btn.disabled = false;
+                if (btn) {
+                    const done = App.introGateEnded.size >= (App.introGateTotal || 0);
+                    btn.disabled = !done;
+                    btn.title = done ? '' : 'Watch all orientation videos to continue';
+                }
             },
 
             completeIntroGate: () => {
+                const total = App.introGateTotal || 0;
+                const done = App.introGateEnded ? App.introGateEnded.size : 0;
+                if (total > 0 && done < total) {
+                    Swal.fire('Watch required videos', 'Please watch all orientation videos before beginning the test.', 'warning');
+                    return;
+                }
                 const overlay = document.getElementById('execIntroOverlay');
                 if (overlay) overlay.classList.add('d-none');
                 const ev = document.getElementById('executionView');
@@ -10256,6 +10631,9 @@ if (!empty($Tests)) {
                     Swal.close();
 
                     const introConfig = await App.resolveIntroConfig(testId, testMeta);
+                    if (introConfig.addVideoOn && introConfig.introUrls.length === 0) {
+                        throw new Error('Intro video is enabled for this test, but no playable orientation video was found. Please contact admin.');
+                    }
                     const wantIntro = introConfig.addVideoOn && introConfig.introUrls.length > 0;
 
                     if (wantIntro) {
@@ -11362,6 +11740,13 @@ if (!empty($Tests)) {
                     </div>`;
 
                 const inst = bootstrap.Modal.getOrCreateInstance(modalEl);
+                if (!modalEl.dataset.blurBound) {
+                    modalEl.dataset.blurBound = '1';
+                    modalEl.addEventListener('hidden.bs.modal', () => {
+                        document.body.classList.remove('result-modal-open');
+                    });
+                }
+                document.body.classList.add('result-modal-open');
                 inst.show();
             },
 
@@ -12071,7 +12456,7 @@ if (!empty($Tests)) {
                                             onclick="selectTemplate('<?= $t['id'] ?>')" id="temp_card_<?= $t['id'] ?>">
                                             <div class="flex items-start gap-2.5">
                                                 <div
-                                                    class="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-red-600 transition-colors flex-shrink-0">
+                                                    class="w-8 h-8 bg-white border border-slate-100 rounded-lg flex items-center justify-center text-red-500 group-hover:text-red-600 group-hover:bg-red-50 group-hover:border-red-100 shadow-sm transition-all flex-shrink-0">
                                                     <i class="bi bi-file-earmark-text text-base"></i>
                                                 </div>
                                                 <div class="overflow-hidden">
@@ -12140,7 +12525,7 @@ if (!empty($Tests)) {
                                     <div class="col-span-7 card border border-slate-200 shadow-sm rounded-2xl overflow-hidden bg-white"
                                         id="wizard_template_section">
                                         <div class="p-5">
-                                            <div class="flex items-center justify-between mb-4">
+                                            <div class="flex items-center justify-between mb-4 gap-4">
                                                 <div class="flex items-center gap-3">
                                                     <div
                                                         class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center shadow-sm">
@@ -12154,7 +12539,33 @@ if (!empty($Tests)) {
                                                             question paper framework</p>
                                                     </div>
                                                 </div>
-                                                <div class="flex items-center gap-2">
+
+                                                <!-- Template Meta Info (Created Date & Usage) -->
+                                                <div id="active_template_meta" class="hidden flex-1 flex items-center justify-end gap-2 min-w-0">
+                                                    <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5 shadow-sm">
+                                                        <i class="bi bi-calendar2-event text-red-500 text-[11px]"></i>
+                                                        <div class="leading-tight">
+                                                            <span class="block text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Created</span>
+                                                            <span id="active_template_created_date" class="block text-[10px] font-black text-slate-700 leading-tight">--</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="relative group">
+                                                        <button type="button" id="active_template_usage_btn" class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5 shadow-sm hover:border-red-200 transition-all max-w-[260px]">
+                                                            <i class="bi bi-link-45deg text-red-500 text-[12px]"></i>
+                                                            <div class="leading-tight text-left min-w-0">
+                                                                <span class="block text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Used In</span>
+                                                                <span id="active_template_usage_summary" class="block text-[10px] font-black text-slate-700 leading-tight truncate">Not used yet</span>
+                                                            </div>
+                                                            <i class="bi bi-chevron-down text-slate-400 text-[9px]"></i>
+                                                        </button>
+                                                        <div id="active_template_usage_dropdown" class="hidden absolute right-0 top-full mt-1 w-72 max-h-64 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-2">
+                                                            <div class="text-[8px] font-black text-slate-400 uppercase tracking-widest px-2 py-1 border-b border-slate-100 mb-1">Template Usage</div>
+                                                            <div id="active_template_usage_list" class="space-y-1"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex items-center gap-2 shrink-0">
                                                     <button id="active_template_delete_btn"
                                                         class="hidden px-3 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm"
                                                         onclick="deleteActiveTemplate()" title="Delete Template">
@@ -15020,7 +15431,12 @@ if (!empty($Tests)) {
                 try {
                     const p = JSON.parse(data.intro_videos);
                     return Array.isArray(p) ? p : [];
-                } catch (e) { return []; }
+                } catch (e) {
+                    return data.intro_videos
+                        .split(/[\n,]/)
+                        .map(x => String(x || '').trim())
+                        .filter(Boolean);
+                }
             }
             return [];
         }
@@ -15467,6 +15883,8 @@ if (!empty($Tests)) {
                     if (uj.status === 'success' && Array.isArray(uj.intro_videos)) {
                         assIntroVideoUrls = uj.intro_videos;
                         assIntroVideoFiles = [];
+                    } else {
+                        throw new Error(uj.message || 'Intro video upload failed');
                     }
                 }
 

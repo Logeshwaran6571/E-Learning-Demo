@@ -22,10 +22,34 @@ class TestController extends BaseController
         $testPackModel = new TestPackModel();
 
         $templates = $templateModel->findAll();
+
+        $allTestsForUsage = $TestModel->select('id, name')->findAll();
+        $testsById = [];
+        foreach ($allTestsForUsage as $row) {
+            $testsById[$row['id']] = $row['name'];
+        }
+        $allPacksForUsage = $testPackModel
+            ->select('id, pack_name, template_id, assessment_id')
+            ->findAll();
+        $usageByTemplate = [];
+        foreach ($allPacksForUsage as $pack) {
+            $tid = $pack['template_id'] ?? null;
+            if (!$tid) continue;
+            if (!isset($usageByTemplate[$tid])) $usageByTemplate[$tid] = [];
+            $usageByTemplate[$tid][] = [
+                'pack_id' => $pack['id'],
+                'pack_name' => $pack['pack_name'],
+                'assessment_id' => $pack['assessment_id'],
+                'assessment_name' => $testsById[$pack['assessment_id']] ?? 'Unknown Test',
+            ];
+        }
+
         foreach ($templates as &$t) {
             $t['sections'] = $sectionModel->where('template_id', $t['id'])->findAll();
             $t['questions'] = (new QuestionModel())->where('template_id', $t['id'])->findAll();
+            $t['usage'] = $usageByTemplate[$t['id']] ?? [];
         }
+        unset($t);
 
         $Tests = $TestModel->orderBy('id', 'DESC')->findAll();
         foreach ($Tests as &$a) {
@@ -385,7 +409,6 @@ class TestController extends BaseController
         if (! is_array($arr)) {
             return $json;
         }
-        $base = rtrim(base_url(), '/');
         $out = [];
         foreach ($arr as $u) {
             $u = trim((string) $u);
@@ -393,11 +416,16 @@ class TestController extends BaseController
                 continue;
             }
             if (preg_match('#(/uploads/assessment_intro/.+)$#', $u, $m)) {
-                $out[] = $base . $m[1];
+                $out[] = $m[1];
+            } elseif (preg_match('#(/assessment_intro/.+)$#', $u, $m)) {
+                // Backward compatibility: older records may miss the /uploads segment.
+                $out[] = '/uploads' . $m[1];
             } elseif (strpos($u, 'uploads/assessment_intro/') === 0) {
-                $out[] = $base . '/' . $u;
+                $out[] = '/' . $u;
+            } elseif (strpos($u, 'assessment_intro/') === 0) {
+                $out[] = '/uploads/' . $u;
             } elseif (strpos($u, '/uploads/assessment_intro/') === 0) {
-                $out[] = $base . $u;
+                $out[] = $u;
             } else {
                 $out[] = $u;
             }
@@ -491,6 +519,7 @@ class TestController extends BaseController
             'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo',
             'video/mpeg', 'video/ogg',
         ];
+        $allowedExt = ['mp4', 'webm', 'mov', 'avi', 'mpeg', 'mpg', 'ogv', 'm4v', 'mkv'];
         $maxFiles = 5;
         $maxBytes = 120 * 1024 * 1024; // 120 MB per file
 
@@ -504,25 +533,43 @@ class TestController extends BaseController
             mkdir($targetDir, 0755, true);
         }
 
+        $acceptedCount = 0;
+        $rejectedCount = 0;
         foreach ($uploaded as $file) {
             if (count($existing) >= $maxFiles) {
                 break;
             }
             if (!$file || !$file->isValid() || $file->hasMoved()) {
+                $rejectedCount++;
                 continue;
             }
             $mime = $file->getMimeType();
-            if ($mime && !in_array($mime, $allowedMime, true)) {
+            $ext = strtolower((string) $file->getExtension());
+            $mimeAllowed = $mime && in_array($mime, $allowedMime, true);
+            $extAllowed = $ext !== '' && in_array($ext, $allowedExt, true);
+            if (! $mimeAllowed && ! $extAllowed) {
+                $rejectedCount++;
                 continue;
             }
             if ($file->getSize() > $maxBytes) {
+                $rejectedCount++;
                 continue;
             }
 
             $newName = $file->getRandomName();
             $file->move($targetDir, $newName);
-            $relative = 'uploads/assessment_intro/' . (int) $assessmentId . '/' . $newName;
-            $existing[] = rtrim(base_url(), '/') . '/' . $relative;
+            $relative = '/uploads/assessment_intro/' . (int) $assessmentId . '/' . $newName;
+            $existing[] = $relative;
+            $acceptedCount++;
+        }
+
+        if ($acceptedCount === 0 && !empty($uploaded)) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => $rejectedCount > 0
+                    ? 'No valid video files were uploaded. Please upload MP4/WebM/MOV/AVI/MKV files.'
+                    : 'No video files were uploaded.',
+            ]);
         }
 
         $model->update((int) $assessmentId, ['intro_videos' => json_encode($existing)]);
