@@ -34,6 +34,7 @@ if (!empty($Tests)) {
 }
 ?>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>console.log('Workflow Script Load Start'); window.__APP_BASE__ = <?= workflow_view_json(rtrim(base_url(), '/')) ?>;</script>
 
 <!-- Flash Message Handler -->
@@ -44,10 +45,23 @@ if (!empty($Tests)) {
     var testIntroVideoFrozen = false;
     var assIntroVideoUrls = [];
     var assIntroVideoFiles = [];
+    
+    // Global Toast configuration for success messages
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
         <?php if (session()->getFlashdata('success')): ?>
-            Swal.fire({ title: 'Success', text: <?= workflow_view_json(session()->getFlashdata('success')) ?>, icon: 'success', timer: 3000 });
+                    Toast.fire({ title: 'Success', text: <?= workflow_view_json(session()->getFlashdata('success')) ?>, icon: 'success' });
         <?php endif; ?>
         <?php if (session()->getFlashdata('error')): ?>
             Swal.fire({ title: 'Upload Failed', text: <?= workflow_view_json(session()->getFlashdata('error')) ?>, icon: 'error' });
@@ -66,8 +80,6 @@ if (!empty($Tests)) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -122,10 +134,8 @@ if (!empty($Tests)) {
             height: 32px !important;
         }
 
-        /* ============================================
            MODERN RED PAGINATION (Bootstrap 5 DataTables)
            Targets: .dataTables_paginate ul.pagination > li.page-item > a.page-link
-           ============================================ */
         .dataTables_wrapper .dataTables_info {
             font-size: 11px !important;
             font-weight: 700 !important;
@@ -494,6 +504,56 @@ if (!empty($Tests)) {
             align-items: center;
             gap: 0.5rem;
         }
+
+        /* Export Modal Card Design */
+        .column-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+        
+        .column-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .column-card input[type="checkbox"]:checked ~ .w-full {
+            animation: checkbox-pop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes checkbox-pop {
+            0% { transform: scale(0.9); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f8fafc;
+            border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .column-card i.bi-person-circle { font-size: 1.2rem; }
+        .column-card i.bi-file-earmark-text { font-size: 1.2rem; }
+        .column-card i.bi-list-stars { font-size: 1.2rem; }
+        .column-card i.bi-people { font-size: 1.2rem; }
+        .column-card i.bi-clock-history { font-size: 1.2rem; }
+        .column-card i.bi-bar-chart { font-size: 1.2rem; }
+        .column-card i.bi-star { font-size: 1.2rem; }
+        .column-card i.bi-percent { font-size: 1.2rem; }
+        .column-card i.bi-check-circle { font-size: 1.2rem; }
+        .column-card i.bi-calendar-event { font-size: 1.2rem; }
+        .column-card i.bi-stopwatch { font-size: 1.2rem; }
 
         tr.is-editing .inline-editable-input {
             background-color: #ffffff !important;
@@ -2312,9 +2372,7 @@ if (!empty($Tests)) {
             box-shadow: 0 0 0 3px rgba(220, 34, 48, 0.1);
         }
 
-        /* ============================================
            MODERN GLOBAL FOCUS STYLE — Red Brand Ring
-           ============================================ */
         .input,
         .select,
         textarea,
@@ -7037,7 +7095,7 @@ if (!empty($Tests)) {
                     }
 
                     renderQuestionBanks();
-                    Swal.fire({ icon: 'success', title: 'Bank Deleted', timer: 1500, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Bank Deleted' });
                 } else {
                     throw new Error(result.message);
                 }
@@ -7181,7 +7239,7 @@ if (!empty($Tests)) {
                     syncQBDropdowns();
                     selectQuestionBank(newBank.id);
                     collapseFreshQBAfterSave(newBank);
-                    Swal.fire({ icon: 'success', title: 'Bank Created!', timer: 1500, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Bank Created!' });
                 } else {
                     throw new Error(result.message);
                 }
@@ -7366,12 +7424,10 @@ if (!empty($Tests)) {
             activeQB.name = bankName;
 
             if (activeQB.id) {
-                Swal.fire({
+                Toast.fire({
                     icon: 'success',
                     title: 'Saved!',
-                    text: 'Repository changes are already synced.',
-                    timer: 1400,
-                    showConfirmButton: false
+                    text: 'Repository changes are already synced.'
                 });
                 renderQuestionBanks();
                 renderQBQuestions();
@@ -7434,7 +7490,7 @@ if (!empty($Tests)) {
                     syncQBDropdowns();
                     selectQuestionBank(activeQB.id);
                     collapseFreshQBAfterSave(activeQB);
-                    Swal.fire({ icon: 'success', title: 'Repository Saved!', timer: 1500, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Repository Saved!' });
                 })
                 .catch(error => {
                     Swal.fire('Error', error.message || 'Failed to save repository', 'error');
@@ -7638,7 +7694,7 @@ if (!empty($Tests)) {
                 renderQBQuestions();
                 renderQuestionBanks();
                 syncQBDropdowns();
-                Swal.fire({ icon: 'success', title: 'Question Added', text: 'Saved in draft. Click Save to persist.', timer: 1300, showConfirmButton: false });
+                Toast.fire({ icon: 'success', title: 'Question Added', text: 'Saved in draft. Click Save to persist.' });
                 return;
             }
 
@@ -7657,7 +7713,7 @@ if (!empty($Tests)) {
                     renderQBQuestions();
                     renderQuestionBanks();
                     syncQBDropdowns();
-                    Swal.fire({ icon: 'success', title: 'Question Saved', timer: 1000, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Question Saved' });
                 }
             } catch (e) { console.error(e); }
         }
@@ -7684,7 +7740,7 @@ if (!empty($Tests)) {
                 updateQBCounters();
                 renderQBQuestions();
                 renderQuestionBanks();
-                Swal.fire({ icon: 'success', title: 'Removed', timer: 1000, showConfirmButton: false });
+                Toast.fire({ icon: 'success', title: 'Removed' });
                 return;
             }
 
@@ -7696,7 +7752,7 @@ if (!empty($Tests)) {
                     updateQBCounters();
                     renderQBQuestions();
                     renderQuestionBanks();
-                    Swal.fire({ icon: 'success', title: 'Deleted!', timer: 1000, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Deleted' });
                 }
             } catch (e) { console.error(e); }
         }
@@ -7812,7 +7868,7 @@ if (!empty($Tests)) {
             if (!isQBQuestionPersisted(id)) {
                 Object.assign(q, updatedData);
                 renderQBQuestions();
-                Swal.fire({ icon: 'success', title: 'Updated', text: 'Saved in draft. Use Save on the bank to persist.', timer: 1400, showConfirmButton: false });
+                Toast.fire({ icon: 'success', title: 'Updated', text: 'Saved in draft. Use Save on the bank to persist.' });
                 return;
             }
 
@@ -7827,7 +7883,7 @@ if (!empty($Tests)) {
                 if (result.status === 'success') {
                     Object.assign(q, updatedData);
                     renderQBQuestions();
-                    Swal.fire({ icon: 'success', title: 'Updated!', timer: 1000, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Updated!' });
                 } else {
                     throw new Error(result.message);
                 }
@@ -7911,12 +7967,10 @@ if (!empty($Tests)) {
                     updateQBCounters();
                     renderQBQuestions();
                     renderQuestionBanks();
-                    Swal.fire({
+                    Toast.fire({
                         title: 'Imported to Draft',
                         text: `${localQuestions.length} questions added. Click Save to persist.`,
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false
+                        icon: 'success'
                     });
                     return;
                 }
@@ -7934,14 +7988,8 @@ if (!empty($Tests)) {
                     if (result.status === 'success') {
                         // Refresh activeQB questions by refetching or just adding locally (if backend doesn't return them)
                         // For simplicity, we'll just reload the page or refetch the list
-                        Swal.fire({
-                            title: 'Success!',
-                            text: `${questions.length} questions imported and saved permanently.`,
-                            icon: 'success',
-                            confirmButtonColor: '#dc2230'
-                        }).then(() => {
-                            App.refreshAllData();
-                        });
+                        Toast.fire({ icon: 'success', title: 'Success!', text: `${questions.length} questions imported and saved permanently.` });
+                        App.refreshAllData();
                     } else {
                         throw new Error(result.message);
                     }
@@ -8613,9 +8661,8 @@ if (!empty($Tests)) {
                 });
                 const res = await response.json();
                 if (res.status === 'success') {
-                    Swal.fire('Success', 'Group rescheduled successfully!', 'success').then(() => {
-                        location.reload();
-                    });
+                    Toast.fire({ icon: 'success', title: 'Group rescheduled successfully!' });
+                    location.reload();
                 } else {
                     Swal.fire('Error', res.message, 'error');
                 }
@@ -8674,12 +8721,10 @@ if (!empty($Tests)) {
 
                     const data = await response.json();
                     if (data.status === 'success') {
-                        Swal.fire({
+                        Toast.fire({
                             icon: 'success',
                             title: 'Published!',
-                            text: 'Group has been locked and published.',
-                            timer: 1500,
-                            showConfirmButton: false
+                            text: 'Group has been locked and published.'
                         });
 
                         const table = $(`#BatchTable_${testId}`).DataTable();
@@ -8730,12 +8775,10 @@ if (!empty($Tests)) {
                 });
                 const data = await response.json();
                 if (data.status === 'success') {
-                    Swal.fire({
+                    Toast.fire({
                         icon: 'success',
                         title: 'Results published',
-                        text: 'Candidates can now open their results.',
-                        timer: 1800,
-                        showConfirmButton: false
+                        text: 'Candidates can now open their results.'
                     });
 
                     const table = $(`#BatchTable_${testId}`).DataTable();
@@ -8946,13 +8989,9 @@ if (!empty($Tests)) {
 
                 const result = await response.json();
                 if (result.status === 'success') {
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
+                    Toast.fire({
                         icon: 'success',
-                        title: data.id ? 'Batch updated successfully' : 'Batch created successfully',
-                        showConfirmButton: false,
-                        timer: 2000
+                        title: data.id ? 'Batch updated successfully' : 'Batch created successfully'
                     });
 
                     // Update the row data with the new ID and exit edit mode
@@ -9364,16 +9403,13 @@ if (!empty($Tests)) {
                         }
                     }
 
-                    Swal.fire({
-                        title: 'Success!',
-                        text: 'Test group and assignments saved successfully.',
+                    Toast.fire({
                         icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        if (typeof renderTable === 'function') renderTable();
-                        closeModal('createPackModal');
+                        title: 'Success!',
+                        text: 'Test group and assignments saved successfully.'
                     });
+                    closeModal('createPackModal');
+                    if (typeof renderTable === 'function') renderTable();
                 } else {
                     throw new Error(result.message || 'Failed to save batch');
                 }
@@ -9968,11 +10004,10 @@ if (!empty($Tests)) {
                     }
 
                     App.manualQuestions = questions;
-                    Swal.fire({
-                        title: 'Questions Uploaded',
-                        text: `${questions.length} questions integrated into the template.`,
+                    Toast.fire({
                         icon: 'success',
-                        timer: 2000
+                        title: 'Questions Uploaded',
+                        text: `${questions.length} questions integrated into the template.`
                     });
 
                     if (typeof updateManualQCount === 'function') updateManualQCount();
@@ -10133,12 +10168,10 @@ if (!empty($Tests)) {
                         loadSidebarTemplates();
                     }
 
-                    Swal.fire({
+                    Toast.fire({
                         icon: 'success',
                         title: isEditMode ? 'Template Updated!' : 'Template Saved!',
-                        text: isEditMode ? 'Template changes have been saved.' : 'Template has been created and is ready to use.',
-                        timer: 2000,
-                        showConfirmButton: false
+                        text: isEditMode ? 'Template changes have been saved.' : 'Template has been created and is ready to use.'
                     });
 
                     // Optional: Scroll to the new card
@@ -10830,15 +10863,13 @@ if (!empty($Tests)) {
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    Swal.fire({
-                        title: 'Success!',
-                        text: 'Batch has been created.',
+                    Toast.fire({
                         icon: 'success',
-                        timer: 1500
-                    }).then(() => {
-                        if (typeof closeModal === 'function') closeModal('assignModal');
-                        App.refreshAllData();
+                        title: 'Success!',
+                        text: 'Batch has been created.'
                     });
+                    if (typeof closeModal === 'function') closeModal('assignModal');
+                    App.refreshAllData();
                 } else {
                     Swal.fire('Error', result.message || 'Failed to create Batch', 'error');
                 }
@@ -11297,14 +11328,11 @@ if (!empty($Tests)) {
                             const addedMins = serverDuration - currentDuration;
                             App.executionState.timeLeft += (addedMins * 60);
                             App.executionState.durationMins = serverDuration;
-
-                            Swal.fire({
-                                toast: true,
-                                position: 'top-end',
+                            
+                            Toast.fire({
                                 icon: 'success',
-                                title: `Time Extended! Admin added ${addedMins} extra minutes.`,
-                                showConfirmButton: false,
-                                timer: 5000
+                                title: 'Time Extended!',
+                                text: 'Sync Successful: Database and state are now aligned.'
                             });
                         }
                     }
@@ -12267,12 +12295,37 @@ if (!empty($Tests)) {
                 }
                 const modalEl = document.getElementById('reportExportModal');
                 const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                App.initExportSearch();
+                App.updateExportColCount();
                 modal.show();
             },
 
             toggleAllExportColumns: (state) => {
                 const checkboxes = document.querySelectorAll('#report_column_selector input[type="checkbox"]');
                 checkboxes.forEach(cb => cb.checked = state);
+                App.updateExportColCount();
+                const selectAll = document.getElementById('selectAllCols');
+                if (selectAll) selectAll.checked = state;
+            },
+
+            updateExportColCount: () => {
+                const total = document.querySelectorAll('#report_column_selector .column-card').length;
+                const selected = document.querySelectorAll('#report_column_selector input[type="checkbox"]:checked').length;
+                const countEl = document.getElementById('selectedColCount');
+                if (countEl) countEl.textContent = `${selected} of ${total} selected`;
+            },
+
+            initExportSearch: () => {
+                const searchInput = document.getElementById('columnSearch');
+                if (!searchInput || searchInput.dataset.initialized) return;
+                searchInput.addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    document.querySelectorAll('#report_column_selector .column-card').forEach(card => {
+                        const text = card.querySelector('span').textContent.toLowerCase();
+                        card.style.display = text.includes(term) ? 'flex' : 'none';
+                    });
+                });
+                searchInput.dataset.initialized = "true";
             },
 
             exportToExcel: () => {
@@ -12334,13 +12387,11 @@ if (!empty($Tests)) {
 
                     const modalEl = document.getElementById('reportExportModal');
                     bootstrap.Modal.getInstance(modalEl).hide();
-
-                    Swal.fire({
+                    
+                    Toast.fire({
                         icon: 'success',
                         title: 'Export Complete',
-                        text: 'Your Excel report has been downloaded.',
-                        timer: 2000,
-                        showConfirmButton: false
+                        text: 'Your Excel report has been downloaded.'
                     });
                 } catch (e) {
                     console.error("Excel Generation Error:", e);
@@ -12799,12 +12850,10 @@ if (!empty($Tests)) {
                 if (typeof initTestsDataTable === 'function') initTestsDataTable();
                 if (typeof App.initExecutionDashboard === 'function') App.initExecutionDashboard();
 
-                Swal.fire({
+                Toast.fire({
                     icon: 'success',
                     title: 'Deleted',
-                    text: 'Candidate score entry removed.',
-                    timer: 1000,
-                    showConfirmButton: false
+                    text: 'Candidate score entry removed.'
                 });
             },
 
@@ -13297,6 +13346,16 @@ if (!empty($Tests)) {
                             <h5 class="text-sm font-bold text-[#1e293b]">Evaluation Complete</h5>
                             <p class="text-[11px] text-[#94a3b8] uppercase tracking-wider font-bold">All subjective answers are graded</p>
                         </div>
+                        <div class="flex justify-end mt-3 gap-2">
+                            <button class="bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#64748b] px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all border border-[#e2e8f0]"
+                                onclick="App.navigateEvaluator('${submission.key}', -1)">
+                                Previous
+                            </button>
+                            <button class="bg-[#dc2230] hover:bg-[#c61e2b] text-white px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm"
+                                onclick="App.navigateEvaluator('${submission.key}', 1)">
+                                Next
+                            </button>
+                        </div>
                     `;
                     return;
                 }
@@ -13332,7 +13391,6 @@ if (!empty($Tests)) {
                                 </div>
                             </div>
                         `).join('')}
-                    </div>
                     </div>
                     <div class="flex justify-end mt-3 gap-2">
                         <button class="bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#64748b] px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all border border-[#e2e8f0]"
@@ -13450,7 +13508,7 @@ if (!empty($Tests)) {
                 App.loadCandidateResult();
                 App.renderEvaluatorView(submissionKey);
 
-                Swal.fire({ icon: 'success', title: 'Grade saved', timer: 1000, showConfirmButton: false });
+                Toast.fire({ icon: 'success', title: 'Grade saved' });
             },
 
             saveFinalEvaluation: (submissionKey) => {
@@ -13469,12 +13527,10 @@ if (!empty($Tests)) {
                 App.saveEvaluationState();
                 App.loadCandidateResult();
                 App.activeEvaluatorSubmissionKey = submissionKey;
-                Swal.fire({
+                Toast.fire({
                     icon: 'success',
                     title: 'Evaluation Saved',
-                    text: 'Final score updated. Moving to next candidate...',
-                    timer: 1000,
-                    showConfirmButton: false
+                    text: 'Final score updated. Moving to next candidate...'
                 });
 
                 // Move to next candidate after a short delay to let the user see the success
@@ -15222,8 +15278,9 @@ if (!empty($Tests)) {
 
             document.getElementById('builder_last_sync').textContent = isClone ? 'New Cloned Template' : 'Loaded: ' + new Date().toLocaleTimeString();
 
-            Swal.fire({
-                toast: true, position: 'top-end', icon: 'success', title: isClone ? 'Template structure cloned' : 'Template loaded with ' + App.manualQuestions.length + ' questions', showConfirmButton: false, timer: 1500
+            Toast.fire({
+                icon: 'success',
+                title: isClone ? 'Template structure cloned' : 'Template loaded with ' + App.manualQuestions.length + ' questions'
             });
         }
 
@@ -16444,7 +16501,7 @@ if (!empty($Tests)) {
             document.querySelectorAll('#manualOptionsSection input[type="text"]').forEach(i => i.value = '');
             resetPedagogyCombo('manualQuestionPedagogy');
 
-            Swal.fire({ title: 'Added!', text: 'Question added to section', icon: 'success', timer: 1000, showConfirmButton: false });
+            Toast.fire({ title: 'Added!', text: 'Question added to section', icon: 'success' });
         };
 
         App.refreshSectionQuestions = (idx) => {
@@ -17812,7 +17869,7 @@ if (!empty($Tests)) {
                     })
                 });
                 if (response.ok) {
-                    Swal.fire({ title: 'Updated!', text: 'Test has been updated', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => {
+                    Toast.fire({ title: 'Updated!', text: 'Test has been updated', icon: 'success' }).then(() => {
                         closeModal('TestModal');
                         App.refreshAllData();
                     });
@@ -17835,7 +17892,7 @@ if (!empty($Tests)) {
             });
 
             await fetch(`/Test/deleteTest/${id}`, { method: 'POST' });
-            Swal.fire({ icon: 'success', title: 'Test Deleted', timer: 1000, showConfirmButton: false });
+            Toast.fire({ icon: 'success', title: 'Test Deleted' });
             App.refreshAllData();
         }
 
@@ -17896,7 +17953,7 @@ if (!empty($Tests)) {
                     }
                 }
 
-                Swal.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => {
+                Toast.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success' }).then(() => {
                     closeModal('TestModal');
                     App.refreshAllData();
                 });
@@ -17939,7 +17996,7 @@ if (!empty($Tests)) {
                     }))
                 })
             });
-            Swal.fire({ title: 'Template Saved', text: 'Your template has been created successfully', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => {
+            Toast.fire({ title: 'Template Saved', text: 'Your template has been created successfully', icon: 'success' }).then(() => {
                 if (typeof closeQuickTemplateModal === 'function') closeQuickTemplateModal();
                 App.refreshAllData();
             });
@@ -17987,7 +18044,7 @@ if (!empty($Tests)) {
             Swal.fire({ title: 'Delete this pack?', text: "This action cannot be undone.", icon: 'warning', showCancelButton: true }).then(async (result) => {
                 if (result.isConfirmed) {
                     await fetch(`/Test/deletePack/${id}`, { method: 'POST' });
-                    Swal.fire({ icon: 'success', title: 'Batch Deleted', timer: 1000, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Batch Deleted' });
                     App.refreshAllData();
                 }
             });
@@ -18028,12 +18085,10 @@ if (!empty($Tests)) {
                 confirmButtonColor: '#2563eb'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    Swal.fire({
+                    Toast.fire({
                         title: 'Configuration Copied!',
                         text: 'Redirecting to Step 3: Assign Candidates...',
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false
+                        icon: 'success'
                     }).then(() => {
                         // Create a duplicated row in background for demo
                         addPackToTable({
@@ -18452,163 +18507,202 @@ if (!empty($Tests)) {
 
     <!-- REPORT EXPORT MODAL -->
     <div class="modal fade" id="reportExportModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-2xl rounded-3xl overflow-hidden">
-                <div class="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-9 h-9 bg-red-600 text-white rounded-xl flex items-center justify-center shadow-md">
-                            <i class="bi bi-file-earmark-excel"></i>
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+            <div class="modal-content border-0 shadow-2xl rounded-[20px] overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-50 flex items-center justify-between bg-white">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center shadow-lg shadow-red-100">
+                            <i class="bi bi-file-earmark-excel text-base"></i>
                         </div>
-                        <h5 class="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-0">Export Report
-                        </h5>
+                        <h5 class="text-[13px] font-black text-slate-800 uppercase tracking-wider mb-0">Export Report</h5>
                     </div>
-                    <button type="button" class="btn-close text-[10px]" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <button type="button" class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-50 transition-colors" data-bs-dismiss="modal">
+                         <i class="bi bi-x-lg text-slate-400 text-[10px]"></i>
+                    </button>
                 </div>
-                <div class="p-8">
-                    <p
-                        class="text-[11px] font-bold text-slate-500 mb-6 uppercase tracking-widest border-b border-slate-100 pb-2">
-                        Select Columns for Excel Report</p>
 
-                    <div class="grid grid-cols-2 gap-y-4 gap-x-6" id="report_column_selector">
-                        <label class="flex items-center gap-3 cursor-pointer group relative">
-                            <div class="relative w-5 h-5 flex-shrink-0">
-                                <input type="checkbox" value="candidate_name" checked
-                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-[#dc2230] peer-checked:border-[#dc2230] transition-all z-0"></div>
-                                <i class="bi bi-check-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity z-10 pointer-events-none"></i>
+                <div class="px-5 pt-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-[13px] font-black text-slate-800 mb-0.5">Select Columns</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0">Choose fields for Excel</p>
+                        </div>
+                        <div class="relative">
+                            <i class="bi bi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]"></i>
+                            <input type="text" id="columnSearch" placeholder="Search..." 
+                                class="w-44 pl-8 pr-3 py-1.5 bg-slate-50 border-0 rounded-lg text-[10.5px] font-bold text-slate-700 focus:ring-2 focus:ring-red-600/20 transition-all outline-none">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar" id="report_column_selector">
+                        <!-- Candidate Name -->
+                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
+                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
+                                <input type="checkbox" value="candidate_name" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
                             </div>
-                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Candidate Name</span>
+                            <div class="w-7 h-7 bg-emerald-50 text-emerald-600 rounded flex items-center justify-center">
+                                <i class="bi bi-person-circle text-[13px]"></i>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-700">Candidate Name</span>
                         </label>
 
-
-                        <label class="flex items-center gap-3 cursor-pointer group relative">
-                            <div class="relative w-5 h-5 flex-shrink-0">
-                                <input type="checkbox" value="test_name" checked
-                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-[#dc2230] peer-checked:border-[#dc2230] transition-all z-0"></div>
-                                <i class="bi bi-check-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity z-10 pointer-events-none"></i>
+                        <!-- Test Name -->
+                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
+                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
+                                <input type="checkbox" value="test_name" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
                             </div>
-                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Test Name</span>
+                            <div class="w-7 h-7 bg-blue-50 text-blue-600 rounded flex items-center justify-center">
+                                <i class="bi bi-file-earmark-text text-[13px]"></i>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-700">Test Name</span>
                         </label>
 
-
-                        <label class="flex items-center gap-3 cursor-pointer group relative">
-                            <div class="relative w-5 h-5 flex-shrink-0">
-                                <input type="checkbox" value="test_type" checked
-                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-[#dc2230] peer-checked:border-[#dc2230] transition-all z-0"></div>
-                                <i class="bi bi-check-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity z-10 pointer-events-none"></i>
+                        <!-- Test Type -->
+                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
+                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
+                                <input type="checkbox" value="test_type" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
                             </div>
-                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Test Type</span>
+                            <div class="w-7 h-7 bg-purple-50 text-purple-600 rounded flex items-center justify-center">
+                                <i class="bi bi-list-stars text-[13px]"></i>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-700">Test Type</span>
                         </label>
 
-
-                        <label class="flex items-center gap-3 cursor-pointer group relative">
-                            <div class="relative w-5 h-5 flex-shrink-0">
-                                <input type="checkbox" value="group_name" checked
-                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-[#dc2230] peer-checked:border-[#dc2230] transition-all z-0"></div>
-                                <i class="bi bi-check-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity z-10 pointer-events-none"></i>
+                        <!-- Group / Batch -->
+                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
+                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
+                                <input type="checkbox" value="group_name" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
                             </div>
-                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Group / Batch</span>
+                            <div class="w-7 h-7 bg-orange-50 text-orange-600 rounded flex items-center justify-center">
+                                <i class="bi bi-people text-[13px]"></i>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-700">Group / Batch</span>
                         </label>
 
-
-                        <label class="flex items-center gap-3 cursor-pointer group relative">
-                            <div class="relative w-5 h-5 flex-shrink-0">
-                                <input type="checkbox" value="status" checked
-                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-[#dc2230] peer-checked:border-[#dc2230] transition-all z-0"></div>
-                                <i class="bi bi-check-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity z-10 pointer-events-none"></i>
+                        <!-- Status -->
+                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
+                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
+                                <input type="checkbox" value="status" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
                             </div>
-                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Status</span>
+                            <div class="w-7 h-7 bg-yellow-50 text-yellow-600 rounded flex items-center justify-center">
+                                <i class="bi bi-clock-history text-[13px]"></i>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-700">Status</span>
                         </label>
 
-
-                        <label class="flex items-center gap-3 cursor-pointer group relative">
-                            <div class="relative w-5 h-5 flex-shrink-0">
-                                <input type="checkbox" value="marks_text" checked
-                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-[#dc2230] peer-checked:border-[#dc2230] transition-all z-0"></div>
-                                <i class="bi bi-check-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity z-10 pointer-events-none"></i>
+                        <!-- Marks -->
+                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
+                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
+                                <input type="checkbox" value="marks_text" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
                             </div>
-                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Marks (Obtained/Total)</span>
+                            <div class="w-7 h-7 bg-indigo-50 text-indigo-600 rounded flex items-center justify-center">
+                                <i class="bi bi-bar-chart text-[13px]"></i>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-700">Marks</span>
                         </label>
 
-
-                        <label class="flex items-center gap-3 cursor-pointer group relative">
-                            <div class="relative w-5 h-5 flex-shrink-0">
-                                <input type="checkbox" value="final_score" checked
-                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-[#dc2230] peer-checked:border-[#dc2230] transition-all z-0"></div>
-                                <i class="bi bi-check-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity z-10 pointer-events-none"></i>
+                        <!-- Score -->
+                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
+                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
+                                <input type="checkbox" value="final_score" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
                             </div>
-                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Score</span>
+                            <div class="w-7 h-7 bg-sky-50 text-sky-600 rounded flex items-center justify-center">
+                                <i class="bi bi-star text-[13px]"></i>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-700">Score</span>
                         </label>
 
-
-                        <label class="flex items-center gap-3 cursor-pointer group relative">
-                            <div class="relative w-5 h-5 flex-shrink-0">
-                                <input type="checkbox" value="overall_pct" checked
-                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-[#dc2230] peer-checked:border-[#dc2230] transition-all z-0"></div>
-                                <i class="bi bi-check-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity z-10 pointer-events-none"></i>
+                        <!-- Accuracy -->
+                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
+                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
+                                <input type="checkbox" value="overall_pct" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
                             </div>
-                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Accuracy (%)</span>
+                            <div class="w-7 h-7 bg-teal-50 text-teal-600 rounded flex items-center justify-center">
+                                <i class="bi bi-percent text-[13px]"></i>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-700">Accuracy (%)</span>
                         </label>
 
-
-                        <label class="flex items-center gap-3 cursor-pointer group relative">
-                            <div class="relative w-5 h-5 flex-shrink-0">
-                                <input type="checkbox" value="pass_fail" checked
-                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-[#dc2230] peer-checked:border-[#dc2230] transition-all z-0"></div>
-                                <i class="bi bi-check-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity z-10 pointer-events-none"></i>
+                        <!-- Result -->
+                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
+                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
+                                <input type="checkbox" value="pass_fail" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
                             </div>
-                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Result (Pass/Fail)</span>
+                            <div class="w-7 h-7 bg-rose-50 text-rose-600 rounded flex items-center justify-center">
+                                <i class="bi bi-check-circle text-[13px]"></i>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-700">Result</span>
                         </label>
 
-
-                        <label class="flex items-center gap-3 cursor-pointer group relative">
-                            <div class="relative w-5 h-5 flex-shrink-0">
-                                <input type="checkbox" value="date_ymd" checked
-                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-[#dc2230] peer-checked:border-[#dc2230] transition-all z-0"></div>
-                                <i class="bi bi-check-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity z-10 pointer-events-none"></i>
+                        <!-- Date -->
+                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
+                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
+                                <input type="checkbox" value="date_ymd" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
                             </div>
-                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Date</span>
+                            <div class="w-7 h-7 bg-red-50 text-red-600 rounded flex items-center justify-center">
+                                <i class="bi bi-calendar-event text-[13px]"></i>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-700">Date</span>
                         </label>
 
-
-                        <label class="flex items-center gap-3 cursor-pointer group col-span-2 relative">
-                            <div class="relative w-5 h-5 flex-shrink-0">
-                                <input type="checkbox" value="duration_seconds" checked
-                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-[#dc2230] peer-checked:border-[#dc2230] transition-all z-0"></div>
-                                <i class="bi bi-check-lg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity z-10 pointer-events-none"></i>
+                        <!-- Duration -->
+                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
+                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
+                                <input type="checkbox" value="duration_seconds" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
                             </div>
-                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Duration (Seconds)</span>
+                            <div class="w-7 h-7 bg-cyan-50 text-cyan-600 rounded flex items-center justify-center">
+                                <i class="bi bi-stopwatch text-[13px]"></i>
+                            </div>
+                            <span class="text-[11px] font-black text-slate-700">Duration</span>
                         </label>
                     </div>
 
-                    <div class="mt-8 flex items-center justify-between border-t border-slate-50 pt-6">
-                        <button type="button" onclick="App.toggleAllExportColumns(true)"
-                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-600 transition-colors">Select
-                            All</button>
-                        <button type="button" onclick="App.toggleAllExportColumns(false)"
-                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-600 transition-colors">Deselect
-                            All</button>
+                    <div class="mt-5 flex items-center justify-between border-t border-slate-50 pt-4 pb-5">
+                        <div class="flex items-center gap-2">
+                             <div class="relative w-4 h-4 flex-shrink-0">
+                                <input type="checkbox" id="selectAllCols" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.toggleAllExportColumns(this.checked)">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[10px] font-black"></i>
+                            </div>
+                            <label for="selectAllCols" class="text-[10px] font-black text-red-600 cursor-pointer hover:text-red-700 transition-colors uppercase tracking-wider">Select All</label>
+                        </div>
+
+                        <div class="px-2 py-1 bg-slate-50 border border-slate-100 rounded">
+                            <span class="text-[9.5px] font-black text-slate-600 uppercase tracking-widest" id="selectedColCount">11 of 11 selected</span>
+                        </div>
+
+                        <button type="button" onclick="App.toggleAllExportColumns(false)" class="text-[10px] font-black text-red-600 hover:text-red-700 transition-colors uppercase tracking-wider">Deselect All</button>
                     </div>
                 </div>
-                <div class="p-6 bg-slate-50/50 border-t border-slate-50 flex gap-4">
-                    <button type="button"
-                        class="flex-1 py-3 bg-white border border-slate-200 text-slate-500 font-bold rounded-xl text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all"
-                        data-bs-dismiss="modal">Cancel</button>
-                    <button type="button"
-                        class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl text-[11px] uppercase tracking-widest shadow-lg shadow-red-100 hover:bg-red-700 transition-all"
-                        onclick="App.exportToExcel()">Download Excel</button>
+
+                <div class="px-5 py-4 bg-slate-50/50 border-t border-slate-50 flex gap-2.5">
+                    <button type="button" class="flex-1 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-lg text-[10.5px] uppercase tracking-wider hover:bg-slate-50 transition-all" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="flex-1 py-2.5 bg-red-600 text-white font-bold rounded-lg text-[10.5px] uppercase tracking-wider shadow-lg shadow-red-100 hover:bg-red-700 transition-all flex items-center justify-center gap-2" onclick="App.exportToExcel()">
+                        <i class="bi bi-download text-sm"></i>
+                        Export
+                    </button>
                 </div>
             </div>
         </div>
@@ -18617,3 +18711,4 @@ if (!empty($Tests)) {
 </body>
 
 </html>
+
