@@ -254,17 +254,35 @@ class TestController extends BaseController
     {
         $templateModel = new TemplateModel();
         $sectionModel = new TemplateSectionModel();
+        $testPackModel = new TestPackModel();
+        $questionModel = new QuestionModel();
+
+        // Check if template is used in any test packs (batches)
+        $usageCount = $testPackModel->where('template_id', $id)->countAllResults();
+        if ($usageCount > 0) {
+            return $this->response->setJSON([
+                'status' => 'error', 
+                'message' => 'This template is currently assigned to ' . $usageCount . ' test batch(es). Please delete or unassign those batches before removing the template.'
+            ]);
+        }
         
-        // Delete associated sections first
-        $sectionModel->where('template_id', $id)->delete();
-        
-        // Delete associated questions
-        (new QuestionModel())->where('template_id', $id)->delete();
-        
-        // Delete the template
-        $templateModel->delete($id);
-        
-        return $this->response->setJSON(['status' => 'success']);
+        try {
+            // Delete associated sections
+            $sectionModel->where('template_id', $id)->delete();
+            
+            // Delete associated template-specific questions
+            $questionModel->where('template_id', $id)->delete();
+            
+            // Finally delete the template
+            $templateModel->delete($id);
+            
+            return $this->response->setJSON(['status' => 'success']);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'status' => 'error', 
+                'message' => 'Database error: ' . $e->getMessage()
+            ]);
+        }
     }
 
     public function createTest()

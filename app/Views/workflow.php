@@ -649,6 +649,27 @@ if (!empty($Tests)) {
             }
         }
 
+        /* Blinking Animation for Pending Evaluations */
+        @keyframes pulse-indigo-blink {
+            0%, 100% {
+                background-color: #f8fafc;
+                color: #94a3b8;
+                transform: scale(1);
+            }
+            50% {
+                background-color: #4f46e5;
+                color: #ffffff;
+                transform: scale(1.1);
+                box-shadow: 0 0 15px rgba(79, 70, 229, 0.6);
+            }
+        }
+
+        .blink-eval-pending {
+            animation: pulse-indigo-blink 1.5s infinite ease-in-out !important;
+            border-color: #c7d2fe !important;
+            z-index: 10;
+        }
+
         .template-table th,
         .template-table td {
             padding: 16px 24px;
@@ -7956,7 +7977,7 @@ if (!empty($Tests)) {
             if (App.executionInterval) clearInterval(App.executionInterval);
             App.executionInterval = setInterval(refresh, 30000); // Check every 30s
         };
-        let TestsDataTable = null;
+        window.TestsDataTable = null;
         function initTestsDataTable() {
             if (typeof jQuery === 'undefined' || typeof $.fn.dataTable !== 'function') {
                 return;
@@ -8027,19 +8048,32 @@ if (!empty($Tests)) {
                     {
                         data: null,
                         className: 'text-center px-6',
-                        render: (data, type, row) => `
-                        <div class="flex items-center justify-center gap-2">
-                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-all" onclick="event.stopPropagation(); App.openResultsForTest('${(row.name || '').replace(/'/g, "\\'")}')" title="Results & Evaluation">
-                                <i class="bi bi-file-earmark-text"></i>
-                            </button>
-                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-all" onclick="event.stopPropagation(); editTestById(${row.id})" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition-all" onclick="event.stopPropagation(); deleteTest(${row.id})" title="Delete">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    `
+                        render: (data, type, row) => {
+                            const packs = row.test_packs || [];
+                            const submissions = App.getAllSubmissions();
+                            const hasPendingEval = packs.some(p => {
+                                return submissions.some(s => 
+                                    String(s.pack_id) === String(p.id) &&
+                                    (s.subjective_items || []).some(q => (q.candidate_answer || '').trim() && !q.graded)
+                                );
+                            });
+
+                            return `
+                                <div class="flex items-center justify-center gap-2">
+                                    <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-all ${hasPendingEval ? 'blink-eval-pending' : ''}" 
+                                        onclick="event.stopPropagation(); App.openResultsForTest('${(row.name || '').replace(/'/g, "\\'")}')" 
+                                        title="${hasPendingEval ? 'Evaluations Pending' : 'Results & Evaluation'}">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </button>
+                                    <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 transition-all" onclick="event.stopPropagation(); editTestById(${row.id})" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition-all" onclick="event.stopPropagation(); deleteTest(${row.id})" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
                     }
                 ],
                 pageLength: 7,
@@ -15736,8 +15770,19 @@ if (!empty($Tests)) {
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
-            if (typeof window.initTestsDataTable === 'function') window.initTestsDataTable();
-            if (typeof App.loadEvaluationState === 'function') App.loadEvaluationState();
+            if (typeof App.loadEvaluationState === 'function') {
+                App.loadEvaluationState();
+            }
+            
+            if (typeof window.initTestsDataTable === 'function') {
+                window.initTestsDataTable();
+            }
+
+            // Ensure table reflects the loaded state immediately
+            if (window.TestsDataTable) {
+                window.TestsDataTable.draw();
+            }
+
             if (typeof App.loadCandidateResult === 'function') App.loadCandidateResult();
 
             const previewModal = document.getElementById('paperPreviewModal');
