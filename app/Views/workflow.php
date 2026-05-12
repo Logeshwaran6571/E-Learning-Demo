@@ -4872,11 +4872,19 @@ if (!empty($Tests)) {
                     <p class="text-sm text-gray-500">Review candidate performance and grade subjective answers.</p>
                 </div>
                 <div class="flex flex-col items-end gap-3 w-full xl:w-[36%] shrink-0">
-                    <button type="button"
-                        class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs inline-flex items-center gap-2 hover:bg-red-700 transition-all border border-red-600 shadow-sm shadow-red-100"
-                        onclick="window.backFromResultsPage()">
-                        <i class="bi bi-arrow-left"></i> Back to Inventory
-                    </button>
+                    <div class="flex flex-wrap items-center justify-end gap-2 w-full">
+                        <button type="button"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold text-xs inline-flex items-center gap-2 hover:bg-indigo-700 transition-all border border-indigo-600 shadow-sm shadow-indigo-100"
+                            onclick="App.openResultsAnalytics()"
+                            title="Charts for the current filtered leaderboard">
+                            <i class="bi bi-bar-chart-line-fill"></i> Result Analytics
+                        </button>
+                        <button type="button"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs inline-flex items-center gap-2 hover:bg-red-700 transition-all border border-red-600 shadow-sm shadow-red-100"
+                            onclick="window.backFromResultsPage()">
+                            <i class="bi bi-arrow-left"></i> Back to Inventory
+                        </button>
+                    </div>
                     <div id="resultsOverviewCards" class="w-full">
                     <h5 class="text-[10px] font-black text-[#1e293b] mb-2">Evaluation Overview</h5>
                     <div class="grid grid-cols-4 gap-2">
@@ -6004,6 +6012,44 @@ if (!empty($Tests)) {
         </div>
     </div>
 
+    <!-- Results & Evaluation: analytics (uses current leaderboard filters) -->
+    <div class="modal fade" id="resultsAnalyticsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+                <div class="modal-header border-b border-slate-100 bg-slate-50/80 px-5 py-3">
+                    <div>
+                        <h5 class="modal-title fw-bold text-slate-800 mb-0"><i class="bi bi-bar-chart-line-fill text-indigo-600 me-2"></i>Result Analytics</h5>
+                        <p class="text-[11px] text-slate-500 font-semibold mb-0 mt-1">Live view of the same data as the table below your current filters.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-5 pt-3 pb-5 bg-white">
+                    <p id="resultsAnalyticsFilterHint" class="text-[11px] text-slate-500 font-medium mb-3 leading-snug"></p>
+                    <div class="row g-3 g-lg-4">
+                        <div class="col-lg-6 d-flex">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-4 w-100 d-flex flex-column">
+                                <h6 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-3 border-b border-slate-200/80">Highest &amp; lowest mark</h6>
+                                <div id="resultsAnalyticsHighLowChart" class="flex-grow-1 d-flex align-items-center justify-content-center py-3" style="min-height: 260px;"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 d-flex">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-4 w-100 d-flex flex-column">
+                                <h6 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-3 border-b border-slate-200/80">Pass / fail / pending</h6>
+                                <div id="resultsAnalyticsOutcomeChart" class="flex-grow-1 d-flex align-items-center justify-content-center py-3" style="min-height: 260px;"></div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+                                <h6 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-3 border-b border-slate-200/80">Top scores (completed attempts)</h6>
+                                <div id="resultsAnalyticsTopChart" class="pt-3" style="min-height: 100px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Submit Confirmation Modal -->
     <div id="submitConfirmModal" class="submit-confirm-overlay d-none">
         <div class="confirm-card">
@@ -6062,6 +6108,7 @@ if (!empty($Tests)) {
             quickModePaperSource: null,
             resultsContextTestName: '',
             activeEvaluatorSubmissionKey: '',
+            resultsLeaderboardFiltered: [],
 
             evaluationState: { submissions: {} },
 
@@ -11809,6 +11856,8 @@ if (!empty($Tests)) {
                     return norm(a.candidate_name).localeCompare(norm(b.candidate_name));
                 });
 
+                App.resultsLeaderboardFiltered = filtered;
+
                 const paginationState = App.resultsPagination || { page: 1, perPage: 10 };
                 App.resultsPagination = paginationState;
                 const totalRows = filtered.length;
@@ -11937,6 +11986,144 @@ if (!empty($Tests)) {
                 const countEl = document.getElementById('breakdown-cat-count');
                 if (countEl) countEl.textContent = `${filtered.length} Candidate${filtered.length === 1 ? '' : 's'}`;
 
+            },
+
+            openResultsAnalytics: () => {
+                if (typeof App.renderResultsAnalytics === 'function') App.renderResultsAnalytics();
+                const el = document.getElementById('resultsAnalyticsModal');
+                if (el && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    bootstrap.Modal.getOrCreateInstance(el).show();
+                }
+            },
+
+            renderResultsAnalytics: () => {
+                const esc = (s) => escapeHtml(String(s ?? ''));
+                const data = Array.isArray(App.resultsLeaderboardFiltered) ? App.resultsLeaderboardFiltered : [];
+                const hintEl = document.getElementById('resultsAnalyticsFilterHint');
+                const hiLoEl = document.getElementById('resultsAnalyticsHighLowChart');
+                const outEl = document.getElementById('resultsAnalyticsOutcomeChart');
+                const topEl = document.getElementById('resultsAnalyticsTopChart');
+                if (hintEl) {
+                    hintEl.textContent = data.length
+                        ? `Showing ${data.length} candidate row${data.length === 1 ? '' : 's'} (same filters as the leaderboard).`
+                        : 'No rows match the current filters — adjust filters on the leaderboard and open again.';
+                }
+                const emptyMsg = '<div class="d-flex align-items-center justify-content-center text-[12px] font-bold text-slate-400 text-uppercase tracking-widest" style="min-height: 200px;">No data</div>';
+
+                const completed = data.filter(r => r.status === 'Completed' && (parseInt(r.total_marks || 0, 10) || 0) > 0);
+                const BAR_W = 'w-12';
+                const TRACK_H = 152;
+
+                if (hiLoEl) {
+                    if (!completed.length) {
+                        hiLoEl.innerHTML = '<p class="text-[12px] text-slate-500 font-medium mb-0 text-center px-2">No completed attempts with a marked total in this view.</p>';
+                    } else {
+                        const byDesc = [...completed].sort((a, b) => {
+                            if ((b.final_score || 0) !== (a.final_score || 0)) return (b.final_score || 0) - (a.final_score || 0);
+                            return (parseInt(a.duration_seconds || 0, 10) || 0) - (parseInt(b.duration_seconds || 0, 10) || 0);
+                        });
+                        const byAsc = [...completed].sort((a, b) => {
+                            if ((a.final_score || 0) !== (b.final_score || 0)) return (a.final_score || 0) - (b.final_score || 0);
+                            return (parseInt(a.duration_seconds || 0, 10) || 0) - (parseInt(b.duration_seconds || 0, 10) || 0);
+                        });
+                        const high = byDesc[0];
+                        const low = byAsc[0];
+                        const maxH = Math.max(parseInt(high.final_score || 0, 10), parseInt(low.final_score || 0, 10), 1);
+                        const hH = Math.max(16, Math.round((parseInt(high.final_score || 0, 10) / maxH) * (TRACK_H - 8)));
+                        const hL = Math.max(16, Math.round((parseInt(low.final_score || 0, 10) / maxH) * (TRACK_H - 8)));
+                        const hiLoCol = (score, total, hPx, name, isHigh) => {
+                            const scoreCls = isHigh ? 'text-emerald-700' : 'text-rose-700';
+                            const grad = isHigh ? 'from-emerald-700 to-emerald-400' : 'from-rose-700 to-rose-400';
+                            const tagCls = isHigh ? 'text-emerald-600' : 'text-rose-600';
+                            const ttl = isHigh ? 'Highest score' : 'Lowest score';
+                            return `
+                            <div class="flex flex-col items-center w-[5.5rem] sm:w-24 shrink-0">
+                                <div class="h-8 w-full flex items-center justify-center mb-2 px-1">
+                                    <span class="text-[13px] font-black tabular-nums whitespace-nowrap leading-none ${scoreCls}">${score}<span class="text-slate-400 font-bold">/${total}</span></span>
+                                </div>
+                                <div class="flex flex-col justify-end items-center ${BAR_W} rounded-t-md bg-slate-200/40 border border-slate-200/60 overflow-hidden" style="height:${TRACK_H}px">
+                                    <div class="${BAR_W} rounded-t-md bg-gradient-to-t ${grad} shrink-0" style="height:${hPx}px" title="${ttl}"></div>
+                                </div>
+                                <p class="text-[10px] font-bold text-slate-800 text-center mt-2 mb-0 w-full truncate px-0.5 leading-tight" title="${esc(name)}">${esc(name)}</p>
+                                <span class="text-[8px] font-black uppercase tracking-widest mt-1 ${tagCls}">${isHigh ? 'Highest' : 'Lowest'}</span>
+                            </div>`;
+                        };
+                        hiLoEl.innerHTML = `
+                            <div class="flex items-end justify-center gap-8 sm:gap-14 w-full max-w-lg mx-auto px-2">
+                                ${hiLoCol(high.final_score, high.total_marks, hH, high.candidate_name, true)}
+                                ${hiLoCol(low.final_score, low.total_marks, hL, low.candidate_name, false)}
+                            </div>`;
+                    }
+                }
+
+                if (outEl) {
+                    if (!data.length) {
+                        outEl.innerHTML = emptyMsg;
+                    } else {
+                        let pass = 0;
+                        let fail = 0;
+                        let pend = 0;
+                        data.forEach(r => {
+                            if (r.status === 'Pending') pend += 1;
+                            else if (r.pass_fail === 'Pass') pass += 1;
+                            else if (r.pass_fail === 'Fail') fail += 1;
+                        });
+                        const maxO = Math.max(pass, fail, pend, 1);
+                        const bh = (n) => Math.max(12, Math.round((n / maxO) * (TRACK_H - 12)));
+                        const outcomeCol = (n, hPx, grad, label) => `
+                            <div class="flex flex-col items-center justify-end gap-0 w-full max-w-[4.5rem] mx-auto">
+                                <div class="h-8 w-full flex items-center justify-center mb-2">
+                                    <span class="text-[13px] font-black tabular-nums leading-none ${label === 'Pass' ? 'text-emerald-700' : label === 'Fail' ? 'text-rose-700' : 'text-slate-600'}">${n}</span>
+                                </div>
+                                <div class="flex flex-col justify-end items-center ${BAR_W} rounded-t-md bg-slate-200/40 border border-slate-200/60 overflow-hidden" style="height:${TRACK_H}px">
+                                    <div class="${BAR_W} rounded-t-md bg-gradient-to-t ${grad} shrink-0" style="height:${hPx}px"></div>
+                                </div>
+                                <span class="text-[8px] font-black uppercase text-slate-500 text-center mt-2 leading-tight tracking-wide">${label}</span>
+                            </div>`;
+                        outEl.innerHTML = `
+                            <div class="grid grid-cols-3 gap-4 sm:gap-6 w-full max-w-md mx-auto items-end px-2">
+                                ${outcomeCol(pass, bh(pass), 'from-emerald-600 to-emerald-400', 'Pass')}
+                                ${outcomeCol(fail, bh(fail), 'from-rose-600 to-rose-400', 'Fail')}
+                                ${outcomeCol(pend, bh(pend), 'from-slate-500 to-slate-300', 'Pending')}
+                            </div>`;
+                    }
+                }
+
+                if (topEl) {
+                    if (!completed.length) {
+                        topEl.innerHTML = '<p class="text-[12px] text-slate-500 font-medium mb-0 text-center">No completed attempts to rank.</p>';
+                    } else {
+                        const top = [...completed].sort((a, b) => {
+                            if ((b.final_score || 0) !== (a.final_score || 0)) return (b.final_score || 0) - (a.final_score || 0);
+                            return (parseInt(a.duration_seconds || 0, 10) || 0) - (parseInt(b.duration_seconds || 0, 10) || 0);
+                        }).slice(0, 5);
+                        const topMax = Math.max(...top.map(r => parseInt(r.final_score || 0, 10)), 1);
+                        topEl.innerHTML = `
+                            <div class="d-flex flex-column max-w-3xl mx-auto">
+                                ${top.map((r, i) => {
+                                    const fs = parseInt(r.final_score || 0, 10);
+                                    const tm = parseInt(r.total_marks || 0, 10);
+                                    const pct = Math.round((fs / topMax) * 100);
+                                    const rowBorder = i < top.length - 1 ? 'border-bottom border-slate-100' : '';
+                                    return `
+                                    <div class="d-flex align-items-center gap-3 py-2.5 ${rowBorder}">
+                                        <div class="flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 1.75rem;">
+                                            <span class="text-[11px] font-black text-slate-500 tabular-nums">${i + 1}</span>
+                                        </div>
+                                        <div class="min-w-0 flex-grow-1 d-flex flex-column gap-1 justify-content-center">
+                                            <span class="text-[11px] font-bold text-slate-800 text-truncate d-block">${esc(r.candidate_name)}</span>
+                                            <div class="rounded-pill bg-slate-200 overflow-hidden" style="height: 8px;">
+                                                <div class="h-100 rounded-pill bg-gradient-to-r from-indigo-600 to-indigo-400" style="width: ${pct}%;"></div>
+                                            </div>
+                                        </div>
+                                        <div class="flex-shrink-0 text-end" style="width: 4.25rem;">
+                                            <span class="text-[11px] font-black text-[#1e3a8a] tabular-nums text-nowrap d-inline-block">${fs}/${tm}</span>
+                                        </div>
+                                    </div>`;
+                                }).join('')}
+                            </div>`;
+                    }
+                }
             },
 
             loadDetailedResult: (name) => {
