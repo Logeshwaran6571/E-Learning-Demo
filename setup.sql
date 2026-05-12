@@ -1,103 +1,182 @@
-CREATE DATABASE IF NOT EXISTS assessment_db;
-USE assessment_db;
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Host: 127.0.0.1
+-- Generation Time: May 12, 2026 at 06:05 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
-CREATE TABLE IF NOT EXISTS templates (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
 
-CREATE TABLE IF NOT EXISTS template_sections (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    template_id INT NOT NULL,
-    marks_type VARCHAR(50) NOT NULL,
-    num_questions INT NOT NULL,
-    knowledge_type VARCHAR(255),
-    FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
-);
+--
+-- Database: `assessment_db`
+--
+CREATE DATABASE IF NOT EXISTS `assessment_db`;
+USE `assessment_db`;
 
-CREATE TABLE IF NOT EXISTS assessments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    status ENUM('Draft', 'Active') DEFAULT 'Draft',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+-- --------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS test_packs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    assessment_id INT NOT NULL,
-    pack_name VARCHAR(255) NOT NULL,
-    user_role VARCHAR(100) NOT NULL,
-    template_id INT NOT NULL,
-    FOREIGN KEY (assessment_id) REFERENCES assessments(id) ON DELETE CASCADE,
-    FOREIGN KEY (template_id) REFERENCES templates(id)
-);
+--
+-- Table structure for table `assessments`
+--
 
-CREATE TABLE IF NOT EXISTS employees (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    role VARCHAR(100),
-    college VARCHAR(255),
-    type ENUM('internal', 'recruitment') DEFAULT 'internal'
-);
+CREATE TABLE IF NOT EXISTS `assessments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `category` varchar(100) DEFAULT NULL,
+  `assessment_type` varchar(100) DEFAULT NULL,
+  `assigned_to` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `code` varchar(50) DEFAULT NULL,
+  `department` varchar(100) DEFAULT NULL,
+  `batch_year` varchar(20) DEFAULT NULL,
+  `status` enum('Draft','Active') DEFAULT 'Draft',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `instructions` text DEFAULT NULL,
+  `shuffle_questions` tinyint(1) DEFAULT 0,
+  `shuffle_options` tinyint(1) DEFAULT 0,
+  `proctored_exam` tinyint(1) DEFAULT 0,
+  `browser_lockdown` tinyint(1) DEFAULT 0,
+  `show_results` tinyint(1) DEFAULT 0,
+  `allow_backtracking` tinyint(1) DEFAULT 0,
+  `pass_mark` int(11) DEFAULT 50,
+  `attempts` int(11) DEFAULT 1,
+  `add_video` tinyint(1) NOT NULL DEFAULT 0,
+  `intro_videos` text DEFAULT NULL,
+  `pedagogy` varchar(128) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE IF NOT EXISTS question_bank_repositories (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+--
+-- Table structure for table `employees`
+--
 
-CREATE TABLE IF NOT EXISTS question_bank (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    repository_id INT NOT NULL,
-    question TEXT NOT NULL,
-    type VARCHAR(50) NOT NULL,
-    category VARCHAR(100),
-    difficulty ENUM('Easy', 'Medium', 'Hard') DEFAULT 'Medium',
-    marks INT DEFAULT 1,
-    option_a TEXT,
-    option_b TEXT,
-    option_c TEXT,
-    option_d TEXT,
-    correct_answer TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (repository_id) REFERENCES question_bank_repositories(id) ON DELETE CASCADE
-);
+CREATE TABLE IF NOT EXISTS `employees` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `role` varchar(100) DEFAULT NULL,
+  `college` varchar(255) DEFAULT NULL,
+  `type` enum('internal','recruitment') DEFAULT 'internal',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE IF NOT EXISTS questions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    test_pack_id INT NOT NULL,
-    type VARCHAR(50) NOT NULL,
-    content TEXT NOT NULL,
-    option_a TEXT,
-    option_b TEXT,
-    option_c TEXT,
-    option_d TEXT,
-    correct_answer VARCHAR(10),
-    marks INT NOT NULL,
-    knowledge_type VARCHAR(255),
-    FOREIGN KEY (test_pack_id) REFERENCES test_packs(id) ON DELETE CASCADE
-);
+--
+-- Table structure for table `templates`
+--
 
--- OPTIONAL: Sample data
-INSERT INTO templates (name, description) VALUES ('Frontend Developer — Standard', 'Standard template for frontend roles');
-INSERT INTO template_sections (template_id, marks_type, num_questions, knowledge_type) VALUES (1, 'MCQ', 15, 'HTML / CSS Basics');
-INSERT INTO template_sections (template_id, marks_type, num_questions, knowledge_type) VALUES (1, '2 Marks', 8, 'JS Fundamentals');
+CREATE TABLE IF NOT EXISTS `templates` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-INSERT INTO employees (name, email, type) VALUES ('John Doe', 'john.doe@company.com', 'internal');
-INSERT INTO employees (name, email, type) VALUES ('Jane Smith', 'jane.smith@company.com', 'internal');
-INSERT INTO employees (name, email, type) VALUES ('Aditya Kumar', 'aditya.k@gmail.com', 'recruitment');
+--
+-- Table structure for table `template_sections`
+--
 
-INSERT INTO question_bank_repositories (name) VALUES ('General');
+CREATE TABLE IF NOT EXISTS `template_sections` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `template_id` int(11) NOT NULL,
+  `marks_type` varchar(50) NOT NULL,
+  `num_questions` int(11) NOT NULL,
+  `knowledge_type` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `template_id` (`template_id`),
+  CONSTRAINT `template_sections_ibfk_1` FOREIGN KEY (`template_id`) REFERENCES `templates` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-INSERT INTO question_bank (repository_id, question, type, category, marks, option_a, option_b, option_c, option_d, correct_answer) 
-VALUES (1, 'What is the output of 2 + "2"?', 'MCQ', 'JavaScript', 1, '4', '22', 'Error', 'None', 'B');
+--
+-- Table structure for table `test_packs`
+--
 
-INSERT INTO question_bank (repository_id, question, type, category, marks) 
-VALUES (1, 'Explain closures in JavaScript.', '2-Mark', 'JavaScript', 2);
+CREATE TABLE IF NOT EXISTS `test_packs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `assessment_id` int(11) NOT NULL,
+  `pack_name` varchar(255) NOT NULL,
+  `user_role` varchar(100) NOT NULL,
+  `template_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `assessment_id` (`assessment_id`),
+  KEY `template_id` (`template_id`),
+  CONSTRAINT `test_packs_ibfk_1` FOREIGN KEY (`assessment_id`) REFERENCES `assessments` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `test_packs_ibfk_2` FOREIGN KEY (`template_id`) REFERENCES `templates` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `questions`
+--
+
+CREATE TABLE IF NOT EXISTS `questions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `test_pack_id` int(11) NOT NULL,
+  `template_id` int(11) DEFAULT NULL,
+  `section_idx` int(11) DEFAULT 0,
+  `type` varchar(50) NOT NULL,
+  `question` text DEFAULT NULL,
+  `option_a` text DEFAULT NULL,
+  `option_b` text DEFAULT NULL,
+  `option_c` text DEFAULT NULL,
+  `option_d` text DEFAULT NULL,
+  `correct_answer` varchar(10) DEFAULT NULL,
+  `marks` int(11) NOT NULL,
+  `knowledge_type` varchar(255) DEFAULT NULL,
+  `pedagogy` varchar(128) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `question_bank_repositories`
+--
+
+CREATE TABLE IF NOT EXISTS `question_bank_repositories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `question_bank`
+--
+
+CREATE TABLE IF NOT EXISTS `question_bank` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `repository_id` int(11) UNSIGNED DEFAULT NULL,
+  `question` text NOT NULL,
+  `type` varchar(50) NOT NULL,
+  `option_a` text DEFAULT NULL,
+  `option_b` text DEFAULT NULL,
+  `option_c` text DEFAULT NULL,
+  `option_d` text DEFAULT NULL,
+  `correct_answer` text DEFAULT NULL,
+  `marks` int(11) NOT NULL DEFAULT 1,
+  `category` varchar(255) DEFAULT NULL,
+  `difficulty` varchar(50) DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `pedagogy` varchar(128) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping sample data
+--
+
+INSERT INTO `employees` (`name`, `email`, `type`) VALUES 
+('John Doe', 'john.doe@company.com', 'internal'),
+('Jane Smith', 'jane.smith@company.com', 'internal'),
+('Aditya Kumar', 'aditya.k@gmail.com', 'recruitment');
+
+INSERT INTO `question_bank_repositories` (`name`) VALUES ('General');
+
+COMMIT;
