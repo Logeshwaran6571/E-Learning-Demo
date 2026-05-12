@@ -495,55 +495,87 @@ if (!empty($Tests)) {
             gap: 0.5rem;
         }
 
-        /* Export Modal Card Design */
+        /* Export Modal Card Design - Redesigned Compact Style */
         .column-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
+            border: 1px solid #f1f5f9 !important;
+            background-color: #fff;
         }
         
         .column-card:hover {
-            transform: translateY(-2px);
+            border-color: #e2e8f0 !important;
+            background-color: #f8fafc;
         }
 
-        .column-card input[type="checkbox"]:checked ~ .w-full {
-            animation: checkbox-pop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .column-card.is-selected {
+            background-color: #fef2f2 !important;
+            border-color: #fecaca !important;
+            box-shadow: 0 2px 4px rgba(220, 34, 48, 0.05);
         }
 
-        @keyframes checkbox-pop {
-            0% { transform: scale(0.9); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+        .column-card input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 2px solid #cbd5e1;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background: #fff;
+            margin: 0;
         }
 
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 5px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f8fafc;
-            border-radius: 10px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+        .column-card input[type="checkbox"]:checked {
+            background-color: #dc2230;
+            border-color: #dc2230;
         }
 
-        .column-card i.bi-person-circle { font-size: 1.2rem; }
-        .column-card i.bi-file-earmark-text { font-size: 1.2rem; }
-        .column-card i.bi-list-stars { font-size: 1.2rem; }
-        .column-card i.bi-people { font-size: 1.2rem; }
-        .column-card i.bi-clock-history { font-size: 1.2rem; }
-        .column-card i.bi-bar-chart { font-size: 1.2rem; }
-        .column-card i.bi-star { font-size: 1.2rem; }
-        .column-card i.bi-percent { font-size: 1.2rem; }
-        .column-card i.bi-check-circle { font-size: 1.2rem; }
-        .column-card i.bi-calendar-event { font-size: 1.2rem; }
-        .column-card i.bi-stopwatch { font-size: 1.2rem; }
+        .column-card input[type="checkbox"]:checked::after {
+            content: "\F26E";
+            font-family: "bootstrap-icons";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        #selectAllCols {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1.5px solid #cbd5e1;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background: #fff;
+            margin: 0;
+        }
+
+        #selectAllCols:checked {
+            background-color: #dc2230;
+            border-color: #dc2230;
+        }
+
+        #selectAllCols:checked::after {
+            content: "\F26E";
+            font-family: "bootstrap-icons";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 8px;
+            font-weight: 900;
+        }
+
 
         tr.is-editing .inline-editable-input {
             background-color: #ffffff !important;
@@ -12233,7 +12265,9 @@ if (!empty($Tests)) {
 
             toggleAllExportColumns: (state) => {
                 const checkboxes = document.querySelectorAll('#report_column_selector input[type="checkbox"]');
-                checkboxes.forEach(cb => cb.checked = state);
+                checkboxes.forEach(cb => {
+                    cb.checked = state;
+                });
                 App.updateExportColCount();
                 const selectAll = document.getElementById('selectAllCols');
                 if (selectAll) selectAll.checked = state;
@@ -12241,9 +12275,26 @@ if (!empty($Tests)) {
 
             updateExportColCount: () => {
                 const total = document.querySelectorAll('#report_column_selector .column-card').length;
-                const selected = document.querySelectorAll('#report_column_selector input[type="checkbox"]:checked').length;
+                const checkboxes = document.querySelectorAll('#report_column_selector input[type="checkbox"]');
+                const selected = Array.from(checkboxes).filter(cb => cb.checked).length;
+                
+                // Update row highlights
+                checkboxes.forEach(cb => {
+                    const card = cb.closest('.column-card');
+                    if (card) {
+                        if (cb.checked) card.classList.add('is-selected');
+                        else card.classList.remove('is-selected');
+                    }
+                });
+
                 const countEl = document.getElementById('selectedColCount');
                 if (countEl) countEl.textContent = `${selected} of ${total} selected`;
+
+                const selectAll = document.getElementById('selectAllCols');
+                if (selectAll) {
+                    selectAll.checked = (selected === total && total > 0);
+                    selectAll.indeterminate = (selected > 0 && selected < total);
+                }
             },
 
             initExportSearch: () => {
@@ -18470,166 +18521,85 @@ if (!empty($Tests)) {
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar" id="report_column_selector">
+                    <div class="grid grid-cols-2 gap-2 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar" id="report_column_selector">
                         <!-- Candidate Name -->
-                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
-                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
-                                <input type="checkbox" value="candidate_name" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
-                            </div>
-                            <div class="w-7 h-7 bg-emerald-50 text-emerald-600 rounded flex items-center justify-center">
-                                <i class="bi bi-person-circle text-[13px]"></i>
-                            </div>
-                            <span class="text-[11px] font-black text-slate-700">Candidate Name</span>
+                        <label class="column-card p-2.5 rounded-lg flex items-center gap-3 transition-all cursor-pointer">
+                            <input type="checkbox" value="candidate_name" checked onchange="App.updateExportColCount()">
+                            <span class="text-[11.5px] font-bold text-slate-700">Candidate Name</span>
                         </label>
 
                         <!-- Test Name -->
-                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
-                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
-                                <input type="checkbox" value="test_name" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
-                            </div>
-                            <div class="w-7 h-7 bg-blue-50 text-blue-600 rounded flex items-center justify-center">
-                                <i class="bi bi-file-earmark-text text-[13px]"></i>
-                            </div>
-                            <span class="text-[11px] font-black text-slate-700">Test Name</span>
+                        <label class="column-card p-2.5 rounded-lg flex items-center gap-3 transition-all cursor-pointer">
+                            <input type="checkbox" value="test_name" checked onchange="App.updateExportColCount()">
+                            <span class="text-[11.5px] font-bold text-slate-700">Test Name</span>
                         </label>
 
                         <!-- Test Type -->
-                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
-                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
-                                <input type="checkbox" value="test_type" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
-                            </div>
-                            <div class="w-7 h-7 bg-purple-50 text-purple-600 rounded flex items-center justify-center">
-                                <i class="bi bi-list-stars text-[13px]"></i>
-                            </div>
-                            <span class="text-[11px] font-black text-slate-700">Test Type</span>
+                        <label class="column-card p-2.5 rounded-lg flex items-center gap-3 transition-all cursor-pointer">
+                            <input type="checkbox" value="test_type" checked onchange="App.updateExportColCount()">
+                            <span class="text-[11.5px] font-bold text-slate-700">Test Type</span>
                         </label>
 
                         <!-- Group / Batch -->
-                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
-                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
-                                <input type="checkbox" value="group_name" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
-                            </div>
-                            <div class="w-7 h-7 bg-orange-50 text-orange-600 rounded flex items-center justify-center">
-                                <i class="bi bi-people text-[13px]"></i>
-                            </div>
-                            <span class="text-[11px] font-black text-slate-700">Group / Batch</span>
+                        <label class="column-card p-2.5 rounded-lg flex items-center gap-3 transition-all cursor-pointer">
+                            <input type="checkbox" value="group_name" checked onchange="App.updateExportColCount()">
+                            <span class="text-[11.5px] font-bold text-slate-700">Group / Batch</span>
                         </label>
 
                         <!-- Status -->
-                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
-                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
-                                <input type="checkbox" value="status" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
-                            </div>
-                            <div class="w-7 h-7 bg-yellow-50 text-yellow-600 rounded flex items-center justify-center">
-                                <i class="bi bi-clock-history text-[13px]"></i>
-                            </div>
-                            <span class="text-[11px] font-black text-slate-700">Status</span>
+                        <label class="column-card p-2.5 rounded-lg flex items-center gap-3 transition-all cursor-pointer">
+                            <input type="checkbox" value="status" checked onchange="App.updateExportColCount()">
+                            <span class="text-[11.5px] font-bold text-slate-700">Status</span>
                         </label>
 
                         <!-- Marks -->
-                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
-                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
-                                <input type="checkbox" value="marks_text" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
-                            </div>
-                            <div class="w-7 h-7 bg-indigo-50 text-indigo-600 rounded flex items-center justify-center">
-                                <i class="bi bi-bar-chart text-[13px]"></i>
-                            </div>
-                            <span class="text-[11px] font-black text-slate-700">Marks</span>
+                        <label class="column-card p-2.5 rounded-lg flex items-center gap-3 transition-all cursor-pointer">
+                            <input type="checkbox" value="marks_text" checked onchange="App.updateExportColCount()">
+                            <span class="text-[11.5px] font-bold text-slate-700">Marks</span>
                         </label>
 
                         <!-- Score -->
-                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
-                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
-                                <input type="checkbox" value="final_score" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
-                            </div>
-                            <div class="w-7 h-7 bg-sky-50 text-sky-600 rounded flex items-center justify-center">
-                                <i class="bi bi-star text-[13px]"></i>
-                            </div>
-                            <span class="text-[11px] font-black text-slate-700">Score</span>
+                        <label class="column-card p-2.5 rounded-lg flex items-center gap-3 transition-all cursor-pointer">
+                            <input type="checkbox" value="final_score" checked onchange="App.updateExportColCount()">
+                            <span class="text-[11.5px] font-bold text-slate-700">Score</span>
                         </label>
 
                         <!-- Accuracy -->
-                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
-                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
-                                <input type="checkbox" value="overall_pct" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
-                            </div>
-                            <div class="w-7 h-7 bg-teal-50 text-teal-600 rounded flex items-center justify-center">
-                                <i class="bi bi-percent text-[13px]"></i>
-                            </div>
-                            <span class="text-[11px] font-black text-slate-700">Accuracy (%)</span>
+                        <label class="column-card p-2.5 rounded-lg flex items-center gap-3 transition-all cursor-pointer">
+                            <input type="checkbox" value="overall_pct" checked onchange="App.updateExportColCount()">
+                            <span class="text-[11.5px] font-bold text-slate-700">Accuracy (%)</span>
                         </label>
 
                         <!-- Result -->
-                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
-                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
-                                <input type="checkbox" value="pass_fail" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
-                            </div>
-                            <div class="w-7 h-7 bg-rose-50 text-rose-600 rounded flex items-center justify-center">
-                                <i class="bi bi-check-circle text-[13px]"></i>
-                            </div>
-                            <span class="text-[11px] font-black text-slate-700">Result</span>
+                        <label class="column-card p-2.5 rounded-lg flex items-center gap-3 transition-all cursor-pointer">
+                            <input type="checkbox" value="pass_fail" checked onchange="App.updateExportColCount()">
+                            <span class="text-[11.5px] font-bold text-slate-700">Result</span>
                         </label>
 
                         <!-- Date -->
-                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
-                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
-                                <input type="checkbox" value="date_ymd" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
-                            </div>
-                            <div class="w-7 h-7 bg-red-50 text-red-600 rounded flex items-center justify-center">
-                                <i class="bi bi-calendar-event text-[13px]"></i>
-                            </div>
-                            <span class="text-[11px] font-black text-slate-700">Date</span>
+                        <label class="column-card p-2.5 rounded-lg flex items-center gap-3 transition-all cursor-pointer">
+                            <input type="checkbox" value="date_ymd" checked onchange="App.updateExportColCount()">
+                            <span class="text-[11.5px] font-bold text-slate-700">Date</span>
                         </label>
 
                         <!-- Duration -->
-                        <label class="column-card p-2.5 bg-white border border-slate-100 rounded-xl flex items-center gap-2.5 hover:border-red-600/30 hover:shadow-md hover:shadow-red-600/5 transition-all cursor-pointer group">
-                            <div class="relative w-4.5 h-4.5 flex-shrink-0">
-                                <input type="checkbox" value="duration_seconds" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.updateExportColCount()">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[12px] font-black"></i>
-                            </div>
-                            <div class="w-7 h-7 bg-cyan-50 text-cyan-600 rounded flex items-center justify-center">
-                                <i class="bi bi-stopwatch text-[13px]"></i>
-                            </div>
-                            <span class="text-[11px] font-black text-slate-700">Duration</span>
+                        <label class="column-card p-2.5 rounded-lg flex items-center gap-3 transition-all cursor-pointer">
+                            <input type="checkbox" value="duration_seconds" checked onchange="App.updateExportColCount()">
+                            <span class="text-[11.5px] font-bold text-slate-700">Duration</span>
                         </label>
                     </div>
 
-                    <div class="mt-5 flex items-center justify-between border-t border-slate-50 pt-4 pb-5">
+                    <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-3.5 pb-4">
                         <div class="flex items-center gap-2">
-                             <div class="relative w-4 h-4 flex-shrink-0">
-                                <input type="checkbox" id="selectAllCols" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20" onchange="App.toggleAllExportColumns(this.checked)">
-                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
-                                <i class="bi bi-check-lg text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10 text-[10px] font-black"></i>
-                            </div>
-                            <label for="selectAllCols" class="text-[10px] font-black text-red-600 cursor-pointer hover:text-red-700 transition-colors uppercase tracking-wider">Select All</label>
+                            <input type="checkbox" id="selectAllCols" checked onchange="App.toggleAllExportColumns(this.checked)">
+                            <label for="selectAllCols" class="text-[10.5px] font-bold text-red-600 cursor-pointer hover:text-red-700 transition-colors uppercase tracking-wider">Select All</label>
                         </div>
 
-                        <div class="px-2 py-1 bg-slate-50 border border-slate-100 rounded">
-                            <span class="text-[9.5px] font-black text-slate-600 uppercase tracking-widest" id="selectedColCount">11 of 11 selected</span>
+                        <div class="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded">
+                            <span class="text-[10px] font-bold text-slate-600 uppercase tracking-widest" id="selectedColCount">11 of 11 selected</span>
                         </div>
 
-                        <button type="button" onclick="App.toggleAllExportColumns(false)" class="text-[10px] font-black text-red-600 hover:text-red-700 transition-colors uppercase tracking-wider">Deselect All</button>
+                        <button type="button" onclick="App.toggleAllExportColumns(false)" class="text-[10.5px] font-bold text-red-600 hover:text-red-700 transition-colors uppercase tracking-wider">Deselect All</button>
                     </div>
                 </div>
 
