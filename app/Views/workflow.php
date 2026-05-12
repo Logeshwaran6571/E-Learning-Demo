@@ -4863,8 +4863,8 @@ if (!empty($Tests)) {
                             class="bg-[#f8fbff] border border-[#dbeafe] rounded-lg p-2 border-t-[3px] border-t-[#3b82f6] min-h-[62px] flex flex-col justify-between">
                             <p
                                 class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
-                                Total Score</p>
-                            <p id="resSummaryTotalScore"
+                                Total Mark</p>
+                            <p id="resSummaryTotalMark" title=""
                                 class="text-[16px] font-black text-[#0f172a] leading-none text-center mb-0">0</p>
                         </div>
                         <div
@@ -4974,8 +4974,8 @@ if (!empty($Tests)) {
                                 </select>
                                 <select id="resultsSortFilter" onchange="App.loadCandidateResult()"
                                     class="h-9 text-[11px] font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3 rounded-lg">
-                                    <option value="high">Sort By</option>
-                                    <option value="low">Lowest to Highest</option>
+                                    <option value="high">Highest score (faster if tied)</option>
+                                    <option value="low">Lowest score (faster if tied)</option>
                                 </select>
                             </div>
                             <div class="relative min-w-[220px]">
@@ -6317,6 +6317,23 @@ if (!empty($Tests)) {
                 .replace(/'/g, '&#39;');
         }
 
+        function ensureManualQuestionIds(questions) {
+            if (!Array.isArray(questions)) return;
+            const seen = new Set();
+            questions.forEach((q, i) => {
+                let id = q.id;
+                if (id == null || id === '') {
+                    id = 'm' + Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2, 6);
+                    q.id = id;
+                }
+                const key = String(id);
+                if (seen.has(key)) {
+                    q.id = key + '_' + i + '_' + Math.random().toString(36).slice(2, 5);
+                }
+                seen.add(String(q.id));
+            });
+        }
+
         const PedagogyRegistry = {
             STORAGE_KEY: 'workflow_pedagogy_custom_options_v1',
             DEFAULT_OPTIONS: [
@@ -6807,6 +6824,7 @@ if (!empty($Tests)) {
             }
 
             App.manualQuestions = normalizeQuestionList(paper.questions || []);
+            ensureManualQuestionIds(App.manualQuestions);
             App.quickModePaperSource = { templateId, qbId };
             return paper;
         }
@@ -9984,9 +10002,22 @@ if (!empty($Tests)) {
             updateBuilderTemplateFooterVisibility();
         }
 
+        function hasInlineSectionRowInEditMode() {
+            return !!document.querySelector('#builder_sections_container_inline .section-builder-row-inline.is-editing');
+        }
+
         function addNewSectionRowInline() {
             const container = document.getElementById('builder_sections_container_inline');
             const emptyState = document.getElementById('builder_empty_state_inline');
+            if (hasInlineSectionRowInEditMode()) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Save the current section',
+                    text: 'Save or cancel the section you are editing before adding another.',
+                    confirmButtonColor: '#dc2230'
+                });
+                return;
+            }
             const allowedTypes = getAllowedTypesForNewInlineRow();
             if (allowedTypes.length === 0) {
                 Swal.fire('Section limit reached', 'Only two sections are allowed: one MCQ and one descriptive question.', 'info');
@@ -10079,6 +10110,7 @@ if (!empty($Tests)) {
 
             // Toggle modes
             row.classList.remove('is-editing');
+            row.classList.add('was-saved');
             row.querySelectorAll('.edit-mode').forEach(el => el.classList.add('hidden'));
             row.querySelectorAll('.view-mode').forEach(el => el.classList.remove('hidden'));
 
@@ -11461,6 +11493,40 @@ if (!empty($Tests)) {
                     if (Number.isNaN(d.getTime())) return '';
                     return d.toISOString().slice(0, 10);
                 };
+                const formatDurationSeconds = (sec) => {
+                    const s = Math.max(0, parseInt(sec, 10) || 0);
+                    if (s < 60) return `${s}s`;
+                    const m = Math.floor(s / 60);
+                    const rs = s % 60;
+                    if (m < 60) return rs ? `${m}m ${rs}s` : `${m}m`;
+                    const h = Math.floor(m / 60);
+                    const rm = m % 60;
+                    return rm ? `${h}h ${rm}m` : `${h}h`;
+                };
+                const formatCompletedAt = (ts) => {
+                    if (ts == null || ts === '') return '';
+                    const d = typeof ts === 'number' ? new Date(ts) : new Date(ts);
+                    if (Number.isNaN(d.getTime())) return '';
+                    return d.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+                };
+                const getOverviewTotalMarkDisplay = (filteredRows, selectedTestName) => {
+                    const withTm = filteredRows.filter(r => parseInt(r.total_marks || 0, 10) > 0);
+                    if (!withTm.length) return { text: '0', title: '' };
+                    if (selectedTestName) {
+                        const forTest = withTm.filter(r => r.test_name === selectedTestName);
+                        const m = forTest.length ? Math.max(...forTest.map(r => parseInt(r.total_marks || 0, 10))) : 0;
+                        return { text: String(m || 0), title: '' };
+                    }
+                    const names = [...new Set(withTm.map(r => r.test_name).filter(Boolean))];
+                    if (names.length <= 1) {
+                        const m = Math.max(...withTm.map(r => parseInt(r.total_marks || 0, 10)));
+                        return { text: String(m || 0), title: '' };
+                    }
+                    return {
+                        text: '—',
+                        title: 'Select a single test to see its total marks, or use one test per view.'
+                    };
+                };
 
                 const submissionsByPackCandidate = {};
                 const submissions = App.getAllSubmissions().map(item => {
@@ -11558,11 +11624,15 @@ if (!empty($Tests)) {
                                     status: 'Completed',
                                     marks_text: `${finalScore} / ${totalMarks}`,
                                     final_score: finalScore,
+                                    total_marks: totalMarks,
+                                    duration_seconds: parseInt(submission.duration_seconds || 0, 10) || 0,
+                                    submitted_at: submission.submitted_at ?? submission.submitted_date ?? null,
                                     overall_pct: accuracy,
                                     pass_fail: passFail,
                                     subjective_items: submission.subjective_items || []
                                 });
                             } else {
+                                const pendingTotalMarks = parseInt(pack?.template?.total_marks || test?.total_marks || 0, 10) || 0;
                                 rows.push({
                                     key: `pending::${packId}::${empId}`,
                                     candidate_name: candidateName,
@@ -11572,8 +11642,11 @@ if (!empty($Tests)) {
                                     group_name: groupName,
                                     date_ymd: dateYmd,
                                     status: 'Pending',
-                                    marks_text: '0 / 0',
+                                    marks_text: pendingTotalMarks ? `0 / ${pendingTotalMarks}` : '0 / 0',
                                     final_score: 0,
+                                    total_marks: pendingTotalMarks,
+                                    duration_seconds: 0,
+                                    submitted_at: null,
                                     overall_pct: 0,
                                     pass_fail: '-',
                                     subjective_items: []
@@ -11606,6 +11679,9 @@ if (!empty($Tests)) {
                         status: 'Completed',
                         marks_text: `${sub.final_score || 0} / ${sub.total_marks || 0}`,
                         final_score: parseInt(sub.final_score || 0, 10) || 0,
+                        total_marks: tmOrphan,
+                        duration_seconds: parseInt(sub.duration_seconds || 0, 10) || 0,
+                        submitted_at: sub.submitted_at ?? sub.submitted_date ?? null,
                         overall_pct: parseInt(sub.accuracy || 0, 10) || 0,
                         pass_fail: passFailOrphan,
                         subjective_items: sub.subjective_items || []
@@ -11680,6 +11756,22 @@ if (!empty($Tests)) {
                 filtered.sort((a, b) => {
                     const scoreDiff = sortMode === 'low' ? (a.final_score - b.final_score) : (b.final_score - a.final_score);
                     if (scoreDiff !== 0) return scoreDiff;
+                    const durA = parseInt(a.duration_seconds || 0, 10) || 0;
+                    const durB = parseInt(b.duration_seconds || 0, 10) || 0;
+                    if (durA !== durB) return durA - durB;
+                    const tA = (() => {
+                        const x = a.submitted_at;
+                        if (x == null || x === '') return 0;
+                        const d = typeof x === 'number' ? new Date(x) : new Date(x);
+                        return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+                    })();
+                    const tB = (() => {
+                        const x = b.submitted_at;
+                        if (x == null || x === '') return 0;
+                        const d = typeof x === 'number' ? new Date(x) : new Date(x);
+                        return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+                    })();
+                    if (tA && tB && tA !== tB) return tA - tB;
                     return norm(a.candidate_name).localeCompare(norm(b.candidate_name));
                 });
 
@@ -11715,15 +11807,30 @@ if (!empty($Tests)) {
                                             <i class="bi bi-clipboard-check text-[11px]"></i>
                                        </button>`
                                     : `<span class="text-slate-300 text-[11px] font-black">-</span>`;
+                                const statusTimeLines = (() => {
+                                    if (item.status !== 'Completed') {
+                                        return `
+                                        <div class="flex flex-row items-center justify-center gap-2 py-0.5 flex-wrap">
+                                            <span class="inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wide bg-[#f8fafc] text-[#64748b] border border-[#e2e8f0]">${item.status}</span>
+                                        </div>`;
+                                    }
+                                    const dur = formatDurationSeconds(item.duration_seconds || 0);
+                                    const timePart = dur
+                                        ? `<span class="text-[10px] font-bold text-slate-800 tabular-nums whitespace-nowrap">${dur}</span>`
+                                        : '';
+                                    return `
+                                        <div class="flex flex-row items-center justify-center gap-2 py-0.5 flex-wrap text-center">
+                                            <span class="inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wide bg-[#ecfeff] text-[#0891b2] border border-[#a5f3fc]">${item.status}</span>
+                                            ${timePart}
+                                        </div>`;
+                                })();
                                 return `
                             <tr class="hover:bg-[#f8fafc] transition-colors">
                                 <td class="px-6 py-2 text-[12px] font-bold text-[#334155]">${item.candidate_name || '-'}</td>
                                 <td class="px-6 py-2 text-[12px] text-[#64748b] text-center font-bold">${item.test_type || '-'}</td>
                                 <td class="px-6 py-2 text-[12px] text-[#64748b] text-center font-bold uppercase">${item.role || '-'}</td>
-                                <td class="px-6 py-2 text-center">
-                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${item.status === 'Completed' ? 'bg-[#ecfeff] text-[#0891b2] border border-[#a5f3fc]' : 'bg-[#f8fafc] text-[#64748b] border border-[#e2e8f0]'}">${item.status}</span>
-                                </td>
-                                <td class="px-6 py-2 text-[12px] text-right font-black text-[#dc2230]">${item.marks_text}</td>
+                                <td class="px-4 py-2.5 align-middle">${statusTimeLines}</td>
+                                <td class="px-6 py-2 text-[12px] text-right font-black text-[#1e3a8a]">${item.marks_text}</td>
                                 <td class="px-6 py-2 text-[12px] text-right font-black text-[#1e293b]">${item.overall_pct}%</td>
                                 <td class="px-6 py-2 text-center">
                                     <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${item.pass_fail === 'Pass' ? 'bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]' : item.pass_fail === 'Fail' ? 'bg-[#fef2f2] text-[#dc2626] border border-[#fecaca]' : 'bg-[#f8fafc] text-[#64748b] border border-[#e2e8f0]'}">${item.pass_fail}</span>
@@ -11772,7 +11879,6 @@ if (!empty($Tests)) {
                 }
 
                 const hasAnyFilter = !!(selectedType || activeSelectedTest || selectedGroups.length > 0 || selectedDate || candidateSearch);
-                const totalScore = hasAnyFilter ? filtered.reduce((sum, r) => sum + (r.final_score || 0), 0) : 0;
                 const completedRows = hasAnyFilter ? filtered.filter(r => r.status === 'Completed') : [];
                 const evaluatedRows = completedRows.filter(r => r.pass_fail === 'Pass' || r.pass_fail === 'Fail');
                 const passRows = evaluatedRows.filter(r => r.pass_fail === 'Pass');
@@ -11780,11 +11886,16 @@ if (!empty($Tests)) {
                 const pendingRows = hasAnyFilter ? filtered.filter(r => r.status === 'Pending') : [];
                 const passPct = hasAnyFilter && evaluatedRows.length ? Math.round((passRows.length / evaluatedRows.length) * 100) : 0;
 
-                const totalScoreEl = document.getElementById('resSummaryTotalScore');
+                const totalMarkDisplay = hasAnyFilter ? getOverviewTotalMarkDisplay(filtered, activeSelectedTest) : { text: '0', title: '' };
+
+                const totalMarkEl = document.getElementById('resSummaryTotalMark');
                 const passPctEl = document.getElementById('resSummaryPassPct');
                 const failCountEl = document.getElementById('resSummaryFailCount');
                 const pendingCountEl = document.getElementById('resSummaryPendingCount');
-                if (totalScoreEl) totalScoreEl.textContent = `${totalScore}`;
+                if (totalMarkEl) {
+                    totalMarkEl.textContent = totalMarkDisplay.text;
+                    totalMarkEl.setAttribute('title', totalMarkDisplay.title || '');
+                }
                 if (passPctEl) passPctEl.textContent = `${passPct}%`;
                 if (failCountEl) failCountEl.textContent = `${failRows.length}`;
                 if (pendingCountEl) pendingCountEl.textContent = `${pendingRows.length}`;
@@ -13382,8 +13493,7 @@ if (!empty($Tests)) {
 
                                         <!-- 2. Blueprint Section -->
                                         <section class="w-full">
-                                            <div
-                                                class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+                                            <div class="mb-4">
                                                 <div class="flex items-center gap-3 min-w-0">
                                                     <div
                                                         class="w-8 h-8 shrink-0 bg-red-50 text-red-600 rounded-lg flex items-center justify-center shadow-sm border border-red-100">
@@ -13398,12 +13508,6 @@ if (!empty($Tests)) {
                                                             Define sections for this paper</p>
                                                     </div>
                                                 </div>
-                                                <button type="button" onclick="addNewSectionRowInline()"
-                                                    class="btn-red px-5 py-2.5 shadow-lg shadow-red-100 inline-flex items-center justify-center gap-2 h-11 rounded-xl whitespace-nowrap shrink-0 self-start sm:self-auto">
-                                                    <i class="bi bi-plus-circle-fill text-base"></i>
-                                                    <span class="text-[11px] font-black uppercase tracking-widest">Add
-                                                        Section</span>
-                                                </button>
                                             </div>
 
                                             <div
@@ -13420,8 +13524,15 @@ if (!empty($Tests)) {
                                                         class="col-span-2 py-3 px-2 text-[8px] font-black text-slate-400 uppercase tracking-widest text-center">
                                                         Marks Each</div>
                                                     <div
-                                                        class="col-span-4 py-3 px-3 text-right text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                                                        Actions</div>
+                                                        class="col-span-4 py-3 pl-2 pr-3 flex items-center justify-end gap-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                                                        <span class="shrink-0 translate-x-[-4px]">Actions</span>
+                                                        <button type="button"
+                                                            onclick="addNewSectionRowInline()"
+                                                            class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-red-600 bg-red-600 text-white hover:bg-red-700 hover:border-red-700 transition-all shadow-sm shadow-red-100"
+                                                            title="Add section (save the current row first if it is being edited)">
+                                                            <i class="bi bi-plus-lg text-base leading-none font-bold text-white"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <div id="builder_sections_container_inline"
                                                     class="divide-y divide-slate-100 flex-1">
@@ -14470,6 +14581,275 @@ if (!empty($Tests)) {
             update();
         }
 
+        function getBuilderGroupedPaperFromManual() {
+            const sections = [];
+            document.querySelectorAll('#builder_sections_container_inline > div:not(.empty-state):not(.is-editing)').forEach(row => {
+                const name = (
+                    row.querySelector('.sec-name-hidden-inline')?.value ||
+                    row.querySelector('input[type="text"]')?.value ||
+                    row.querySelector('.sec-display-name')?.textContent ||
+                    'Section'
+                );
+                const count = parseInt(
+                    row.querySelector('.sec-count-inline')?.value ||
+                    row.querySelector('.sec-display-count')?.textContent ||
+                    '0',
+                    10
+                ) || 0;
+                const marks = parseInt(
+                    row.querySelector('.sec-marks-inline')?.value ||
+                    row.querySelector('.sec-display-marks')?.textContent ||
+                    '0',
+                    10
+                ) || 0;
+                const type = row.dataset.type || 'MCQ';
+                sections.push({
+                    section_name: name,
+                    name,
+                    marks_type: type,
+                    type,
+                    num_questions: count,
+                    count,
+                    marks_per_question: marks,
+                    marks
+                });
+            });
+            if (sections.length === 0) return null;
+            const groupedBySection = sections.map((s, sIdx) => ({
+                section: s,
+                questions: (App.manualQuestions || []).filter(q => String(q.sectionIdx ?? q.section_idx ?? '') === String(sIdx))
+            }));
+            return {
+                questions: App.manualQuestions,
+                warnings: [],
+                grouped: groupedBySection
+            };
+        }
+
+        function findGeneratedQpCard(id) {
+            return Array.from(document.querySelectorAll('.generated-qp-card[data-gqp-qid]')).find(
+                el => String(el.getAttribute('data-gqp-qid')) === String(id)
+            );
+        }
+
+        function gqpPedagogyBaseForId(qid) {
+            return 'gqpPed_' + String(qid).replace(/[^a-zA-Z0-9_-]/g, '_');
+        }
+
+        function gqpSyncCorrectButtons(root, optLetter) {
+            if (!root) return;
+            const letter = String(optLetter || 'A').trim().toUpperCase().charAt(0);
+            const pick = ['A', 'B', 'C', 'D'].includes(letter) ? letter : 'A';
+            const hidden = root.querySelector('input[type="hidden"][data-gqp-inp="correct_answer"]');
+            if (hidden) hidden.value = pick;
+            root.querySelectorAll('.gqp-correct-btn').forEach(btn => {
+                const o = (btn.getAttribute('data-opt') || '').toUpperCase();
+                const dot = btn.querySelector('.selector-dot');
+                const on = o === pick;
+                btn.className = on
+                    ? 'absolute right-1 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border border-green-500 bg-green-50 flex items-center justify-center gqp-correct-btn'
+                    : 'absolute right-1 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border border-slate-200 flex items-center justify-center gqp-correct-btn';
+                if (dot) {
+                    dot.classList.toggle('opacity-100', on);
+                    dot.classList.toggle('opacity-0', !on);
+                }
+            });
+        }
+
+        window.gqpSetCorrectOpt = function (btn, opt) {
+            gqpSyncCorrectButtons(btn.closest('.generated-qp-card'), opt);
+        };
+
+        function buildGeneratedPaperQuestionHtml(q, qIdx, marks, sectionType) {
+            const targetType = App.normalizeType(q.type || sectionType);
+            const isMcq = targetType === 'mcq';
+            const rawId = String(q.id);
+            const qid = escapeHtml(rawId);
+            const pedBase = gqpPedagogyBaseForId(rawId);
+            const pedBaseAttr = escapeHtml(pedBase);
+            const displayMarks = q.marks || marks;
+            const ped = (q.pedagogy || q.knowledge_type || '').trim();
+            const corLetter = String(q.correct_answer || 'A').trim().toUpperCase().charAt(0);
+            const corActive = ['A', 'B', 'C', 'D'].includes(corLetter) ? corLetter : 'A';
+
+            const gridViewMcq = 'grid grid-cols-[48px_minmax(96px,0.9fr)_minmax(0,1.1fr)_minmax(0,1fr)] gap-2 items-center';
+            const gridViewDesc = 'grid grid-cols-[48px_minmax(96px,0.9fr)_1fr] gap-2 items-start';
+            const gridEditMcq = 'grid grid-cols-[48px_minmax(96px,0.9fr)_minmax(0,1.1fr)_minmax(0,1fr)] gap-2 items-stretch';
+            const gridEditDesc = 'grid grid-cols-[48px_minmax(96px,0.9fr)_1fr] gap-2 items-center';
+
+            const mcqOptionCellsView = ['A', 'B', 'C', 'D'].map(opt => {
+                const ok = corActive === opt;
+                return `
+                    <div class="flex items-center gap-2 p-0.5 px-1.5 rounded border ${ok ? 'border-green-200 bg-green-50/50' : 'border-slate-50 bg-slate-50/30'}">
+                        <div class="w-4 h-4 rounded-sm ${ok ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-[9px] font-black shrink-0">${opt}</div>
+                        <span class="text-[9px] font-bold ${ok ? 'text-green-800' : 'text-slate-500'} truncate">${escapeHtml(q['option_' + opt.toLowerCase()] || '')}</span>
+                    </div>
+                `;
+            }).join('');
+
+            const mcqOptionCellsEdit = ['A', 'B', 'C', 'D'].map(opt => `
+                <div class="relative group">
+                    <div class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-blue-400 uppercase tracking-widest">${opt}</div>
+                    <input type="text" data-gqp-inp="option_${opt.toLowerCase()}" class="w-full pl-6 pr-6 py-1.5 bg-white border border-blue-200 rounded text-[11px] font-bold text-slate-600 outline-none transition-all" value="${escapeHtml(q['option_' + opt.toLowerCase()] || '')}">
+                    <button type="button" data-opt="${opt}" class="absolute right-1 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border ${corActive === opt ? 'border-green-500 bg-green-50' : 'border-slate-200'} flex items-center justify-center gqp-correct-btn" onclick="gqpSetCorrectOpt(this, '${opt}')">
+                        <div class="w-1 h-1 rounded-full bg-green-500 selector-dot ${corActive === opt ? 'opacity-100' : 'opacity-0'} transition-all"></div>
+                    </button>
+                </div>
+            `).join('');
+
+            return `
+                <div class="generated-qp-card group relative border-b border-slate-50 pb-4 last:border-0 last:pb-0 mb-2 last:mb-0" data-gqp-qid="${qid}" data-gqp-ped-base="${pedBaseAttr}">
+                    <div class="gqp-view py-1.5 px-2 sm:px-4 hover:bg-slate-50/30 rounded-xl transition-all">
+                        <div class="${isMcq ? gridViewMcq : gridViewDesc}">
+                            <div class="flex flex-col items-center gap-1">
+                                <div class="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-black shadow-sm border border-slate-700">${qIdx + 1}</div>
+                                <span class="px-1.5 py-0.5 rounded-md ${isMcq ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-blue-50 text-blue-600 border border-blue-100'} text-[7px] font-black uppercase tracking-widest">${isMcq ? 'MCQ' : 'Descriptive'}</span>
+                            </div>
+                            <div class="min-w-0 px-1 space-y-2">
+                                <div>
+                                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Pedagogy</p>
+                                    <p class="text-[10px] font-bold text-slate-600 ${isMcq ? 'truncate' : ''} mb-0">${ped ? escapeHtml(ped) : '—'}</p>
+                                </div>
+                                ${!isMcq ? `
+                                <div>
+                                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Evaluation reference</p>
+                                    <p class="text-[11px] text-slate-600 font-medium italic mb-0 whitespace-pre-wrap leading-relaxed">${escapeHtml(q.correct_answer || q.expected_answer || '—')}</p>
+                                </div>
+                                ` : ''}
+                            </div>
+                            <div class="min-w-0 pr-16 flex flex-col items-stretch text-left">
+                                <p class="text-[13px] font-bold text-slate-800 leading-tight ${isMcq ? 'truncate' : 'whitespace-pre-wrap'} w-full">${escapeHtml(q.question || q.content || '')}</p>
+                                <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1 mb-0 w-full tabular-nums">${displayMarks} marks</p>
+                            </div>
+                            ${isMcq ? `
+                            <div class="grid grid-cols-2 gap-1 px-1">
+                                ${mcqOptionCellsView}
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 flex flex-col items-end gap-1 z-10">
+                            <button type="button" class="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 shadow-sm transition-all" title="Edit" onclick="generatedQpToggleEdit(this.closest('.generated-qp-card').getAttribute('data-gqp-qid'), true)">
+                                <i class="bi bi-pencil-square text-[11px]"></i>
+                            </button>
+                            ${q.difficulty ? `<span class="px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest border ${q.difficulty === 'Hard' ? 'bg-red-50 text-red-600 border-red-100' : q.difficulty === 'Medium' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}">${escapeHtml(q.difficulty)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="gqp-edit hidden py-1 px-2 sm:px-6 bg-blue-50/30 border border-blue-100 rounded-xl transition-all shadow-inner">
+                        ${isMcq ? `
+                        <div class="${gridEditMcq}">
+                            <div class="flex flex-col items-center gap-1 justify-start pt-0.5 min-h-0">
+                                <div class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-black shadow-sm border border-blue-500">${qIdx + 1}</div>
+                                <span class="px-1 py-0 rounded-md bg-blue-100 text-blue-600 text-[7px] font-black uppercase tracking-widest">Edit</span>
+                            </div>
+                            <div class="p-1 min-w-0 min-h-0 flex flex-col justify-start h-full">
+                                <label class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5 shrink-0">Pedagogy</label>
+                                ${pedagogyComboHtml(pedBase, ped, { fillCell: true, manualQuestionId: q.id, searchClass: ' w-full bg-white border border-blue-200 rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-700' })}
+                            </div>
+                            <div class="p-1 min-w-0 min-h-0 flex flex-col h-full">
+                                <label class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Question</label>
+                                <textarea data-gqp-inp="question" class="w-full min-h-[48px] flex-1 bg-white border border-blue-200 rounded p-1.5 text-[13px] font-bold text-slate-700 outline-none transition-all resize-none" rows="2">${escapeHtml(q.question || q.content || '')}</textarea>
+                            </div>
+                            <div class="min-h-0 h-full flex flex-col gap-1 px-1 self-stretch">
+                                <input type="hidden" data-gqp-inp="correct_answer" value="${corActive}">
+                                <div class="grid grid-cols-2 gap-1 content-start">
+                                    ${mcqOptionCellsEdit}
+                                </div>
+                            </div>
+                        </div>
+                        ` : `
+                        <div class="${gridEditDesc}">
+                            <div class="flex flex-col items-center gap-1">
+                                <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px] font-black shadow-sm border border-blue-500">${qIdx + 1}</div>
+                                <span class="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-600 text-[8px] font-black uppercase tracking-widest">Edit</span>
+                            </div>
+                            <div class="p-1 min-w-0 flex flex-col justify-start">
+                                <label class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Pedagogy</label>
+                                ${pedagogyComboHtml(pedBase, ped, { manualQuestionId: q.id, searchClass: ' w-full bg-white border border-blue-200 rounded-lg px-1.5 py-1 text-[11px] font-bold text-slate-700' })}
+                            </div>
+                            <div class="p-1 min-w-0">
+                                <label class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Question</label>
+                                <textarea data-gqp-inp="question" class="w-full bg-white border border-blue-200 rounded p-2 text-sm font-bold text-slate-700 outline-none transition-all resize-none" rows="2">${escapeHtml(q.question || q.content || '')}</textarea>
+                            </div>
+                        </div>
+                        <div class="px-1 pt-2 pb-0">
+                            <label class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Evaluation reference</label>
+                            <textarea data-gqp-inp="correct_answer" rows="3" class="w-full bg-white border border-blue-200 rounded p-2 text-[12px] font-medium text-slate-700 outline-none">${escapeHtml(q.correct_answer || q.expected_answer || '')}</textarea>
+                        </div>
+                        `}
+                        <div class="flex justify-end gap-1 mt-1 pb-1 pr-1">
+                            <button type="button" class="px-2 py-1 rounded bg-white border border-slate-200 text-slate-400 font-black text-[7px] uppercase tracking-widest hover:bg-slate-50 transition-all" onclick="generatedQpCancelEdit(this.closest('.generated-qp-card').getAttribute('data-gqp-qid'))">Cancel</button>
+                            <button type="button" class="px-4 py-1 rounded bg-blue-600 text-white font-black text-[7px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-sm shadow-blue-100" onclick="generatedQpSaveEdit(this.closest('.generated-qp-card').getAttribute('data-gqp-qid'))">Update</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.generatedQpToggleEdit = function (rawId, editMode) {
+            const id = String(rawId);
+            const root = findGeneratedQpCard(id);
+            if (!root) return;
+            const view = root.querySelector('.gqp-view');
+            const edit = root.querySelector('.gqp-edit');
+            if (editMode) {
+                const q = App.manualQuestions.find(x => String(x.id) === id);
+                if (q) {
+                    const setVal = (inp, val) => {
+                        if (!inp) return;
+                        inp.value = val != null ? String(val) : '';
+                    };
+                    setVal(root.querySelector('[data-gqp-inp="question"]'), q.question || q.content || '');
+                    ['a', 'b', 'c', 'd'].forEach(opt => setVal(root.querySelector('[data-gqp-inp="option_' + opt + '"]'), q['option_' + opt] || ''));
+                    const corTa = root.querySelector('textarea[data-gqp-inp="correct_answer"]');
+                    if (corTa) setVal(corTa, q.correct_answer || q.expected_answer || '');
+                    const pedBase = root.getAttribute('data-gqp-ped-base');
+                    if (pedBase) setPedagogyComboValue(pedBase, q.pedagogy || q.knowledge_type || '');
+                    const letter = String(q.correct_answer || 'A').trim().toUpperCase().charAt(0);
+                    const selL = ['A', 'B', 'C', 'D'].includes(letter) ? letter : 'A';
+                    gqpSyncCorrectButtons(root, selL);
+                }
+            }
+            if (view) view.classList.toggle('hidden', !!editMode);
+            if (edit) edit.classList.toggle('hidden', !editMode);
+        };
+
+        window.generatedQpCancelEdit = function (rawId) {
+            window.generatedQpToggleEdit(rawId, false);
+        };
+
+        window.generatedQpSaveEdit = function (rawId) {
+            const id = String(rawId);
+            const root = findGeneratedQpCard(id);
+            if (!root) return;
+
+            const qText = root.querySelector('[data-gqp-inp="question"]')?.value ?? '';
+            if (!String(qText).trim()) {
+                Swal.fire('Required', 'Please enter question text before saving.', 'warning');
+                return;
+            }
+            App.updateManualQuestion(id, 'question', qText);
+
+            const pedBase = root.getAttribute('data-gqp-ped-base');
+            if (pedBase) {
+                App.updateManualQuestion(id, 'pedagogy', getPedagogyComboValue(pedBase));
+            }
+
+            const corHidden = root.querySelector('input[type="hidden"][data-gqp-inp="correct_answer"]');
+            const corTa = root.querySelector('textarea[data-gqp-inp="correct_answer"]');
+            if (corHidden) {
+                ['a', 'b', 'c', 'd'].forEach(opt => {
+                    const el = root.querySelector('[data-gqp-inp="option_' + opt + '"]');
+                    if (el) App.updateManualQuestion(id, 'option_' + opt, el.value);
+                });
+                App.updateManualQuestion(id, 'correct_answer', corHidden.value);
+            } else if (corTa) {
+                App.updateManualQuestion(id, 'correct_answer', corTa.value);
+            }
+
+            App.saveManualQuestionRow(id);
+            generateQuickQuestionPaper(false);
+        };
+
 
         function generateQuickQuestionPaper(forceGenerate = false) {
             const qbSelectInline = document.getElementById('builder_qb_select_inline');
@@ -14499,7 +14879,9 @@ if (!empty($Tests)) {
                 if (configView) configView.classList.add('hidden');
                 if (paperSection) paperSection.classList.remove('hidden');
             } else {
-                hasBuilderGeneratedPreview = false;
+                if (forceGenerate) {
+                    hasBuilderGeneratedPreview = false;
+                }
                 updateBuilderTemplateFooterVisibility();
                 const builderPreview = document.getElementById('builder_questions_section_inline');
                 if (builderPreview) builderPreview.classList.remove('hidden');
@@ -14543,24 +14925,37 @@ if (!empty($Tests)) {
                             throw new Error("Please add and SAVE at least one section to your blueprint first.");
                         }
 
-                        paper = await App.generatePaperFromBank(qbId, { sections });
-                        if (paper && paper.questions) {
-                            App.manualQuestions = paper.questions;
-                            hasBuilderGeneratedPreview = App.manualQuestions.length > 0;
-                            updateBuilderTemplateFooterVisibility();
-                            // Update mapping status in builder
-                            const statusEl = document.getElementById('qb_mapping_status');
-                            const textEl = document.getElementById('qb_mapping_text');
-                            if (statusEl) statusEl.classList.remove('hidden');
-                            if (textEl) textEl.textContent = `${App.manualQuestions.length} Questions Mapped from Bank`;
+                        let fromManual = false;
+                        if (!forceGenerate && hasBuilderGeneratedPreview && Array.isArray(App.manualQuestions) && App.manualQuestions.length > 0) {
+                            const tid = currentEditingTemplateIdInline || 'new_temp';
+                            const template = App.templates.find(t => String(t.id) === String(tid));
+                            paper = template ? App.getGroupedPaper(App.manualQuestions, tid) : null;
+                            if (!paper || !Array.isArray(paper.grouped) || paper.grouped.length === 0) {
+                                paper = getBuilderGroupedPaperFromManual();
+                            }
+                            fromManual = !!(paper && Array.isArray(paper.grouped) && paper.grouped.length > 0);
                         }
-                        if (!paper) {
-                            hasBuilderGeneratedPreview = false;
-                            updateBuilderTemplateFooterVisibility();
-                            closeQuickPreview();
-                            return;
+
+                        if (!fromManual) {
+                            paper = App.generatePaperFromBank(qbId, { sections });
+                            if (paper && paper.questions) {
+                                App.manualQuestions = paper.questions;
+                                ensureManualQuestionIds(App.manualQuestions);
+                                hasBuilderGeneratedPreview = App.manualQuestions.length > 0;
+                                updateBuilderTemplateFooterVisibility();
+                                const statusEl = document.getElementById('qb_mapping_status');
+                                const textEl = document.getElementById('qb_mapping_text');
+                                if (statusEl) statusEl.classList.remove('hidden');
+                                if (textEl) textEl.textContent = `${App.manualQuestions.length} Questions Mapped from Bank`;
+                            }
+                            if (!paper) {
+                                hasBuilderGeneratedPreview = false;
+                                updateBuilderTemplateFooterVisibility();
+                                closeQuickPreview();
+                                return;
+                            }
+                            console.log("Updated App.manualQuestions with", App.manualQuestions.length, "questions from bank");
                         }
-                        console.log("Updated App.manualQuestions with", App.manualQuestions.length, "questions from bank");
                     } else if (qbId) {
                         // Standard Quick Mode from base template
                         paper = await generateQuestionsForQuickMode(templateId, qbId);
@@ -14594,6 +14989,8 @@ if (!empty($Tests)) {
                         container.innerHTML = '<div class="text-center py-12 text-red-500 font-bold">Failed to process paper structure. Template data is missing.</div>';
                         return;
                     }
+
+                    ensureManualQuestionIds(paper.questions || []);
 
                     if (paper.warnings && paper.warnings.length > 0) {
                         console.warn("Paper Warnings:", paper.warnings);
@@ -14631,36 +15028,7 @@ if (!empty($Tests)) {
                                         </div>
                                     </div>
                                     <div class="p-6 space-y-6">
-                                        ${picked && picked.length > 0 ? picked.map((q, qIdx) => `
-                                            <div class="relative pl-10 border-b border-slate-50 pb-6 last:border-0 last:pb-0">
-                                                <div class="absolute left-0 top-0 w-8 h-8 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-[11px] font-black border border-slate-100">${qIdx + 1}</div>
-                                                <div class="flex items-start justify-between mb-4">
-                                                    <p class="text-[14px] font-bold text-slate-800 leading-relaxed pt-1 whitespace-pre-wrap mb-0">${q.question || q.content || 'No question text'}</p>
-                                                    <div class="flex flex-col items-end gap-1 shrink-0 ml-4">
-                                                        <span class="px-2 py-0.5 rounded bg-slate-50 text-slate-400 text-[8px] font-black uppercase tracking-widest border border-slate-100">${q.marks || marks} Marks</span>
-                                                        ${q.difficulty ? `<span class="px-2 py-0.5 rounded ${q.difficulty === 'Hard' ? 'bg-red-50 text-red-600 border-red-100' : q.difficulty === 'Medium' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'} text-[8px] font-black uppercase tracking-widest border">${q.difficulty}</span>` : ''}
-                                                    </div>
-                                                </div>
-                                                ${App.normalizeType(q.type || type) === 'mcq' ? `
-                                                    <div class="grid grid-cols-2 gap-3">
-                                                        ${['a', 'b', 'c', 'd'].map(opt => `
-                                                            <div class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-50 bg-slate-50/20">
-                                                                <div class="w-6 h-6 rounded bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] font-black uppercase">${opt}</div>
-                                                                <span class="text-[12px] text-slate-600 font-medium whitespace-pre-wrap">${q['option_' + opt] || '---'}</span>
-                                                            </div>
-                                                        `).join('')}
-                                                    </div>
-                                                ` : `
-                                                    <div class="p-4 bg-blue-50/30 border border-blue-100 rounded-2xl">
-                                                        <div class="flex items-center gap-2 mb-2">
-                                                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                                            <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Evaluation Reference</span>
-                                                        </div>
-                                                        <p class="text-[12px] text-slate-600 font-medium italic mb-0 whitespace-pre-wrap leading-relaxed">${q.correct_answer || q.expected_answer || 'No reference answer provided'}</p>
-                                                    </div>
-                                                `}
-                                            </div>
-                                        `).join('') : `
+                                        ${picked && picked.length > 0 ? picked.map((q, qIdx) => buildGeneratedPaperQuestionHtml(q, qIdx, marks, type)).join('') : `
                                             <div class="text-center py-12 border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/20">
                                                 <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-200">
                                                     <i class="bi bi-exclamation-triangle text-2xl"></i>
@@ -14915,14 +15283,14 @@ if (!empty($Tests)) {
         };
 
         App.updateManualQuestion = (id, field, value) => {
-            const q = App.manualQuestions.find(q => q.id === id);
+            const q = App.manualQuestions.find(item => String(item.id) === String(id));
             if (q) {
                 q[field] = value;
             }
         };
 
         App.saveManualQuestionRow = (id) => {
-            const q = App.manualQuestions.find(item => item.id === id);
+            const q = App.manualQuestions.find(item => String(item.id) === String(id));
             if (!q) return;
 
             if (!String(q.question || '').trim()) {
@@ -15237,7 +15605,7 @@ if (!empty($Tests)) {
         };
 
         App.removeManualQuestion = (id, sectionIdx) => {
-            App.manualQuestions = App.manualQuestions.filter(q => q.id !== id);
+            App.manualQuestions = App.manualQuestions.filter(q => String(q.id) !== String(id));
             App.refreshSectionQuestions(sectionIdx);
         };
 
