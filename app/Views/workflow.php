@@ -70,8 +70,10 @@ if (!empty($Tests)) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- jsPDF and AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         .swal2-popup {
             border-radius: 20px !important;
@@ -4961,9 +4963,16 @@ if (!empty($Tests)) {
                         class="px-5 py-3 border-b border-[#f1f5f9] bg-[#f8fafc]/50 flex items-center justify-between gap-3 flex-wrap">
                         <h4 class="text-[12px] font-bold text-[#1e293b] mb-0 uppercase tracking-wide">Candidate Ranking
                             & Leaderboard</h4>
-                        <span
-                            class="text-[10px] font-bold text-[#94a3b8] bg-white border border-[#e2e8f0] px-2 py-0.5 rounded"
-                            id="breakdown-cat-count">0 Candidates</span>
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="text-[10px] font-bold text-[#94a3b8] bg-white border border-[#e2e8f0] px-2 py-0.5 rounded"
+                                id="breakdown-cat-count">0 Candidates</span>
+                            <button type="button" onclick="App.generateResultsReport()"
+                                class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all shadow-sm border border-emerald-500">
+                                <i class="bi bi-file-earmark-spreadsheet text-xs"></i>
+                                Generate Report
+                            </button>
+                        </div>
                     </div>
                     <div class="px-5 py-3 border-b border-[#f1f5f9] bg-white">
                         <div class="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-3 items-center">
@@ -4995,8 +5004,8 @@ if (!empty($Tests)) {
                                 </select>
                                 <select id="resultsSortFilter" onchange="App.loadCandidateResult()"
                                     class="h-9 text-[11px] font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3 rounded-lg">
-                                    <option value="high">Highest score (faster if tied)</option>
-                                    <option value="low">Lowest score (faster if tied)</option>
+                                    <option value="high">Highest Score</option>
+                                    <option value="low">Lowest Score</option>
                                 </select>
                             </div>
                             <div class="relative min-w-[220px]">
@@ -11936,7 +11945,113 @@ if (!empty($Tests)) {
 
                 const countEl = document.getElementById('breakdown-cat-count');
                 if (countEl) countEl.textContent = `${filtered.length} Candidate${filtered.length === 1 ? '' : 's'}`;
+                
+                // Store filtered results for report generation
+                App.currentFilteredResults = filtered;
 
+            },
+            
+            generateResultsReport: () => {
+                const data = App.currentFilteredResults || [];
+                if (!data.length) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'No Data to Export',
+                        text: 'Apply filters to find candidates before generating a report.',
+                        confirmButtonColor: '#10b981'
+                    });
+                    return;
+                }
+
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
+
+                    // Branding & Metadata
+                    const timestamp = new Date().toLocaleString();
+                    const logoColor = [220, 34, 48]; // Brand Red (#dc2230)
+                    
+                    // Header Title
+                    doc.setFontSize(22);
+                    doc.setTextColor(30, 41, 59); // slate-800
+                    doc.text("Candidate Performance Report", 14, 18);
+                    
+                    doc.setFontSize(10);
+                    doc.setTextColor(100, 116, 139); // slate-500
+                    doc.text(`Generated on: ${timestamp}`, 14, 24);
+                    doc.text(`Total Records: ${data.length}`, 14, 29);
+                    
+                    // Prepare Table Data
+                    const headers = [['Candidate Name', 'Test Name', 'Test Type', 'Group', 'Status', 'Marks', 'Score', 'Accuracy', 'Pass/Fail']];
+                    const rows = data.map(item => [
+                        item.candidate_name || '-',
+                        item.test_name || '-',
+                        item.test_type || '-',
+                        item.group_name || '-',
+                        item.status || '-',
+                        item.marks_text || '0 / 0',
+                        item.final_score || 0,
+                        (item.overall_pct || 0) + '%',
+                        item.pass_fail || '-'
+                    ]);
+
+                    // Generate Table using AutoTable
+                    doc.autoTable({
+                        head: headers,
+                        body: rows,
+                        startY: 35,
+                        theme: 'striped',
+                        headStyles: { 
+                            fillColor: logoColor,
+                            textColor: [255, 255, 255],
+                            fontSize: 10,
+                            fontStyle: 'bold',
+                            halign: 'left',
+                            cellPadding: 4
+                        },
+                        bodyStyles: { 
+                            fontSize: 9,
+                            textColor: [51, 65, 85], // slate-700
+                            valign: 'middle',
+                            cellPadding: 3
+                        },
+                        alternateRowStyles: {
+                            fillColor: [248, 250, 252] // slate-50
+                        },
+                        columnStyles: {
+                            0: { fontStyle: 'bold', cellWidth: 'auto' }, // Candidate
+                            5: { halign: 'center' }, // Marks
+                            6: { halign: 'center' }, // Score
+                            7: { halign: 'center' }, // Accuracy
+                            8: { halign: 'center' }  // Pass/Fail
+                        },
+                        margin: { top: 35, bottom: 20 },
+                        didDrawPage: (pageData) => {
+                            // Footer (Page Numbering)
+                            const str = "Page " + doc.internal.getNumberOfPages();
+                            doc.setFontSize(9);
+                            doc.setTextColor(148, 163, 184); // slate-400
+                            const pageSize = doc.internal.pageSize;
+                            const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
+                            doc.text(str, pageData.settings.margin.left, pageHeight - 10);
+                        }
+                    });
+
+                    // Save the PDF
+                    const dateStr = new Date().toISOString().slice(0, 10);
+                    doc.save(`Candidate_Performance_Report_${dateStr}.pdf`);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'PDF Generated',
+                        text: 'Professional performance report downloaded.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } catch (e) {
+                    console.error("PDF Generation Error:", e);
+                    Swal.fire('Error', 'Failed to generate PDF report. Please try again.', 'error');
+                }
             },
 
             loadDetailedResult: (name) => {
