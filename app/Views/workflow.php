@@ -4488,20 +4488,6 @@ if (!empty($Tests)) {
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center gap-3"
-                            href="javascript:void(0)" onclick="window.switchMainTab('results'); switchResultView('student');">
-                            <i class="bi bi-bar-chart-line text-lg"></i>
-                            Test Score
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item rounded-2xl py-2.5 px-4 text-[13px] font-bold text-slate-700 hover:bg-violet-50 hover:text-violet-600 transition-all flex items-center gap-3"
-                            href="javascript:void(0)" onclick="window.switchMainTab('results'); switchResultView('evaluator');">
-                            <i class="bi bi-clipboard-check text-lg"></i>
-                            Evaluator View
-                        </a>
-                    </li>
-                    <li>
                         <hr class="dropdown-divider border-slate-50 mx-2">
                     </li>
                     <li>
@@ -11256,7 +11242,8 @@ if (!empty($Tests)) {
                             marks,
                             candidate_answer: ansText,
                             awarded_marks: null,
-                            graded: false
+                            graded: false,
+                            remarks: ''
                         });
                     }
                 });
@@ -11346,13 +11333,18 @@ if (!empty($Tests)) {
                     const passMark = parseInt(item.pass_mark || 70, 10) || 70;
                     const passCutoff = Math.round((totalMarks * passMark) / 100);
                     const key = `${item.pack_id || ''}::${normLower(item.candidate_name)}`;
+                    const answeredSubjective = (item.subjective_items || []).filter(q => (q.candidate_answer || '').trim());
+                    const evaluationComplete = item.completed && (answeredSubjective.length === 0 || item.evaluation_saved);
+                    const passFail = evaluationComplete && totalMarks > 0
+                        ? (finalScore >= passCutoff ? 'Pass' : 'Fail')
+                        : '-';
                     const enriched = {
                         ...item,
                         final_score: finalScore,
                         total_marks: totalMarks,
                         accuracy,
                         status: item.completed ? 'Completed' : 'Pending',
-                        pass_fail: finalScore >= passCutoff ? 'Pass' : 'Fail',
+                        pass_fail: passFail,
                         submitted_ymd: ymd(item.submitted_date || item.submitted_at)
                     };
                     submissionsByPackCandidate[key] = enriched;
@@ -11412,6 +11404,11 @@ if (!empty($Tests)) {
                                 const finalScore = parseInt(submission.final_score || 0, 10) || 0;
                                 const accuracy = totalMarks > 0 ? Math.round((finalScore / totalMarks) * 100) : 0;
                                 const passCutoff = Math.round((totalMarks * passMark) / 100);
+                                const answeredSub = (submission.subjective_items || []).filter(q => (q.candidate_answer || '').trim());
+                                const evaluationComplete = answeredSub.length === 0 || submission.evaluation_saved;
+                                const passFail = evaluationComplete && totalMarks > 0
+                                    ? (finalScore >= passCutoff ? 'Pass' : 'Fail')
+                                    : '-';
                                 rows.push({
                                     key: submission.key || subKey,
                                     candidate_name: candidateName,
@@ -11424,7 +11421,7 @@ if (!empty($Tests)) {
                                     marks_text: `${finalScore} / ${totalMarks}`,
                                     final_score: finalScore,
                                     overall_pct: accuracy,
-                                    pass_fail: finalScore >= passCutoff ? 'Pass' : 'Fail',
+                                    pass_fail: passFail,
                                     subjective_items: submission.subjective_items || []
                                 });
                             } else {
@@ -11453,6 +11450,13 @@ if (!empty($Tests)) {
                     const already = rows.some(r => String(r.key) === String(sub.key));
                     if (already) return;
                     const meta = roleMap[String(sub.pack_id)] || {};
+                    const answeredOrphan = (sub.subjective_items || []).filter(q => (q.candidate_answer || '').trim());
+                    const orphanEvalComplete = answeredOrphan.length === 0 || sub.evaluation_saved;
+                    const tmOrphan = parseInt(sub.total_marks || 0, 10) || 0;
+                    const fsOrphan = parseInt(sub.final_score || 0, 10) || 0;
+                    const pmOrphan = parseInt(sub.pass_mark || 70, 10) || 70;
+                    const cutoffOrphan = tmOrphan > 0 ? Math.round((tmOrphan * pmOrphan) / 100) : 0;
+                    const passFailOrphan = orphanEvalComplete && tmOrphan > 0 ? (fsOrphan >= cutoffOrphan ? 'Pass' : 'Fail') : '-';
                     rows.push({
                         key: sub.key,
                         candidate_name: norm(sub.candidate_name || 'Candidate'),
@@ -11465,7 +11469,7 @@ if (!empty($Tests)) {
                         marks_text: `${sub.final_score || 0} / ${sub.total_marks || 0}`,
                         final_score: parseInt(sub.final_score || 0, 10) || 0,
                         overall_pct: parseInt(sub.accuracy || 0, 10) || 0,
-                        pass_fail: sub.pass_fail || '-',
+                        pass_fail: passFailOrphan,
                         subjective_items: sub.subjective_items || []
                     });
                 });
@@ -11632,10 +11636,11 @@ if (!empty($Tests)) {
                 const hasAnyFilter = !!(selectedType || activeSelectedTest || selectedGroups.length > 0 || selectedDate || candidateSearch);
                 const totalScore = hasAnyFilter ? filtered.reduce((sum, r) => sum + (r.final_score || 0), 0) : 0;
                 const completedRows = hasAnyFilter ? filtered.filter(r => r.status === 'Completed') : [];
-                const passRows = completedRows.filter(r => r.pass_fail === 'Pass');
-                const failRows = completedRows.filter(r => r.pass_fail === 'Fail');
+                const evaluatedRows = completedRows.filter(r => r.pass_fail === 'Pass' || r.pass_fail === 'Fail');
+                const passRows = evaluatedRows.filter(r => r.pass_fail === 'Pass');
+                const failRows = evaluatedRows.filter(r => r.pass_fail === 'Fail');
                 const pendingRows = hasAnyFilter ? filtered.filter(r => r.status === 'Pending') : [];
-                const passPct = hasAnyFilter && completedRows.length ? Math.round((passRows.length / completedRows.length) * 100) : 0;
+                const passPct = hasAnyFilter && evaluatedRows.length ? Math.round((passRows.length / evaluatedRows.length) * 100) : 0;
 
                 const totalScoreEl = document.getElementById('resSummaryTotalScore');
                 const passPctEl = document.getElementById('resSummaryPassPct');
@@ -11764,8 +11769,12 @@ if (!empty($Tests)) {
                     const overallPct = totalMarks > 0 ? Math.round((finalScore / totalMarks) * 100) : 0;
                     const passCutoff = Math.round((totalMarks * passMarkPct) / 100);
                     let passFail = '-';
-                    if (totalMarks > 0) {
-                        passFail = finalScore >= passCutoff ? 'Pass' : 'Fail';
+                    if (submission && totalMarks > 0) {
+                        const answeredSub = (submission.subjective_items || []).filter(q => (q.candidate_answer || '').trim());
+                        const evaluationComplete = answeredSub.length === 0 || submission.evaluation_saved;
+                        if (evaluationComplete) {
+                            passFail = finalScore >= passCutoff ? 'Pass' : 'Fail';
+                        }
                     }
                     board.push({
                         candidate_name: candidateName,
@@ -11791,7 +11800,13 @@ if (!empty($Tests)) {
                     const overallPct = tm > 0 ? Math.round((fs / tm) * 100) : 0;
                     const passCutoff = Math.round((tm * passMarkPct) / 100);
                     let passFail = '-';
-                    if (tm > 0) passFail = fs >= passCutoff ? 'Pass' : 'Fail';
+                    if (tm > 0) {
+                        const answeredSub = (item.subjective_items || []).filter(q => (q.candidate_answer || '').trim());
+                        const evaluationComplete = answeredSub.length === 0 || item.evaluation_saved;
+                        if (evaluationComplete) {
+                            passFail = fs >= passCutoff ? 'Pass' : 'Fail';
+                        }
+                    }
                     board.push({
                         candidate_name: cn,
                         final_score: fs,
@@ -11857,7 +11872,13 @@ if (!empty($Tests)) {
                     const overallPct = totalMarks > 0 ? Math.round((finalScore / totalMarks) * 100) : 0;
                     const passCutoff = Math.round((totalMarks * passMarkPct) / 100);
                     let passFail = '-';
-                    if (totalMarks > 0) passFail = finalScore >= passCutoff ? 'Pass' : 'Fail';
+                    if (totalMarks > 0) {
+                        const answeredSub = (directSub.subjective_items || []).filter(q => (q.candidate_answer || '').trim());
+                        const evaluationComplete = answeredSub.length === 0 || directSub.evaluation_saved;
+                        if (evaluationComplete) {
+                            passFail = finalScore >= passCutoff ? 'Pass' : 'Fail';
+                        }
+                    }
                     const merged = data.board.filter((r) => normL(r.candidate_name) !== nameKey).concat([{
                         candidate_name: String(directSub.candidate_name || '').trim() || App.getCandidateName(),
                         final_score: finalScore,
@@ -11900,6 +11921,20 @@ if (!empty($Tests)) {
                         </p>`;
                 }
 
+                const escHtml = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                const remarkItems = (sub.subjective_items || []).filter(q => (q.candidate_answer || '').trim() && (q.remarks || '').trim());
+                const remarksBlock = (sub.evaluation_saved && remarkItems.length)
+                    ? `<div class="mt-4 rounded-xl border border-slate-100 bg-white p-4">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Evaluator remarks</p>
+                            <ul class="list-unstyled mb-0">${remarkItems.map((q) => `
+                                <li class="mb-3 last:mb-0">
+                                    <p class="text-[10px] font-bold text-slate-500 mb-0.5">Question ${(q.index ?? 0) + 1}</p>
+                                    <p class="text-[12px] text-slate-700 mb-0 whitespace-pre-wrap">${escHtml((q.remarks || '').trim())}</p>
+                                </li>`).join('')}
+                            </ul>
+                        </div>`
+                    : '';
+
                 const passBadge = myRow.pass_fail === 'Pass'
                     ? '<span class="inline-flex px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-100">Pass</span>'
                     : (myRow.pass_fail === 'Fail'
@@ -11936,6 +11971,7 @@ if (!empty($Tests)) {
                             <p class="text-[12px] font-bold text-slate-600 mb-0">You need roughly ${Math.round((myRow.total_marks || 0) * (data.passMarkPct || 70) / 100)} marks to pass this test.</p>
                         </div>
                     </div>
+                    ${remarksBlock}
                     ${evalNote}
                     <div class="mt-4 d-flex justify-content-end">
                         <button type="button" class="btn btn-sm btn-light border text-slate-700 px-4" data-bs-dismiss="modal">Close</button>
@@ -12076,6 +12112,8 @@ if (!empty($Tests)) {
                 const awarded = subjectiveItems.reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
                 const subjectiveMaxPoints = subjectiveItems.reduce((s, q) => s + (parseInt(q.marks, 10) || 0), 0);
 
+                const escTa = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
                 const evalAttachment = submission?.attachment || (Array.isArray(submission?.attachments) ? submission.attachments[0] : null);
                 const attachmentBlock = evalAttachment?.data_url
                     ? `
@@ -12107,6 +12145,17 @@ if (!empty($Tests)) {
                 `;
 
                 if (!pending.length) {
+                    const remarksWhenFinalizing = !submission.evaluation_saved ? `
+                        <div class="bg-white border border-[#e2e8f0] rounded-[10px] overflow-hidden shadow-sm mb-3 p-4">
+                            <p class="text-[9px] font-black text-[#94a3b8] uppercase tracking-widest mb-3">Remarks (shown to student after save)</p>
+                            ${subjectiveItems.map((q) => `
+                                <div class="mb-3 last:mb-0">
+                                    <label class="text-[11px] font-bold text-[#475569] block mb-1">Q${q.index + 1}</label>
+                                    <textarea id="remarks_${submission.key}_${q.id}" rows="2" class="w-full text-[12px] border border-[#e2e8f0] rounded-[6px] px-3 py-2 focus:border-[#dc2230] outline-none resize-y" placeholder="Optional feedback for the candidate…">${escTa(q.remarks || '')}</textarea>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '';
                     const saveEvalBtnBlock = submission.evaluation_saved ? '' : `
                         <div class="flex justify-end">
                             <button class="bg-[#dc2230] hover:bg-[#c61e2b] text-white px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm" onclick="App.saveFinalEvaluation('${submission.key}')">
@@ -12116,6 +12165,7 @@ if (!empty($Tests)) {
                     `;
                     list.innerHTML = `
                         ${headerCard}
+                        ${remarksWhenFinalizing}
                         ${saveEvalBtnBlock}
                         <div class="py-12 text-center bg-gray-50/30 rounded-[10px] border border-dashed border-[#e2e8f0]">
                             <div class="inline-flex items-center justify-center w-12 h-12 bg-[#f0fdf4] text-[#16a34a] rounded-full mb-3">
@@ -12131,13 +12181,14 @@ if (!empty($Tests)) {
                 list.innerHTML = headerCard + `
                     <div class="bg-white border border-[#e2e8f0] rounded-[10px] overflow-hidden shadow-sm">
                         <div class="grid grid-cols-12 gap-2 px-4 py-2.5 bg-[#f8fafc] border-b border-[#f1f5f9]">
-                            <div class="col-span-4 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Question</div>
-                            <div class="col-span-6 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Candidate Answer</div>
+                            <div class="col-span-3 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Question</div>
+                            <div class="col-span-4 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Candidate Answer</div>
+                            <div class="col-span-3 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Remarks</div>
                             <div class="col-span-2 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest text-right">Marks</div>
                         </div>
                         ${subjectiveItems.map(q => `
                             <div class="grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-[#f8fafc] last:border-0 items-start">
-                                <div class="col-span-4 pr-2">
+                                <div class="col-span-3 pr-2">
                                     <div class="flex items-start gap-2">
                                         <span class="bg-[#eff6ff] text-[#2563eb] px-1.5 py-0.5 rounded-[3px] text-[10px] font-bold shrink-0">Q${q.index + 1}</span>
                                         <div>
@@ -12146,10 +12197,13 @@ if (!empty($Tests)) {
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-span-6">
+                                <div class="col-span-4">
                                     <div class="h-[72px] overflow-y-auto bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] px-3 py-2">
                                         <p class="text-[12px] text-[#475569] italic mb-0 whitespace-pre-wrap leading-relaxed">${q.candidate_answer || 'No answer submitted.'}</p>
                                     </div>
+                                </div>
+                                <div class="col-span-3">
+                                    <textarea id="remarks_${submission.key}_${q.id}" rows="3" class="w-full min-h-[72px] text-[11px] border border-[#e2e8f0] rounded-[6px] px-2 py-1.5 focus:border-[#dc2230] outline-none resize-y" placeholder="Feedback for student…">${escTa(q.remarks || '')}</textarea>
                                 </div>
                                 <div class="col-span-2 flex items-start justify-end">
                                     <div class="flex items-center gap-1.5">
@@ -12167,6 +12221,15 @@ if (!empty($Tests)) {
                         </button>
                     </div>
                 `;
+            },
+
+            syncSubjectiveRemarksFromInputs: (submissionKey) => {
+                const submission = App.evaluationState.submissions[submissionKey];
+                if (!submission) return;
+                (submission.subjective_items || []).forEach((q) => {
+                    const el = document.getElementById(`remarks_${submissionKey}_${q.id}`);
+                    if (el) q.remarks = String(el.value || '').trim();
+                });
             },
 
             submitAllManualGrades: (submissionKey) => {
@@ -12192,6 +12255,8 @@ if (!empty($Tests)) {
                     item.awarded_marks = safeVal;
                     item.graded = true;
                 }
+
+                App.syncSubjectiveRemarksFromInputs(submissionKey);
 
                 submission.evaluation_saved = false;
                 submission.final_score = (submission.mcq_score || 0) + subjectiveItems.reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
@@ -12224,6 +12289,8 @@ if (!empty($Tests)) {
 
                 submission.subjective_items[idx].awarded_marks = val;
                 submission.subjective_items[idx].graded = true;
+                const rEl = document.getElementById(`remarks_${submissionKey}_${questionId}`);
+                if (rEl) submission.subjective_items[idx].remarks = String(rEl.value || '').trim();
                 submission.evaluation_saved = false;
                 submission.final_score = (submission.mcq_score || 0) + (submission.subjective_items || [])
                     .filter(q => (q.candidate_answer || '').trim())
@@ -12239,6 +12306,8 @@ if (!empty($Tests)) {
             saveFinalEvaluation: (submissionKey) => {
                 const submission = App.evaluationState.submissions[submissionKey];
                 if (!submission) return;
+
+                App.syncSubjectiveRemarksFromInputs(submissionKey);
 
                 const answeredSub = (submission.subjective_items || []).filter(q => (q.candidate_answer || '').trim());
                 const pending = answeredSub.filter(q => !q.graded);
@@ -12609,14 +12678,14 @@ if (!empty($Tests)) {
                                     Initialize evaluation in seconds</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1.5">
                             <!-- Navigation Controls -->
                             
                             <button id="wizard_global_create_btn" class="px-5 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center gap-2" onclick="openTemplateBuilderInline()">
                                 <i class="bi bi-plus-lg"></i> Create New Template
                             </button>
 
-                            <div class="w-px h-6 bg-slate-100 mx-1" id="wizard_header_divider"></div>
+                            <div class="w-px h-6 bg-slate-100 mx-0 shrink-0" id="wizard_header_divider"></div>
 
                             <button class="px-6 py-2.5 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100 flex items-center gap-2"
                                 onclick="closeQuickSetup()"><i class="bi bi-arrow-left text-[14px] font-black leading-none"></i>Back</button>
