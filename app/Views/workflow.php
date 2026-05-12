@@ -4550,7 +4550,7 @@ if (!empty($Tests)) {
                         <input type="hidden" id="ass_code" value="" />
 
                         <!-- Row 1: compact balanced horizontal layout -->
-                        <div id="test_form_row1" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 mb-6 items-end">
+                        <div id="test_form_row1" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 mb-6 items-start">
                             <div class="form-group min-w-0">
                                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test
                                     Name <span class="text-red-500">*</span></label>
@@ -4619,7 +4619,7 @@ if (!empty($Tests)) {
                                     <span class="error-msg hidden" id="err_ass_assigned">Please assign to at least one role</span>
                                 </div>
                             </div>
-                            <div class="form-group min-w-0">
+                            <div id="ass_add_video_group" class="form-group min-w-0">
                                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Add
                                     Video <span class="text-red-500">*</span></label>
                                 <select id="ass_add_video" class="select h-11 w-full bg-slate-50 border-slate-100 rounded-xl px-3 text-sm"
@@ -4629,21 +4629,29 @@ if (!empty($Tests)) {
                                 </select>
                                 <span class="error-msg hidden" id="err_ass_add_video">Please choose an option</span>
                             </div>
-                            <div id="ass_intro_upload_col" class="hidden form-group min-w-0">
+                            <div id="ass_intro_upload_col" class="hidden form-group min-w-0 flex flex-col">
                                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Upload
                                     Videos <span class="text-red-500">*</span></label>
-                                <div class="h-11 w-full flex items-center gap-2 px-2 rounded-xl border border-slate-100 bg-slate-50">
+                                <div id="ass_intro_upload_strip"
+                                    class="w-full rounded-xl border border-slate-100 bg-slate-50 shrink-0 overflow-hidden">
                                     <input type="file" id="ass_intro_video_input" accept="video/*" multiple class="hidden"
                                         onchange="onAssIntroVideoFilesChange(this)" />
-                                    <button type="button"
-                                        id="ass_intro_video_browse_btn"
-                                        class="px-2 py-1 rounded-lg border border-slate-200 bg-white text-[9px] font-black uppercase tracking-wider text-slate-600 hover:border-red-200 hover:text-red-600 shrink-0 leading-none"
-                                        onclick="document.getElementById('ass_intro_video_input').click()">
-                                        Browse
-                                    </button>
-                                    <span id="ass_intro_video_count" class="text-[10px] font-bold text-slate-500 whitespace-nowrap">0 / 5</span>
+                                    <div id="ass_intro_upload_strip_head"
+                                        class="flex items-center justify-between gap-2 h-11 px-2.5">
+                                        <button type="button"
+                                            id="ass_intro_video_browse_btn"
+                                            class="px-2 py-1 rounded-lg border border-slate-200 bg-white text-[9px] font-black uppercase tracking-wider text-slate-600 hover:border-red-200 hover:text-red-600 shrink-0 leading-none"
+                                            onclick="document.getElementById('ass_intro_video_input').click()">
+                                            Browse
+                                        </button>
+                                        <span id="ass_intro_video_count"
+                                            class="shrink-0 text-[10px] font-bold text-slate-500 whitespace-nowrap cursor-default border-b border-dotted border-slate-300"
+                                            title="">0 / 5</span>
+                                    </div>
+                                    <div id="ass_intro_video_chips" class="hidden w-full"></div>
                                 </div>
-                                <span class="error-msg hidden" id="err_ass_intro_videos">Add at least one video or set Add Video to No</span>
+                                <p class="text-[9px] text-slate-400 font-medium leading-snug mt-1.5 mb-0">File names appear as tags; hover the count for the full list.</p>
+                                <span class="error-msg hidden mt-1" id="err_ass_intro_videos">Add at least one video or set Add Video to No</span>
                             </div>
                             <input id="ass_pass_mark" type="hidden" value="60" />
                         </div>
@@ -4793,16 +4801,17 @@ if (!empty($Tests)) {
 
         <main id="tab-content-results" class="hidden px-8 py-6">
             <div class="flex items-start justify-between gap-4 mb-8">
-                <div>
-                    <button
-                        class="mb-4 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg font-bold text-xs flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm"
-                        onclick="window.backFromResultsPage()">
-                        <i class="bi bi-arrow-left"></i> Back to Inventory
-                    </button>
+                <div class="min-w-0 flex-1">
                     <h3 class="text-2xl font-bold">Results & Evaluation</h3>
                     <p class="text-sm text-gray-500">Review candidate performance and grade subjective answers.</p>
                 </div>
-                <div id="resultsOverviewCards" class="w-full xl:w-[36%]">
+                <div class="flex flex-col items-end gap-3 w-full xl:w-[36%] shrink-0">
+                    <button type="button"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs inline-flex items-center gap-2 hover:bg-red-700 transition-all border border-red-600 shadow-sm shadow-red-100"
+                        onclick="window.backFromResultsPage()">
+                        <i class="bi bi-arrow-left"></i> Back to Inventory
+                    </button>
+                    <div id="resultsOverviewCards" class="w-full">
                     <h5 class="text-[10px] font-black text-[#1e293b] mb-2">Evaluation Overview</h5>
                     <div class="grid grid-cols-4 gap-2">
                         <div class="bg-[#f8fbff] border border-[#dbeafe] rounded-lg p-2 border-t-[3px] border-t-[#3b82f6] min-h-[62px] flex flex-col justify-between">
@@ -4821,6 +4830,7 @@ if (!empty($Tests)) {
                             <p class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">Pending Count</p>
                             <p id="resSummaryPendingCount" class="text-[16px] font-black text-[#475569] leading-none text-center mb-0">0</p>
                         </div>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -6129,10 +6139,14 @@ if (!empty($Tests)) {
             }
         };
 
+        function qbSortedNewestFirst() {
+            return [...QuestionBanks].sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+        }
+
         function renderQuestionBanks() {
             const list = document.getElementById('qbList');
             if (!list) return;
-            list.innerHTML = QuestionBanks.map(bank => {
+            list.innerHTML = qbSortedNewestFirst().map(bank => {
                 const isActive = activeQB && activeQB.id == bank.id;
                 const qCount = bank.questions ? bank.questions.length : 0;
                 const sections = bank.questions ? new Set(bank.questions.map(q => q.type || q.marks_type)).size : 0;
@@ -6162,7 +6176,7 @@ if (!empty($Tests)) {
             if (qbSelect) {
                 const currentValue = qbSelect.value;
                 qbSelect.innerHTML = '<option value="" disabled selected>-- Select a Question Bank --</option>' +
-                    QuestionBanks.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+                    qbSortedNewestFirst().map(b => `<option value="${b.id}">${b.name}</option>`).join('');
                 if (currentValue) qbSelect.value = currentValue;
             }
         }
@@ -6855,8 +6869,9 @@ if (!empty($Tests)) {
         }
 
         function cancelInlineCreate() {
-            if (QuestionBanks.length > 0) {
-                selectQuestionBank(QuestionBanks[0].id);
+            const sorted = qbSortedNewestFirst();
+            if (sorted.length > 0) {
+                selectQuestionBank(sorted[0].id);
             } else {
                 resetToQBEmptyState();
                 restoreQBHeader();
@@ -7499,17 +7514,6 @@ if (!empty($Tests)) {
             }
         }
 
-        function cancelInlineCreate() {
-            if (QuestionBanks.length > 0) {
-                selectQuestionBank(QuestionBanks[0].id);
-            } else {
-                resetToQBEmptyState();
-                restoreQBHeader();
-            }
-        }
-
-
-
         function downloadQBTemplate() {
             const headers = "section_name,question,type,option_a,option_b,option_c,option_d,correct_answer,marks,expected_answer,pedagogy\n";
             const sample1 = "MCQ,What is 2+2?,MCQ,3,4,5,6,B,1,,Factual\n";
@@ -7627,7 +7631,7 @@ if (!empty($Tests)) {
         }
 
         function filterBanks(query) {
-            const filtered = QuestionBanks.filter(b => b.name.toLowerCase().includes(query.toLowerCase()));
+            const filtered = qbSortedNewestFirst().filter(b => b.name.toLowerCase().includes(query.toLowerCase()));
             const list = document.getElementById('qbList');
             if (!list) return;
             list.innerHTML = filtered.map(bank => {
@@ -9180,8 +9184,8 @@ if (!empty($Tests)) {
             if (nameInput) nameInput.value = '';
             const passMarkInline = document.getElementById('builder_pass_mark_inline');
             const passMarkVisible = document.getElementById('builder_pass_mark_visible');
-            if (passMarkInline) passMarkInline.value = 60;
-            if (passMarkVisible) passMarkVisible.value = 60;
+            if (passMarkInline) passMarkInline.value = '0';
+            if (passMarkVisible) passMarkVisible.value = '0';
 
             // 4. Clear state
             if (typeof App !== 'undefined') {
@@ -9222,7 +9226,9 @@ if (!empty($Tests)) {
             const cloneName = getUniqueTemplateCloneName(template.name || 'Untitled Template');
             const nameInput = document.getElementById('builder_storage_name_inline');
             if (nameInput) nameInput.value = cloneName;
-            const clonePassMark = parseInt(template.pass_mark || 60, 10) || 60;
+            let clonePassMark = parseInt(template.pass_mark, 10);
+            if (Number.isNaN(clonePassMark)) clonePassMark = 0;
+            clonePassMark = Math.max(0, Math.min(100, clonePassMark));
             const passMarkInline = document.getElementById('builder_pass_mark_inline');
             const passMarkVisible = document.getElementById('builder_pass_mark_visible');
             if (passMarkInline) passMarkInline.value = clonePassMark;
@@ -9277,7 +9283,9 @@ if (!empty($Tests)) {
 
             // 1. Set Name
             document.getElementById('builder_storage_name_inline').value = template.name;
-            const templatePassMark = parseInt(template.pass_mark || 60, 10) || 60;
+            let templatePassMark = parseInt(template.pass_mark, 10);
+            if (Number.isNaN(templatePassMark)) templatePassMark = 0;
+            templatePassMark = Math.max(0, Math.min(100, templatePassMark));
             const passMarkInline = document.getElementById('builder_pass_mark_inline');
             const passMarkVisible = document.getElementById('builder_pass_mark_visible');
             if (passMarkInline) passMarkInline.value = templatePassMark;
@@ -9446,7 +9454,7 @@ if (!empty($Tests)) {
                     const qbSelect = document.getElementById('quick_qb_select');
                     if (qbSelect && qbSelect.children.length <= 1) {
                         qbSelect.innerHTML = '<option value="" disabled selected>-- Select a Question Bank --</option>' +
-                            QuestionBanks.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+                            qbSortedNewestFirst().map(b => `<option value="${b.id}">${b.name}</option>`).join('');
                     }
                 } else {
                     qbSection.classList.add('hidden');
@@ -9622,7 +9630,11 @@ if (!empty($Tests)) {
                     name: name,
                     category: document.getElementById('builder_category_inline').value,
                     duration: document.getElementById('builder_duration_inline').value || 60,
-                    pass_mark: document.getElementById('builder_pass_mark_inline').value || 60,
+                    pass_mark: (() => {
+                        const v = document.getElementById('builder_pass_mark_inline')?.value;
+                        const n = parseInt(v, 10);
+                        return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
+                    })(),
                     max_attempts: document.getElementById('builder_attempts_inline').value || 2,
                     sections: sections,
                     questions: App.manualQuestions
@@ -11242,8 +11254,7 @@ if (!empty($Tests)) {
                             marks,
                             candidate_answer: ansText,
                             awarded_marks: null,
-                            graded: false,
-                            remarks: ''
+                            graded: false
                         });
                     }
                 });
@@ -11922,16 +11933,11 @@ if (!empty($Tests)) {
                 }
 
                 const escHtml = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                const remarkItems = (sub.subjective_items || []).filter(q => (q.candidate_answer || '').trim() && (q.remarks || '').trim());
-                const remarksBlock = (sub.evaluation_saved && remarkItems.length)
+                const finalRemark = String(sub.evaluator_remarks || '').trim();
+                const remarksBlock = (sub.evaluation_saved && finalRemark)
                     ? `<div class="mt-4 rounded-xl border border-slate-100 bg-white p-4">
                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Evaluator remarks</p>
-                            <ul class="list-unstyled mb-0">${remarkItems.map((q) => `
-                                <li class="mb-3 last:mb-0">
-                                    <p class="text-[10px] font-bold text-slate-500 mb-0.5">Question ${(q.index ?? 0) + 1}</p>
-                                    <p class="text-[12px] text-slate-700 mb-0 whitespace-pre-wrap">${escHtml((q.remarks || '').trim())}</p>
-                                </li>`).join('')}
-                            </ul>
+                            <p class="text-[12px] text-slate-700 mb-0 whitespace-pre-wrap">${escHtml(finalRemark)}</p>
                         </div>`
                     : '';
 
@@ -12112,8 +12118,6 @@ if (!empty($Tests)) {
                 const awarded = subjectiveItems.reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
                 const subjectiveMaxPoints = subjectiveItems.reduce((s, q) => s + (parseInt(q.marks, 10) || 0), 0);
 
-                const escTa = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
-
                 const evalAttachment = submission?.attachment || (Array.isArray(submission?.attachments) ? submission.attachments[0] : null);
                 const attachmentBlock = evalAttachment?.data_url
                     ? `
@@ -12145,27 +12149,15 @@ if (!empty($Tests)) {
                 `;
 
                 if (!pending.length) {
-                    const remarksWhenFinalizing = !submission.evaluation_saved ? `
-                        <div class="bg-white border border-[#e2e8f0] rounded-[10px] overflow-hidden shadow-sm mb-3 p-4">
-                            <p class="text-[9px] font-black text-[#94a3b8] uppercase tracking-widest mb-3">Remarks (shown to student after save)</p>
-                            ${subjectiveItems.map((q) => `
-                                <div class="mb-3 last:mb-0">
-                                    <label class="text-[11px] font-bold text-[#475569] block mb-1">Q${q.index + 1}</label>
-                                    <textarea id="remarks_${submission.key}_${q.id}" rows="2" class="w-full text-[12px] border border-[#e2e8f0] rounded-[6px] px-3 py-2 focus:border-[#dc2230] outline-none resize-y" placeholder="Optional feedback for the candidate…">${escTa(q.remarks || '')}</textarea>
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : '';
                     const saveEvalBtnBlock = submission.evaluation_saved ? '' : `
                         <div class="flex justify-end">
-                            <button class="bg-[#dc2230] hover:bg-[#c61e2b] text-white px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm" onclick="App.saveFinalEvaluation('${submission.key}')">
+                            <button class="bg-[#dc2230] hover:bg-[#c61e2b] text-white px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm" onclick="App.promptEvaluatorRemarksThenFinalize('${submission.key}')">
                                 Save Evaluation
                             </button>
                         </div>
                     `;
                     list.innerHTML = `
                         ${headerCard}
-                        ${remarksWhenFinalizing}
                         ${saveEvalBtnBlock}
                         <div class="py-12 text-center bg-gray-50/30 rounded-[10px] border border-dashed border-[#e2e8f0]">
                             <div class="inline-flex items-center justify-center w-12 h-12 bg-[#f0fdf4] text-[#16a34a] rounded-full mb-3">
@@ -12181,14 +12173,13 @@ if (!empty($Tests)) {
                 list.innerHTML = headerCard + `
                     <div class="bg-white border border-[#e2e8f0] rounded-[10px] overflow-hidden shadow-sm">
                         <div class="grid grid-cols-12 gap-2 px-4 py-2.5 bg-[#f8fafc] border-b border-[#f1f5f9]">
-                            <div class="col-span-3 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Question</div>
-                            <div class="col-span-4 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Candidate Answer</div>
-                            <div class="col-span-3 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Remarks</div>
+                            <div class="col-span-4 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Question</div>
+                            <div class="col-span-6 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest">Candidate Answer</div>
                             <div class="col-span-2 text-[9px] font-black text-[#94a3b8] uppercase tracking-widest text-right">Marks</div>
                         </div>
                         ${subjectiveItems.map(q => `
                             <div class="grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-[#f8fafc] last:border-0 items-start">
-                                <div class="col-span-3 pr-2">
+                                <div class="col-span-4 pr-2">
                                     <div class="flex items-start gap-2">
                                         <span class="bg-[#eff6ff] text-[#2563eb] px-1.5 py-0.5 rounded-[3px] text-[10px] font-bold shrink-0">Q${q.index + 1}</span>
                                         <div>
@@ -12197,13 +12188,10 @@ if (!empty($Tests)) {
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-span-4">
+                                <div class="col-span-6">
                                     <div class="h-[72px] overflow-y-auto bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] px-3 py-2">
                                         <p class="text-[12px] text-[#475569] italic mb-0 whitespace-pre-wrap leading-relaxed">${q.candidate_answer || 'No answer submitted.'}</p>
                                     </div>
-                                </div>
-                                <div class="col-span-3">
-                                    <textarea id="remarks_${submission.key}_${q.id}" rows="3" class="w-full min-h-[72px] text-[11px] border border-[#e2e8f0] rounded-[6px] px-2 py-1.5 focus:border-[#dc2230] outline-none resize-y" placeholder="Feedback for student…">${escTa(q.remarks || '')}</textarea>
                                 </div>
                                 <div class="col-span-2 flex items-start justify-end">
                                     <div class="flex items-center gap-1.5">
@@ -12223,12 +12211,42 @@ if (!empty($Tests)) {
                 `;
             },
 
-            syncSubjectiveRemarksFromInputs: (submissionKey) => {
+            promptEvaluatorRemarksThenFinalize: (submissionKey) => {
                 const submission = App.evaluationState.submissions[submissionKey];
                 if (!submission) return;
-                (submission.subjective_items || []).forEach((q) => {
-                    const el = document.getElementById(`remarks_${submissionKey}_${q.id}`);
-                    if (el) q.remarks = String(el.value || '').trim();
+
+                const escTa = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+                const preset = String(submission.evaluator_remarks || '');
+
+                Swal.fire({
+                    title: 'Optional remarks',
+                    html: `
+                        <p class="text-[13px] text-slate-600 mb-3 text-start">Add optional feedback for the student. You can skip this step.</p>
+                        <textarea id="evaluatorRemarkPopup" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-[13px] min-h-[100px] focus:border-red-500 focus:ring-1 focus:ring-red-100 outline-none" style="box-sizing:border-box" placeholder="Feedback for student…">${escTa(preset)}</textarea>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Continue',
+                    cancelButtonText: 'Skip',
+                    confirmButtonColor: '#dc2230',
+                    cancelButtonColor: '#94a3b8',
+                    focusConfirm: false,
+                    reverseButtons: false,
+                    preConfirm: () => {
+                        const el = document.getElementById('evaluatorRemarkPopup');
+                        return el ? String(el.value || '').trim() : '';
+                    }
+                }).then((result) => {
+                    if (result.dismiss === Swal.DismissReason.backdrop || result.dismiss === Swal.DismissReason.esc) {
+                        return;
+                    }
+                    if (result.dismiss === Swal.DismissReason.cancel) {
+                        submission.evaluator_remarks = '';
+                    } else if (result.isConfirmed) {
+                        submission.evaluator_remarks = String(result.value ?? '').trim();
+                    } else {
+                        return;
+                    }
+                    App.saveFinalEvaluation(submissionKey);
                 });
             },
 
@@ -12256,12 +12274,10 @@ if (!empty($Tests)) {
                     item.graded = true;
                 }
 
-                App.syncSubjectiveRemarksFromInputs(submissionKey);
-
                 submission.evaluation_saved = false;
                 submission.final_score = (submission.mcq_score || 0) + subjectiveItems.reduce((sum, q) => sum + (q.awarded_marks || 0), 0);
                 App.saveEvaluationState();
-                App.saveFinalEvaluation(submissionKey);
+                App.promptEvaluatorRemarksThenFinalize(submissionKey);
             },
 
             enableManualGradeEdit: (submissionKey, questionId) => {
@@ -12289,8 +12305,6 @@ if (!empty($Tests)) {
 
                 submission.subjective_items[idx].awarded_marks = val;
                 submission.subjective_items[idx].graded = true;
-                const rEl = document.getElementById(`remarks_${submissionKey}_${questionId}`);
-                if (rEl) submission.subjective_items[idx].remarks = String(rEl.value || '').trim();
                 submission.evaluation_saved = false;
                 submission.final_score = (submission.mcq_score || 0) + (submission.subjective_items || [])
                     .filter(q => (q.candidate_answer || '').trim())
@@ -12306,8 +12320,6 @@ if (!empty($Tests)) {
             saveFinalEvaluation: (submissionKey) => {
                 const submission = App.evaluationState.submissions[submissionKey];
                 if (!submission) return;
-
-                App.syncSubjectiveRemarksFromInputs(submissionKey);
 
                 const answeredSub = (submission.subjective_items || []).filter(q => (q.candidate_answer || '').trim());
                 const pending = answeredSub.filter(q => !q.graded);
@@ -13144,8 +13156,8 @@ if (!empty($Tests)) {
                                                         <p class="text-[9px] text-slate-400 font-bold uppercase mb-0 mt-0.5 leading-snug">Minimum to pass</p>
                                                     </div>
                                                 </div>
-                                                <input id="builder_pass_mark_visible" type="number" min="1" max="100" value="60"
-                                                    oninput="document.getElementById('builder_pass_mark_inline').value = this.value || 60"
+                                                <input id="builder_pass_mark_visible" type="number" min="0" max="100" value="0"
+                                                    oninput="document.getElementById('builder_pass_mark_inline').value = this.value === '' ? '0' : this.value"
                                                     class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 focus:ring-2 focus:ring-emerald-100 focus:border-emerald-300 transition-all text-slate-700 shadow-inner"
                                                     placeholder="e.g. 60" />
                                             </div>
@@ -13175,7 +13187,7 @@ if (!empty($Tests)) {
                                             </div>
                                             <input type="hidden" id="builder_category_inline" value="General">
                                             <input type="hidden" id="builder_duration_inline" value="60">
-                                            <input type="hidden" id="builder_pass_mark_inline" value="60">
+                                            <input type="hidden" id="builder_pass_mark_inline" value="0">
                                             <input type="hidden" id="builder_attempts_inline" value="2">
                                         </div>
                                         <hr class="border-slate-100">
@@ -15754,26 +15766,72 @@ if (!empty($Tests)) {
             renderAssIntroVideoChips();
         }
 
+        function escapeIntroAttr(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;');
+        }
+
+        function escapeIntroHtml(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function introSavedVideoDisplayName(url, i) {
+            const s = String(url || '').trim();
+            if (!s) return 'Saved video ' + (i + 1);
+            try {
+                const path = s.split('?')[0].split('#')[0];
+                const seg = path.split('/').filter(Boolean).pop() || '';
+                if (!seg) return 'Saved video ' + (i + 1);
+                return decodeURIComponent(seg);
+            } catch (e) {
+                return 'Saved video ' + (i + 1);
+            }
+        }
+
         function renderAssIntroVideoChips() {
             const wrap = document.getElementById('ass_intro_video_chips');
             const cnt = document.getElementById('ass_intro_video_count');
+            const strip = document.getElementById('ass_intro_upload_strip');
             const n = assIntroVideoUrls.length + assIntroVideoFiles.length;
+            const allNames = [];
             if (cnt) cnt.textContent = n + ' / 5';
+
+            assIntroVideoUrls.forEach((url, i) => {
+                allNames.push(introSavedVideoDisplayName(url, i));
+            });
+            assIntroVideoFiles.forEach((f) => {
+                allNames.push(String(f.name || 'file'));
+            });
+
+            const listTitle = allNames.length ? allNames.map((nm, idx) => (idx + 1) + '. ' + nm).join('\n') : 'No videos selected';
+            if (cnt) cnt.setAttribute('title', listTitle);
+            if (strip) strip.setAttribute('title', listTitle);
+
             if (!wrap) return;
             let html = '';
             assIntroVideoUrls.forEach((url, i) => {
+                const fullName = introSavedVideoDisplayName(url, i);
+                const safe = escapeIntroHtml(fullName);
                 const rm = testIntroVideoFrozen ? '' :
-                    '<button type="button" class="border-0 bg-transparent text-red-500 p-0 ms-1" onclick="removeAssIntroUrl(' + i + ')">&times;</button>';
-                html += '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-[9px] font-bold text-slate-700 max-w-[140px] truncate" title="Saved video">' +
-                    'Saved ' + (i + 1) + rm + '</span>';
+                    '<button type="button" class="border-0 bg-transparent text-red-500 p-0 ms-1 shrink-0" onclick="removeAssIntroUrl(' + i + ')">&times;</button>';
+                html += '<span class="inline-flex items-center justify-between gap-2 w-full px-2 py-1.5 rounded-lg bg-slate-100 text-[9px] font-bold text-slate-700 break-words text-left leading-snug" title="' + escapeIntroAttr(fullName) + '"><span class="min-w-0">' +
+                    safe + '</span>' + rm + '</span>';
             });
             assIntroVideoFiles.forEach((f, i) => {
-                const nm = String(f.name || 'file').replace(/</g, '&lt;');
+                const fullName = String(f.name || 'file');
+                const safe = escapeIntroHtml(fullName);
                 const rm = testIntroVideoFrozen ? '' :
-                    '<button type="button" class="border-0 bg-transparent text-red-500 p-0 ms-1" onclick="removeAssIntroFile(' + i + ')">&times;</button>';
-                html += '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-50 text-[9px] font-bold text-red-700 max-w-[140px] truncate">' + nm + rm + '</span>';
+                    '<button type="button" class="border-0 bg-transparent text-red-500 p-0 ms-1 shrink-0" onclick="removeAssIntroFile(' + i + ')">&times;</button>';
+                html += '<span class="inline-flex items-center justify-between gap-2 w-full px-2 py-1.5 rounded-lg bg-red-50 text-[9px] font-bold text-red-700 break-words text-left leading-snug" title="' + escapeIntroAttr(fullName) + '"><span class="min-w-0">' +
+                    safe + '</span>' + rm + '</span>';
             });
-            wrap.innerHTML = html || '<span class="text-[9px] text-slate-400">No files yet</span>';
+            const chipOpenClass = 'flex w-full flex-col gap-1.5 items-stretch px-2.5 pb-2.5 pt-1 border-t border-slate-100';
+            if (n === 0) {
+                wrap.innerHTML = '';
+                wrap.className = 'hidden w-full';
+            } else {
+                wrap.innerHTML = html;
+                wrap.className = chipOpenClass;
+            }
         }
 
         function removeAssIntroUrl(idx) {
@@ -15808,6 +15866,17 @@ if (!empty($Tests)) {
                     enovaFields.classList.add('hidden');
                 }
             }
+
+            const addVideoGroup = document.getElementById('ass_add_video_group');
+            const isHrFresher = category === 'HR Recruitment-Fresher';
+            if (addVideoGroup) {
+                addVideoGroup.classList.toggle('hidden', isHrFresher);
+            }
+            if (isHrFresher) {
+                const sel = document.getElementById('ass_add_video');
+                if (sel && !sel.disabled) sel.value = 'No';
+            }
+            syncIntroVideoUploadColumn();
         }
 
         let wizardStep = 1;
@@ -16165,7 +16234,7 @@ if (!empty($Tests)) {
             const assigned = assignedSelect ? Array.from(assignedSelect.selectedOptions).map(o => o.value).join(',') : null;
             const desc = document.getElementById('ass_desc').value.trim();
             const addVideoEl = document.getElementById('ass_add_video');
-            const addVideo = addVideoEl && addVideoEl.value === 'Yes';
+            const addVideo = category !== 'HR Recruitment-Fresher' && addVideoEl && addVideoEl.value === 'Yes';
             const g = (id) => { const e = document.getElementById(id); return e ? e.checked : false; };
 
             Swal.fire({
@@ -16176,7 +16245,7 @@ if (!empty($Tests)) {
             });
 
             try {
-                if (!testIntroVideoFrozen && assIntroVideoFiles.length > 0) {
+                if (category !== 'HR Recruitment-Fresher' && !testIntroVideoFrozen && assIntroVideoFiles.length > 0) {
                     const fd = new FormData();
                     assIntroVideoFiles.forEach(f => fd.append('videos[]', f));
                     const up = await fetch(`Test/uploadIntroVideos/${id}`, { method: 'POST', body: fd });
@@ -16201,7 +16270,7 @@ if (!empty($Tests)) {
                         show_results: g('test_form_show_results'),
                         allow_backtracking: g('test_form_backtrack'),
                         add_video: addVideo,
-                        intro_videos: addVideo ? assIntroVideoUrls : []
+                        intro_videos: (category !== 'HR Recruitment-Fresher' && addVideo) ? assIntroVideoUrls : []
                     })
                 });
                 if (response.ok) {
@@ -16241,7 +16310,7 @@ if (!empty($Tests)) {
             const assigned = category === 'Enova' ? Array.from(assignedSelect.selectedOptions).map(o => o.value).join(',') : null;
             const desc = document.getElementById('ass_desc').value.trim();
             const addVideoEl = document.getElementById('ass_add_video');
-            const addVideo = addVideoEl && addVideoEl.value === 'Yes';
+            const addVideo = category !== 'HR Recruitment-Fresher' && addVideoEl && addVideoEl.value === 'Yes';
             const g = (id) => { const e = document.getElementById(id); return e ? e.checked : false; };
 
             Swal.fire({
@@ -16274,7 +16343,7 @@ if (!empty($Tests)) {
                 }
 
                 const newId = result.id;
-                if (newId && assIntroVideoFiles.length > 0) {
+                if (newId && category !== 'HR Recruitment-Fresher' && assIntroVideoFiles.length > 0) {
                     const fd = new FormData();
                     assIntroVideoFiles.forEach(f => fd.append('videos[]', f));
                     const up = await fetch(`Test/uploadIntroVideos/${newId}`, { method: 'POST', body: fd });
@@ -16641,7 +16710,7 @@ if (!empty($Tests)) {
             if (!desc || !desc.value.trim()) { showError('ass_desc', true); isValid = false; } else { showError('ass_desc', false); }
 
             const addV = document.getElementById('ass_add_video');
-            if (addV && addV.value === 'Yes') {
+            if (category && category.value !== 'HR Recruitment-Fresher' && addV && addV.value === 'Yes') {
                 const n = (typeof assIntroVideoUrls !== 'undefined' ? assIntroVideoUrls.length : 0)
                     + (typeof assIntroVideoFiles !== 'undefined' ? assIntroVideoFiles.length : 0);
                 if (n < 1) {

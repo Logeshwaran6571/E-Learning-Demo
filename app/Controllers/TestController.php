@@ -71,7 +71,7 @@ class TestController extends BaseController
             $repoModel = new QuestionBankRepositoryModel();
             $qModel = new QuestionBankModel();
             
-            $repos = $repoModel->findAll();
+            $repos = $repoModel->orderBy('id', 'DESC')->findAll();
             $questionBank = [];
             
             foreach ($repos as $repo) {
