@@ -93,6 +93,16 @@ if (!empty($Tests)) {
     <!-- jsPDF and AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- amCharts 5 -->
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+
     <style>
         .swal2-popup {
             border-radius: 20px !important;
@@ -4850,12 +4860,16 @@ if (!empty($Tests)) {
                                                 Browser Lockdown</div>
                                             <p class="text-[10px] text-slate-500 font-medium mb-0 leading-snug">Restrict
                                                 tab switches</p>
+                                            <div id="lockdown_info_msg" class="hidden mt-1">
+                                                <span class="text-[9px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-bold border border-red-100 animate-pulse">Only the tab is restricted</span>
+                                            </div>
                                         </div>
                                         <div class="form-check form-switch mb-0 ps-0">
                                             <input class="form-check-input ms-0" type="checkbox" id="test_form_lockdown"
-                                                role="switch">
+                                                role="switch" onchange="document.getElementById('lockdown_info_msg').classList.toggle('hidden', !this.checked)">
                                         </div>
                                     </div>
+
                                     <div class="test-exam-config-card">
                                         <div
                                             class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-red-500 shrink-0 shadow-sm">
@@ -5986,39 +6000,67 @@ if (!empty($Tests)) {
                     </div>
 
                     <div id="finalSubmissionPage" class="d-none mt-4 bg-white border border-slate-200 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-[14px] font-black text-slate-800 mb-0">Final Submission</h4>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Optional
-                                Upload</span>
-                        </div>
-                        <p class="text-[12px] text-slate-500 mb-3">You can upload one or multiple files before
-                            submitting. This is optional.</p>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50">
-                                <label
-                                    class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Single
-                                    File</label>
-                                <input type="file" id="execFinalSingleFileInput" class="form-control text-[12px]"
-                                    onchange="App.onExecutionAttachmentsChange(this)">
+                        <div id="execUploadSection">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-[14px] font-black text-slate-800 mb-0">Final Submission</h4>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Optional
+                                    Upload</span>
                             </div>
-                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50">
-                                <label
-                                    class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Bulk
-                                    Upload</label>
-                                <input type="file" id="execFinalBulkFileInput" multiple class="form-control text-[12px]"
-                                    onchange="App.onExecutionAttachmentsChange(this)">
+                            <p class="text-[12px] text-slate-500 mb-3">You can upload one or multiple files before
+                                submitting. This is optional.</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                                    <label
+                                        class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Single
+                                        File</label>
+                                    <input type="file" id="execFinalSingleFileInput" class="form-control text-[12px]"
+                                        onchange="App.onExecutionAttachmentsChange(this)">
+                                </div>
+                                <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                                    <label
+                                        class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Bulk
+                                        Upload</label>
+                                    <input type="file" id="execFinalBulkFileInput" multiple class="form-control text-[12px]"
+                                        onchange="App.onExecutionAttachmentsChange(this)">
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mb-2">Maximum file size: 2 MB each. Any format allowed.</p>
+                            <div id="execFinalAttachmentList" class="space-y-1 mb-4"></div>
+                        </div>
+
+                        <!-- Phase 2: Completion Summary -->
+                        <div id="execCompletionSection" class="d-none mb-6">
+                            <div class="text-center py-6">
+                                <div class="w-16 h-16 bg-red-50 text-[#dc2230] rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="bi bi-check2-all text-3xl"></i>
+                                </div>
+                                <h3 class="text-lg font-black text-slate-800 mb-2">Test Completion</h3>
+                                <p class="text-sm text-slate-500 max-w-sm mx-auto">
+                                    Your responses and any uploaded documents are ready for final submission. 
+                                    Please click 'Submit Test' to complete your assessment.
+                                </p>
                             </div>
                         </div>
-                        <p class="text-[10px] text-slate-400 mb-2">Maximum file size: 2 MB each. Any format allowed.</p>
-                        <div id="execFinalAttachmentList" class="space-y-1 mb-4"></div>
 
-                        <div class="flex items-center justify-end gap-2">
-                            <button class="btn btn-light px-4 py-2 text-[11px] font-bold"
-                                onclick="App.backToQuestionsFromFinal()">Back</button>
-                            <button class="btn btn-danger px-5 py-2 text-[11px] font-black uppercase tracking-widest"
-                                onclick="App.submitTest()">Submit Test</button>
+
+                        <div class="flex items-center justify-end gap-2" id="finalSubmissionActions">
+                            <!-- Phase 1: Skip / Save -->
+                            <div id="initialSubActions" class="flex items-center gap-2">
+                                <button class="btn btn-light px-4 py-2 text-[11px] font-bold border border-slate-200"
+                                    onclick="App.showFinalSubActions()">Skip</button>
+                                <button class="btn btn-primary px-4 py-2 text-[11px] font-bold"
+                                    onclick="App.showFinalSubActions()">Save</button>
+                            </div>
+                            <!-- Phase 2: Back / Submit Test (Hidden initially) -->
+                            <div id="finalSubActions" class="d-none flex items-center gap-2">
+                                <button class="btn btn-light px-4 py-2 text-[11px] font-bold border border-slate-200"
+                                    onclick="App.backToQuestionsFromFinal()">Back</button>
+                                <button class="btn btn-danger px-5 py-2 text-[11px] font-black uppercase tracking-widest"
+                                    onclick="App.submitTest()">Submit Test</button>
+                            </div>
                         </div>
+
                     </div>
                 </div>
             </main>
@@ -11226,6 +11268,8 @@ if (!empty($Tests)) {
                     App.executionState.assignedRoles = testMeta?.assigned_to || test?.assigned_to || pack?.user_role || 'General Access';
                     App.executionState.attachment = null;
                     App.executionState.attachments = [];
+                    App.executionState.browserLockdown = !!(pack && parseInt(pack.browser_lockdown) === 1);
+
                     const attachInput = document.getElementById('execSubmissionAttachmentInput');
                     const attachMeta = document.getElementById('execSubmissionAttachmentMeta');
                     const singleInput = document.getElementById('execFinalSingleFileInput');
@@ -11620,8 +11664,26 @@ if (!empty($Tests)) {
                 document.getElementById('questionCard')?.classList.add('d-none');
                 document.getElementById('execQuestionFooter')?.classList.add('d-none');
                 document.getElementById('finalSubmissionPage')?.classList.remove('d-none');
+                
+                // Reset UI to initial state (Upload Section + Skip/Save)
+                document.getElementById('execUploadSection')?.classList.remove('d-none');
+                document.getElementById('execCompletionSection')?.classList.add('d-none');
+                document.getElementById('initialSubActions')?.classList.remove('d-none');
+                document.getElementById('finalSubActions')?.classList.add('d-none');
+
                 App.renderExecutionAttachmentList();
             },
+
+
+            showFinalSubActions: () => {
+                // Switch to Completion Section + Submit/Back
+                document.getElementById('execUploadSection')?.classList.add('d-none');
+                document.getElementById('execCompletionSection')?.classList.remove('d-none');
+                document.getElementById('initialSubActions')?.classList.add('d-none');
+                document.getElementById('finalSubActions')?.classList.remove('d-none');
+            },
+
+
 
             backToQuestionsFromFinal: () => {
                 document.getElementById('questionCard')?.classList.remove('d-none');
@@ -11796,6 +11858,12 @@ if (!empty($Tests)) {
 
 
             backToDashboard: () => {
+                // Hide the success overlay and all execution-related screens
+                document.getElementById('submissionSuccessOverlay')?.classList.add('d-none');
+                document.getElementById('finalSubmissionPage')?.classList.add('d-none');
+                document.getElementById('execIntroOverlay')?.classList.add('d-none');
+                
+                // Ensure the main UI state is clean
                 if (typeof window.switchMainTab === 'function') {
                     window.switchMainTab('execution');
                     App.refreshAllData();
@@ -11803,6 +11871,7 @@ if (!empty($Tests)) {
                     location.reload();
                 }
             },
+
 
             // --- Results & Evaluation ---
             loadCandidateResult: () => {
@@ -13835,16 +13904,11 @@ if (!empty($Tests)) {
 
         // Proctoring: Tab/Window Switch Detection
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden' && App.executionState.active) {
+            if (document.visibilityState === 'hidden' && App.executionState.active && App.executionState.browserLockdown) {
                 App.simulateViolation();
             }
         });
 
-        window.addEventListener('blur', () => {
-            if (App.executionState.active) {
-                App.simulateViolation();
-            }
-        });
 
         window.backFromResultsPage = () => {
             const viewEvaluator = document.getElementById('result-evaluator-view');
@@ -18617,6 +18681,4 @@ if (!empty($Tests)) {
 </body>
 
 </html>
-</body>
 
-</html>
