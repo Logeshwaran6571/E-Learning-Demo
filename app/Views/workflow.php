@@ -74,6 +74,8 @@ if (!empty($Tests)) {
     <!-- jsPDF and AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         .swal2-popup {
             border-radius: 20px !important;
@@ -12008,95 +12010,86 @@ if (!empty($Tests)) {
                     });
                     return;
                 }
+                const modalEl = document.getElementById('reportExportModal');
+                const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modal.show();
+            },
+
+            toggleAllExportColumns: (state) => {
+                const checkboxes = document.querySelectorAll('#report_column_selector input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = state);
+            },
+
+            exportToExcel: () => {
+                const data = App.currentFilteredResults || [];
+                if (!data.length) return;
+
+                const selectedCols = Array.from(document.querySelectorAll('#report_column_selector input[type="checkbox"]:checked'))
+                    .map(cb => ({ key: cb.value, label: cb.closest('label').querySelector('span').textContent }));
+
+                if (selectedCols.length === 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No Columns Selected',
+                        text: 'Please select at least one column to export.',
+                        confirmButtonColor: '#dc2230'
+                    });
+                    return;
+                }
 
                 try {
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
-
-                    // Branding & Metadata
-                    const timestamp = new Date().toLocaleString();
-                    const logoColor = [220, 34, 48]; // Brand Red (#dc2230)
-                    
-                    // Header Title
-                    doc.setFontSize(22);
-                    doc.setTextColor(30, 41, 59); // slate-800
-                    doc.text("Candidate Performance Report", 14, 18);
-                    
-                    doc.setFontSize(10);
-                    doc.setTextColor(100, 116, 139); // slate-500
-                    doc.text(`Generated on: ${timestamp}`, 14, 24);
-                    doc.text(`Total Records: ${data.length}`, 14, 29);
-                    
-                    // Prepare Table Data
-                    const headers = [['Candidate Name', 'Test Name', 'Test Type', 'Group', 'Status', 'Marks', 'Score', 'Accuracy', 'Pass/Fail']];
-                    const rows = data.map(item => [
-                        item.candidate_name || '-',
-                        item.test_name || '-',
-                        item.test_type || '-',
-                        item.group_name || '-',
-                        item.status || '-',
-                        item.marks_text || '0 / 0',
-                        item.final_score || 0,
-                        (item.overall_pct || 0) + '%',
-                        item.pass_fail || '-'
-                    ]);
-
-                    // Generate Table using AutoTable
-                    doc.autoTable({
-                        head: headers,
-                        body: rows,
-                        startY: 35,
-                        theme: 'striped',
-                        headStyles: { 
-                            fillColor: logoColor,
-                            textColor: [255, 255, 255],
-                            fontSize: 10,
-                            fontStyle: 'bold',
-                            halign: 'left',
-                            cellPadding: 4
-                        },
-                        bodyStyles: { 
-                            fontSize: 9,
-                            textColor: [51, 65, 85], // slate-700
-                            valign: 'middle',
-                            cellPadding: 3
-                        },
-                        alternateRowStyles: {
-                            fillColor: [248, 250, 252] // slate-50
-                        },
-                        columnStyles: {
-                            0: { fontStyle: 'bold', cellWidth: 'auto' }, // Candidate
-                            5: { halign: 'center' }, // Marks
-                            6: { halign: 'center' }, // Score
-                            7: { halign: 'center' }, // Accuracy
-                            8: { halign: 'center' }  // Pass/Fail
-                        },
-                        margin: { top: 35, bottom: 20 },
-                        didDrawPage: (pageData) => {
-                            // Footer (Page Numbering)
-                            const str = "Page " + doc.internal.getNumberOfPages();
-                            doc.setFontSize(9);
-                            doc.setTextColor(148, 163, 184); // slate-400
-                            const pageSize = doc.internal.pageSize;
-                            const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
-                            doc.text(str, pageData.settings.margin.left, pageHeight - 10);
-                        }
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Generating Excel...',
+                        text: 'Please wait while we prepare your report.',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
                     });
 
-                    // Save the PDF
-                    const dateStr = new Date().toISOString().slice(0, 10);
-                    doc.save(`Candidate_Performance_Report_${dateStr}.pdf`);
+                    const wsData = data.map(item => {
+                        const row = {};
+                        selectedCols.forEach(col => {
+                            let value = item[col.key];
+                            if (col.key === 'overall_pct' && value !== undefined) {
+                                value = value + '%';
+                            }
+                            row[col.label] = (value === null || value === undefined) ? '-' : value;
+                        });
+                        return row;
+                    });
 
+                    const worksheet = XLSX.utils.json_to_sheet(wsData);
+                    
+                    // Style the header row (optional but nice)
+                    const range = XLSX.utils.decode_range(worksheet['!ref']);
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const address = XLSX.utils.encode_col(C) + "1";
+                        if (!worksheet[address]) continue;
+                        worksheet[address].s = {
+                            font: { bold: true },
+                            fill: { fgColor: { rgb: "F1F5F9" } }
+                        };
+                    }
+
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Performance Report");
+
+                    const dateStr = new Date().toISOString().slice(0, 10);
+                    XLSX.writeFile(workbook, `Candidate_Performance_Report_${dateStr}.xlsx`);
+
+                    const modalEl = document.getElementById('reportExportModal');
+                    bootstrap.Modal.getInstance(modalEl).hide();
+                    
                     Swal.fire({
                         icon: 'success',
-                        title: 'PDF Generated',
-                        text: 'Professional performance report downloaded.',
-                        timer: 1500,
+                        title: 'Export Complete',
+                        text: 'Your Excel report has been downloaded.',
+                        timer: 2000,
                         showConfirmButton: false
                     });
                 } catch (e) {
-                    console.error("PDF Generation Error:", e);
-                    Swal.fire('Error', 'Failed to generate PDF report. Please try again.', 'error');
+                    console.error("Excel Generation Error:", e);
+                    Swal.fire('Error', 'Failed to generate Excel report. Please try again.', 'error');
                 }
             },
 
@@ -17759,6 +17752,158 @@ if (!empty($Tests)) {
                     <button type="button"
                         class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl text-[11px] uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all"
                         onclick="addManualQuestion()">Add Question</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REPORT EXPORT MODAL -->
+    <div class="modal fade" id="reportExportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-2xl rounded-3xl overflow-hidden">
+                <div class="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-red-600 text-white rounded-xl flex items-center justify-center shadow-md">
+                            <i class="bi bi-file-earmark-excel"></i>
+                        </div>
+                        <h5 class="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-0">Export Report</h5>
+                    </div>
+                    <button type="button" class="btn-close text-[10px]" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="p-8">
+                    <p class="text-[11px] font-bold text-slate-500 mb-6 uppercase tracking-widest border-b border-slate-100 pb-2">Select Columns for Excel Report</p>
+                    
+                    <div class="grid grid-cols-2 gap-y-4 gap-x-6" id="report_column_selector">
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="candidate_name" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Candidate Name</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="test_name" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Test Name</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="test_type" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Test Type</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="group_name" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Group / Batch</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="status" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Status</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="marks_text" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Marks (Obtained/Total)</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="final_score" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Score</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="overall_pct" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Accuracy (%)</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="pass_fail" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Result (Pass/Fail)</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="date_ymd" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Date</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group col-span-2 relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="duration_seconds" checked class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0"></div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Duration (Seconds)</span>
+                        </label>
+                    </div>
+
+                    <div class="mt-8 flex items-center justify-between border-t border-slate-50 pt-6">
+                        <button type="button" onclick="App.toggleAllExportColumns(true)" class="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-600 transition-colors">Select All</button>
+                        <button type="button" onclick="App.toggleAllExportColumns(false)" class="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-600 transition-colors">Deselect All</button>
+                    </div>
+                </div>
+                <div class="p-6 bg-slate-50/50 border-t border-slate-50 flex gap-4">
+                    <button type="button" class="flex-1 py-3 bg-white border border-slate-200 text-slate-500 font-bold rounded-xl text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl text-[11px] uppercase tracking-widest shadow-lg shadow-red-100 hover:bg-red-700 transition-all" onclick="App.exportToExcel()">Download Excel</button>
                 </div>
             </div>
         </div>
