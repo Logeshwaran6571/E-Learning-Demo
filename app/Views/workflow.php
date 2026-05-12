@@ -34,16 +34,23 @@ if (!empty($Tests)) {
 }
 ?>
 
-<script>window.__APP_BASE__ = <?= workflow_view_json(rtrim(base_url(), '/')) ?>;</script>
+<script>console.log('Workflow Script Load Start'); window.__APP_BASE__ = <?= workflow_view_json(rtrim(base_url(), '/')) ?>;</script>
 
 <!-- Flash Message Handler -->
 <script>
+    // --- Global State Declarations (Early Init) ---
+    var currentEditTestId = null;
+    var currentEditingTemplateId = null;
+    var testIntroVideoFrozen = false;
+    var assIntroVideoUrls = [];
+    var assIntroVideoFiles = [];
+
     document.addEventListener('DOMContentLoaded', () => {
         <?php if (session()->getFlashdata('success')): ?>
-            Swal.fire({ title: 'Success', text: <?= workflow_view_json(session()->getFlashdata('success')) ?>, icon: 'success', timer: 3000 });
+                    Swal.fire({ title: 'Success', text: <?= workflow_view_json(session()->getFlashdata('success')) ?>, icon: 'success', timer: 3000 });
         <?php endif; ?>
         <?php if (session()->getFlashdata('error')): ?>
-            Swal.fire({ title: 'Upload Failed', text: <?= workflow_view_json(session()->getFlashdata('error')) ?>, icon: 'error' });
+                    Swal.fire({ title: 'Upload Failed', text: <?= workflow_view_json(session()->getFlashdata('error')) ?>, icon: 'error' });
         <?php endif; ?>
     });
 </script>
@@ -4589,7 +4596,8 @@ if (!empty($Tests)) {
                         <input type="hidden" id="ass_code" value="" />
 
                         <!-- Row 1: compact balanced horizontal layout -->
-                        <div id="test_form_row1" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 mb-6 items-start">
+                        <div id="test_form_row1"
+                            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 mb-6 items-start">
                             <div class="form-group min-w-0">
                                 <label
                                     class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test
@@ -4668,7 +4676,8 @@ if (!empty($Tests)) {
                                 </div>
                             </div>
                             <div id="ass_add_video_group" class="form-group min-w-0">
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Add
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Add
                                     Video <span class="text-red-500">*</span></label>
                                 <select id="ass_add_video"
                                     class="select h-11 w-full bg-slate-50 border-slate-100 rounded-xl px-3 text-sm"
@@ -4679,16 +4688,16 @@ if (!empty($Tests)) {
                                 <span class="error-msg hidden" id="err_ass_add_video">Please choose an option</span>
                             </div>
                             <div id="ass_intro_upload_col" class="hidden form-group min-w-0 flex flex-col">
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Upload
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Upload
                                     Videos <span class="text-red-500">*</span></label>
                                 <div id="ass_intro_upload_strip"
                                     class="w-full rounded-xl border border-slate-100 bg-slate-50 shrink-0 overflow-hidden">
-                                    <input type="file" id="ass_intro_video_input" accept="video/*" multiple class="hidden"
-                                        onchange="onAssIntroVideoFilesChange(this)" />
+                                    <input type="file" id="ass_intro_video_input" accept="video/*" multiple
+                                        class="hidden" onchange="onAssIntroVideoFilesChange(this)" />
                                     <div id="ass_intro_upload_strip_head"
                                         class="flex items-center justify-between gap-2 h-11 px-2.5">
-                                        <button type="button"
-                                            id="ass_intro_video_browse_btn"
+                                        <button type="button" id="ass_intro_video_browse_btn"
                                             class="px-2 py-1 rounded-lg border border-slate-200 bg-white text-[9px] font-black uppercase tracking-wider text-slate-600 hover:border-red-200 hover:text-red-600 shrink-0 leading-none"
                                             onclick="document.getElementById('ass_intro_video_input').click()">
                                             Browse
@@ -4699,8 +4708,10 @@ if (!empty($Tests)) {
                                     </div>
                                     <div id="ass_intro_video_chips" class="hidden w-full"></div>
                                 </div>
-                                <p class="text-[9px] text-slate-400 font-medium leading-snug mt-1.5 mb-0">File names appear as tags; hover the count for the full list.</p>
-                                <span class="error-msg hidden mt-1" id="err_ass_intro_videos">Add at least one video or set Add Video to No</span>
+                                <p class="text-[9px] text-slate-400 font-medium leading-snug mt-1.5 mb-0">File names
+                                    appear as tags; hover the count for the full list.</p>
+                                <span class="error-msg hidden mt-1" id="err_ass_intro_videos">Add at least one video or
+                                    set Add Video to No</span>
                             </div>
                             <input id="ass_pass_mark" type="hidden" value="60" />
                         </div>
@@ -4832,7 +4843,7 @@ if (!empty($Tests)) {
                     </div>
                 </div>
                 <div class="table-responsive p-0">
-                    <table id="TestsDataTable" class="w-full text-left">
+                    <table id="TestsDataTable" class="w-full text-left" style="width: 100% !important;">
                         <thead class="bg-white border-b border-slate-100">
                             <tr>
                                 <th class="hidden">ID</th>
@@ -4882,41 +4893,41 @@ if (!empty($Tests)) {
                         <i class="bi bi-arrow-left"></i> Back to Inventory
                     </button>
                     <div id="resultsOverviewCards" class="w-full">
-                    <h5 class="text-[10px] font-black text-[#1e293b] mb-2">Evaluation Overview</h5>
-                    <div class="grid grid-cols-4 gap-2">
-                        <div
-                            class="bg-[#f8fbff] border border-[#dbeafe] rounded-lg p-2 border-t-[3px] border-t-[#3b82f6] min-h-[62px] flex flex-col justify-between">
-                            <p
-                                class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
-                                Total Mark</p>
-                            <p id="resSummaryTotalMark" title=""
-                                class="text-[16px] font-black text-[#0f172a] leading-none text-center mb-0">0</p>
+                        <h5 class="text-[10px] font-black text-[#1e293b] mb-2">Evaluation Overview</h5>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div
+                                class="bg-[#f8fbff] border border-[#dbeafe] rounded-lg p-2 border-t-[3px] border-t-[#3b82f6] min-h-[62px] flex flex-col justify-between">
+                                <p
+                                    class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
+                                    Total Mark</p>
+                                <p id="resSummaryTotalMark" title=""
+                                    class="text-[16px] font-black text-[#0f172a] leading-none text-center mb-0">0</p>
+                            </div>
+                            <div
+                                class="bg-[#f0fdf4] border border-[#dcfce7] rounded-lg p-2 border-t-[3px] border-t-[#16a34a] min-h-[62px] flex flex-col justify-between">
+                                <p
+                                    class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
+                                    Overall Pass %</p>
+                                <p id="resSummaryPassPct"
+                                    class="text-[16px] font-black text-[#16a34a] leading-none text-center mb-0">0%</p>
+                            </div>
+                            <div
+                                class="bg-[#fef2f2] border border-[#fee2e2] rounded-lg p-2 border-t-[3px] border-t-[#dc2626] min-h-[62px] flex flex-col justify-between">
+                                <p
+                                    class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
+                                    Fail Count</p>
+                                <p id="resSummaryFailCount"
+                                    class="text-[16px] font-black text-[#dc2626] leading-none text-center mb-0">0</p>
+                            </div>
+                            <div
+                                class="bg-[#faf5ff] border border-[#f3e8ff] rounded-lg p-2 border-t-[3px] border-t-[#7c3aed] min-h-[62px] flex flex-col justify-between">
+                                <p
+                                    class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
+                                    Pending Count</p>
+                                <p id="resSummaryPendingCount"
+                                    class="text-[16px] font-black text-[#475569] leading-none text-center mb-0">0</p>
+                            </div>
                         </div>
-                        <div
-                            class="bg-[#f0fdf4] border border-[#dcfce7] rounded-lg p-2 border-t-[3px] border-t-[#16a34a] min-h-[62px] flex flex-col justify-between">
-                            <p
-                                class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
-                                Overall Pass %</p>
-                            <p id="resSummaryPassPct"
-                                class="text-[16px] font-black text-[#16a34a] leading-none text-center mb-0">0%</p>
-                        </div>
-                        <div
-                            class="bg-[#fef2f2] border border-[#fee2e2] rounded-lg p-2 border-t-[3px] border-t-[#dc2626] min-h-[62px] flex flex-col justify-between">
-                            <p
-                                class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
-                                Fail Count</p>
-                            <p id="resSummaryFailCount"
-                                class="text-[16px] font-black text-[#dc2626] leading-none text-center mb-0">0</p>
-                        </div>
-                        <div
-                            class="bg-[#faf5ff] border border-[#f3e8ff] rounded-lg p-2 border-t-[3px] border-t-[#7c3aed] min-h-[62px] flex flex-col justify-between">
-                            <p
-                                class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
-                                Pending Count</p>
-                            <p id="resSummaryPendingCount"
-                                class="text-[16px] font-black text-[#475569] leading-none text-center mb-0">0</p>
-                        </div>
-                    </div>
                     </div>
                 </div>
             </div>
@@ -4997,7 +5008,8 @@ if (!empty($Tests)) {
                                     <div class="multiselect-options" id="resultsGroupFilter_options">
                                         <!-- Dynamically populated -->
                                     </div>
-                                    <select id="resultsGroupFilter" class="hidden" multiple onchange="App.loadCandidateResult()">
+                                    <select id="resultsGroupFilter" class="hidden" multiple
+                                        onchange="App.loadCandidateResult()">
                                     </select>
                                 </div>
                                 <select id="resultsDateFilter" onchange="App.loadCandidateResult()"
@@ -5527,7 +5539,7 @@ if (!empty($Tests)) {
                 </select>
                 <select id="tp_template" class="select">
                     <?php foreach ($templates as $t): ?>
-                        <option value="<?= $t['id'] ?>"><?= esc($t['name']) ?></option>
+                                <option value="<?= $t['id'] ?>"><?= esc($t['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -5573,8 +5585,8 @@ if (!empty($Tests)) {
                                     <option value="">-- No Template (Custom Questions Only) --</option>
                                     <?php if (!empty($templates)):
                                         foreach ($templates as $t): ?>
-                                            <option value="<?= $t['id'] ?>"><?= $t['name'] ?></option>
-                                        <?php endforeach; endif; ?>
+                                                            <option value="<?= $t['id'] ?>"><?= $t['name'] ?></option>
+                                                <?php endforeach; endif; ?>
                                 </select>
                                 <button class="btn btn-primary-custom px-6 h-12 text-xs font-bold rounded-lg shadow-sm"
                                     onclick="updatePackTemplate()">
@@ -6292,21 +6304,7 @@ if (!empty($Tests)) {
     <script>
 
         // --- Test Execution Engine ---
-        // Modal Helpers
-        function openModal(id) {
-            const modalEl = document.getElementById(id);
-            if (modalEl) {
-                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-                modal.show();
-            }
-        }
-        function closeModal(id) {
-            const modalEl = document.getElementById(id);
-            if (modalEl) {
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
-            }
-        }
+
 
         let QuestionBanks = App.QuestionBanks || [];
         let activeQB = null;
@@ -6332,6 +6330,16 @@ if (!empty($Tests)) {
                 modal.classList.remove('open');
                 document.body.style.overflow = '';
             }
+        };
+
+        window.rescheduleTest = function (testId) {
+            console.log('Reschedule test:', testId);
+            Swal.fire({
+                title: 'Reschedule Test',
+                text: 'This will allow you to modify batch timings. Opening management...',
+                icon: 'info',
+                confirmButtonColor: 'var(--brand)'
+            });
         };
 
         function qbSortedNewestFirst() {
@@ -8054,6 +8062,8 @@ if (!empty($Tests)) {
             }
 
             TestsDataTable = $('#TestsDataTable').DataTable({
+                width: '100%',
+                autoWidth: false,
                 data: App.Tests,
                 order: [[0, 'desc']],
                 columns: [
@@ -8067,6 +8077,7 @@ if (!empty($Tests)) {
                     },
                     {
                         data: 'name',
+                        width: '35%',
                         render: (data, type, row) => `
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center font-bold text-xs border border-red-100">
@@ -8082,11 +8093,13 @@ if (!empty($Tests)) {
                     {
                         data: 'category',
                         className: 'text-center',
+                        width: '12%',
                         render: (data) => `<span class="chip bg-blue-50 text-blue-600 border-blue-100">${data || 'General'}</span>`
                     },
                     {
                         data: 'assessment_type',
                         className: 'text-center',
+                        width: '10%',
                         render: (data) => `<span class="text-xs font-bold text-slate-600">${data || 'Standard'}</span>`
                     },
                     {
@@ -8115,6 +8128,7 @@ if (!empty($Tests)) {
                     {
                         data: null,
                         className: 'text-center px-6',
+                        width: '15%',
                         render: (data, type, row) => {
                             const packs = row.test_packs || [];
                             const submissions = App.getAllSubmissions();
@@ -8410,6 +8424,9 @@ if (!empty($Tests)) {
                                     <div class="w-8 h-8 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg" title="Group Published & Locked">
                                         <i class="bi bi-lock-fill"></i>
                                     </div>
+                                    <button class="batch-action-btn bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white" onclick="enableRescheduleMode(this, '${row.id}', '${testId}')" title="Reschedule Group">
+                                        <i class="bi bi-calendar-range"></i>
+                                    </button>
                                     ${canPublishResults ? `
                                         <button type="button" class="batch-action-btn bg-violet-50 text-violet-600 hover:bg-violet-600 hover:text-white" onclick="publishEvaluatedPackResults(this, '${row.id}', '${testId}')" title="Publish evaluated results to candidates">
                                             <i class="bi bi-megaphone-fill"></i>
@@ -8436,6 +8453,75 @@ if (!empty($Tests)) {
                 }
             });
         }
+
+        window.enableRescheduleMode = function (btn, batchId, testId) {
+            const tr = $(btn).closest('tr');
+            tr.find('input[data-field="scheduled_date"], input[data-field="start_time"], input[data-field="end_time"], input[data-field="duration"]')
+                .removeAttr('readonly')
+                .prop('readonly', false)
+                .prop('disabled', false)
+                .css({
+                    'pointer-events': 'auto',
+                    'position': 'relative',
+                    'z-index': '50'
+                })
+                .addClass('border-amber-300 bg-amber-50')
+                .first().focus();
+
+            $(btn).html('<i class="bi bi-check2"></i>').attr('onclick', `saveReschedule('${batchId}', '${testId}', this)`).attr('title', 'Confirm Reschedule').removeClass('bg-amber-50 text-amber-600').addClass('bg-emerald-600 text-white');
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Reschedule mode enabled. Change the date/time and click checkmark.',
+                showConfirmButton: false,
+                timer: 3000
+            });
+        };
+
+        window.saveReschedule = async function (batchId, testId, btn) {
+            const tr = $(btn).closest('tr');
+            const data = {
+                id: batchId,
+                assessment_id: testId,
+                pack_name: tr.find('input[data-field="pack_name"]').val(),
+                template_id: tr.find('select[data-field="template_id"]').val(),
+                candidates: tr.find('input[data-field="candidates"]').val(),
+                candidates_type: tr.find('input[data-field="candidates_type"]').val(),
+                scheduled_date: tr.find('input[data-field="scheduled_date"]').val(),
+                start_time: tr.find('input[data-field="start_time"]').val(),
+                end_time: tr.find('input[data-field="end_time"]').val(),
+                duration: tr.find('input[data-field="duration"]').val()
+            };
+
+            // Ensure template_id is valid
+            if (!data.template_id || data.template_id === '') {
+                // Try to find it in the data object if DOM fails
+                const table = tr.closest('table').DataTable();
+                const rowData = table.row(tr).data();
+                if (rowData && rowData.template_id) {
+                    data.template_id = rowData.template_id;
+                }
+            }
+
+            try {
+                const response = await fetch('Test/createTestPack', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(data)
+                });
+                const res = await response.json();
+                if (res.status === 'success') {
+                    Swal.fire('Success', 'Group rescheduled successfully!', 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'Failed to save schedule.', 'error');
+            }
+        };
 
         function updateDuration(input) {
             const tr = $(input).closest('tr');
@@ -11075,14 +11161,51 @@ if (!empty($Tests)) {
             startTimer: () => {
                 if (App.executionState.timerInterval) clearInterval(App.executionState.timerInterval);
 
-                App.executionState.timerInterval = setInterval(() => {
+                let syncCounter = 0;
+                App.executionState.timerInterval = setInterval(async () => {
                     App.executionState.timeLeft--;
+                    
+                    // Check for time extension from admin every 60 seconds
+                    syncCounter++;
+                    if (syncCounter >= 60) {
+                        syncCounter = 0;
+                        await App.syncExamTime();
+                    }
+
                     if (App.executionState.timeLeft <= 0) {
                         clearInterval(App.executionState.timerInterval);
                         App.submitTest(true);
                     }
                     App.updateTimerUI();
                 }, 1000);
+            },
+
+            syncExamTime: async () => {
+                const packId = App.executionState.packId;
+                if (!packId) return;
+                try {
+                    const response = await fetch(`Test/getPackDuration/${packId}`);
+                    const res = await response.json();
+                    if (res.status === 'success') {
+                        const serverDuration = parseInt(res.duration);
+                        const currentDuration = parseInt(App.executionState.durationMins || 60);
+                        
+                        if (serverDuration > currentDuration) {
+                            const addedMins = serverDuration - currentDuration;
+                            App.executionState.timeLeft += (addedMins * 60);
+                            App.executionState.durationMins = serverDuration;
+                            
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: `Time Extended! Admin added ${addedMins} extra minutes.`,
+                                showConfirmButton: false,
+                                timer: 5000
+                            });
+                        }
+                    }
+                } catch(e) { console.error("Time sync failed", e); }
             },
 
             updateTimerUI: () => {
@@ -11095,6 +11218,8 @@ if (!empty($Tests)) {
                     const timerPill = document.getElementById('execTimer');
                     if (App.executionState.timeLeft < 300) {
                         timerPill.classList.add('warning');
+                    } else {
+                        timerPill.classList.remove('warning');
                     }
                 }
             },
@@ -14271,6 +14396,8 @@ if (!empty($Tests)) {
             return false;
         };
 
+
+
         // --- Global Helpers & Navigation ---
         // Restore tab on load
         window.addEventListener('DOMContentLoaded', () => {
@@ -14287,14 +14414,39 @@ if (!empty($Tests)) {
         function openModal(id) {
             if (id === 'createPackModal') { openPackWizard(); return; }
             const el = document.getElementById(id);
-            if (el) el.classList.add('open');
+            if (!el) return;
+
+            // Custom Modals (Glassmorphism / Inline Panels)
+            if (el.classList.contains('test-form-inline-panel') || el.classList.contains('custom-modal-backdrop') || el.classList.contains('template-builder-overlay')) {
+                el.classList.add('open');
+            } else {
+                // Bootstrap Modals
+                if (window.bootstrap && bootstrap.Modal) {
+                    const inst = bootstrap.Modal.getOrCreateInstance(el);
+                    if (inst) inst.show();
+                } else {
+                    el.classList.add('open'); // Fallback
+                }
+            }
+
             if (id === 'TestModal' && typeof updateNewTestButtonState === 'function') {
                 updateNewTestButtonState(true);
             }
         }
+
         function closeModal(id) {
             const el = document.getElementById(id);
-            if (el) el.classList.remove('open');
+            if (!el) return;
+
+            if (el.classList.contains('open')) {
+                el.classList.remove('open');
+            } else if (window.bootstrap && bootstrap.Modal) {
+                const inst = bootstrap.Modal.getInstance(el);
+                if (inst) inst.hide();
+            } else {
+                el.classList.remove('open'); // Fallback
+            }
+
             if (id === 'TestModal' && typeof updateNewTestButtonState === 'function') {
                 updateNewTestButtonState(false);
             }
@@ -14473,7 +14625,7 @@ if (!empty($Tests)) {
             document.getElementById('builder_section_count').textContent = totalSections + ' Sections';
         }
 
-        let currentEditingTemplateId = null;
+
 
         function loadTemplateToBuilder(id, btn, isClone = false) {
             currentEditingTemplateId = isClone ? null : id;
@@ -16547,11 +16699,7 @@ if (!empty($Tests)) {
         window.toggleFlag = (idx) => App.toggleFlag(idx);
         window.confirmSubmitTest = () => App.confirmSubmit();
 
-        let currentEditTestId = null;
-        let testIntroVideoFrozen = false;
 
-        let assIntroVideoUrls = [];
-        let assIntroVideoFiles = [];
 
         function parseTestIntroVideosRow(data) {
             if (!data || data.intro_videos == null) return [];
@@ -17909,6 +18057,9 @@ if (!empty($Tests)) {
         </div>
     </div>
 
+</body>
+
+</html>
 </body>
 
 </html>
