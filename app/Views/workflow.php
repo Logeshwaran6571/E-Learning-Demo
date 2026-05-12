@@ -6074,6 +6074,42 @@ if (!empty($Tests)) {
 
             evaluationState: { submissions: {} },
 
+            refreshAllData: async () => {
+                console.log("App: Comprehensive dynamic refresh starting...");
+                try {
+                    // 1. Fetch latest assessment data from server
+                    const response = await fetch('Test/getTests');
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        App.Tests = result.tests;
+                        
+                        // 2. Refresh Inventory Table
+                        if (typeof window.initTestsDataTable === 'function') {
+                            window.initTestsDataTable();
+                        }
+                    }
+
+                    // 3. Refresh Evaluation State (Counts & Blinking Icons)
+                    if (typeof App.loadEvaluationState === 'function') {
+                        App.loadEvaluationState();
+                    }
+
+                    // 4. Refresh Results & Evaluation Leaderboard
+                    if (typeof App.loadCandidateResult === 'function') {
+                        App.loadCandidateResult();
+                    }
+
+                    // 5. Refresh Execution Dashboard
+                    if (typeof App.initExecutionDashboard === 'function') {
+                        App.initExecutionDashboard();
+                    }
+
+                    console.log("App: Comprehensive refresh completed.");
+                } catch (e) {
+                    console.error("App: Dynamic refresh failed.", e);
+                }
+            },
+
             loadEvaluationState: function () {
                 try {
                     const raw = localStorage.getItem('evaluationSubmissions');
@@ -7793,7 +7829,7 @@ if (!empty($Tests)) {
                             icon: 'success',
                             confirmButtonColor: '#dc2230'
                         }).then(() => {
-                            location.reload(); // Hard refresh to ensure everything is in sync with DB
+                            App.refreshAllData();
                         });
                     } else {
                         throw new Error(result.message);
@@ -8010,6 +8046,8 @@ if (!empty($Tests)) {
                 return;
             }
             if ($.fn.dataTable.isDataTable('#TestsDataTable')) {
+                const dt = $('#TestsDataTable').DataTable();
+                dt.clear().rows.add(App.Tests).draw();
                 return;
             }
 
@@ -10608,7 +10646,10 @@ if (!empty($Tests)) {
                         text: 'Batch has been created.',
                         icon: 'success',
                         timer: 1500
-                    }).then(() => location.reload());
+                    }).then(() => {
+                        if (typeof closeModal === 'function') closeModal('assignModal');
+                        App.refreshAllData();
+                    });
                 } else {
                     Swal.fire('Error', result.message || 'Failed to create Batch', 'error');
                 }
@@ -11509,7 +11550,12 @@ if (!empty($Tests)) {
 
 
             backToDashboard: () => {
-                location.reload();
+                if (typeof window.switchMainTab === 'function') {
+                    window.switchMainTab('execution');
+                    App.refreshAllData();
+                } else {
+                    location.reload();
+                }
             },
 
             // --- Results & Evaluation ---
@@ -12381,6 +12427,37 @@ if (!empty($Tests)) {
                 inst.show();
             },
 
+            navigateEvaluator: (currentKey, direction) => {
+                const results = App.currentFilteredResults || [];
+                // Only consider results that CAN be evaluated (Completed + Answered Subjective)
+                const evaluatable = results.filter(r => 
+                    r.status === 'Completed' && 
+                    !String(r.key).startsWith('pending::') &&
+                    (r.subjective_items || []).some(q => (q.candidate_answer || '').trim() !== '')
+                );
+                
+                const currentIndex = evaluatable.findIndex(r => String(r.key) === String(currentKey));
+                if (currentIndex === -1) {
+                    // Fallback to simple index search if key mapping is complex
+                    console.warn("Evaluator navigation: Current key not found in filtered list.");
+                    return;
+                }
+                
+                const nextIndex = currentIndex + direction;
+                if (nextIndex >= 0 && nextIndex < evaluatable.length) {
+                    App.openEvaluatorForSubmission(evaluatable[nextIndex].key);
+                } else {
+                    const label = direction > 0 ? 'next' : 'previous';
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'End of list',
+                        text: `No more candidates to evaluate in the ${label} direction.`,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }
+            },
+
             openEvaluatorForSubmission: (submissionKey) => {
                 if (!submissionKey) return;
                 App.activeEvaluatorSubmissionKey = submissionKey;
@@ -12589,10 +12666,15 @@ if (!empty($Tests)) {
                             </div>
                         `).join('')}
                     </div>
-                    <div class="flex justify-end mt-3">
+                    </div>
+                    <div class="flex justify-end mt-3 gap-2">
+                        <button class="bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#64748b] px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all border border-[#e2e8f0]"
+                            onclick="App.navigateEvaluator('${submission.key}', -1)">
+                            Previous
+                        </button>
                         <button class="bg-[#dc2230] hover:bg-[#c61e2b] text-white px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm"
                             onclick="App.submitAllManualGrades('${submission.key}')">
-                            Submit Grade
+                            Submit & Next
                         </button>
                     </div>
                 `;
@@ -12720,17 +12802,33 @@ if (!empty($Tests)) {
                 App.saveEvaluationState();
                 App.loadCandidateResult();
                 App.activeEvaluatorSubmissionKey = submissionKey;
-                if (typeof window.switchResultView === 'function') {
-                    window.switchResultView('student');
-                }
-
                 Swal.fire({
                     icon: 'success',
                     title: 'Evaluation Saved',
-                    text: 'Final score is updated in student score table.',
-                    timer: 1200,
+                    text: 'Final score updated. Moving to next candidate...',
+                    timer: 1000,
                     showConfirmButton: false
                 });
+
+                // Move to next candidate after a short delay to let the user see the success
+                setTimeout(() => {
+                    const results = App.currentFilteredResults || [];
+                    const evaluatable = results.filter(r => 
+                        r.status === 'Completed' && 
+                        !String(r.key).startsWith('pending::') &&
+                        (r.subjective_items || []).some(q => (q.candidate_answer || '').trim() !== '')
+                    );
+                    const currentIndex = evaluatable.findIndex(r => String(r.key) === String(submissionKey));
+                    
+                    if (currentIndex !== -1 && currentIndex < evaluatable.length - 1) {
+                        App.navigateEvaluator(submissionKey, 1);
+                    } else {
+                        // End of list, go back to main view
+                        if (typeof window.switchResultView === 'function') {
+                            window.switchResultView('student');
+                        }
+                    }
+                }, 1000);
             },
 
             // --- Assign Questions Logic ---
@@ -16439,7 +16537,7 @@ if (!empty($Tests)) {
                         timer: 2000,
                         showConfirmButton: false
                     }).then(() => {
-                        location.reload();
+                        App.refreshAllData();
                     });
                 } else {
                     Swal.fire('Error', result.message || 'Failed to publish.', 'error');
@@ -16831,7 +16929,12 @@ if (!empty($Tests)) {
                     body: JSON.stringify(data)
                 });
                 const res = await resp.json();
-                if (res.status === 'success') Swal.fire('Success!', 'Test & Group Published!', 'success').then(() => location.reload());
+                if (res.status === 'success') {
+                    Swal.fire('Success!', 'Test & Group Published!', 'success').then(() => {
+                        closeModal('TestModal');
+                        App.refreshAllData();
+                    });
+                }
                 else Swal.fire('Error', res.message, 'error');
             } catch (e) { Swal.fire('Error', 'Failed to save Test.', 'error'); }
         }
@@ -17023,7 +17126,10 @@ if (!empty($Tests)) {
                     })
                 });
                 if (response.ok) {
-                    Swal.fire({ title: 'Updated!', text: 'Test has been updated', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
+                    Swal.fire({ title: 'Updated!', text: 'Test has been updated', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => {
+                        closeModal('TestModal');
+                        App.refreshAllData();
+                    });
                 } else {
                     throw new Error();
                 }
@@ -17043,7 +17149,8 @@ if (!empty($Tests)) {
             });
 
             await fetch(`/Test/deleteTest/${id}`, { method: 'POST' });
-            location.reload();
+            Swal.fire({ icon: 'success', title: 'Test Deleted', timer: 1000, showConfirmButton: false });
+            App.refreshAllData();
         }
 
         async function createTest() {
@@ -17103,7 +17210,10 @@ if (!empty($Tests)) {
                     }
                 }
 
-                Swal.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
+                Swal.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => {
+                    closeModal('TestModal');
+                    App.refreshAllData();
+                });
             } catch (e) {
                 Swal.fire('Error', e.message || 'Failed to create Test.', 'error');
             }
@@ -17143,7 +17253,10 @@ if (!empty($Tests)) {
                     }))
                 })
             });
-            Swal.fire({ title: 'Template Saved', text: 'Your template has been created successfully', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => location.reload());
+            Swal.fire({ title: 'Template Saved', text: 'Your template has been created successfully', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => {
+                if (typeof closeQuickTemplateModal === 'function') closeQuickTemplateModal();
+                App.refreshAllData();
+            });
         }
 
         function setTestAndRedirect(id) {
@@ -17188,7 +17301,8 @@ if (!empty($Tests)) {
             Swal.fire({ title: 'Delete this pack?', text: "This action cannot be undone.", icon: 'warning', showCancelButton: true }).then(async (result) => {
                 if (result.isConfirmed) {
                     await fetch(`/Test/deletePack/${id}`, { method: 'POST' });
-                    location.reload();
+                    Swal.fire({ icon: 'success', title: 'Batch Deleted', timer: 1000, showConfirmButton: false });
+                    App.refreshAllData();
                 }
             });
         }
