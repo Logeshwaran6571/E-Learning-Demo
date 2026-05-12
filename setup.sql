@@ -73,6 +73,9 @@ CREATE TABLE IF NOT EXISTS `employees` (
 CREATE TABLE IF NOT EXISTS `templates` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
+  `paper_title` varchar(255) DEFAULT NULL,
+  `duration` int(11) DEFAULT 60,
+  `total_marks` int(11) DEFAULT 0,
   `description` text DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -86,8 +89,10 @@ CREATE TABLE IF NOT EXISTS `templates` (
 CREATE TABLE IF NOT EXISTS `template_sections` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `template_id` int(11) NOT NULL,
+  `section_name` varchar(255) DEFAULT NULL,
   `marks_type` varchar(50) NOT NULL,
   `num_questions` int(11) NOT NULL,
+  `marks_per_question` int(11) DEFAULT 1,
   `knowledge_type` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `template_id` (`template_id`),
@@ -104,11 +109,28 @@ CREATE TABLE IF NOT EXISTS `test_packs` (
   `pack_name` varchar(255) NOT NULL,
   `user_role` varchar(100) NOT NULL,
   `template_id` int(11) NOT NULL,
+  `duration` int(11) DEFAULT 60,
+  `scheduled_date` date DEFAULT NULL,
+  `start_time` time DEFAULT NULL,
+  `end_time` time DEFAULT NULL,
+  `candidates` text DEFAULT NULL,
+  `candidates_type` varchar(50) DEFAULT 'all',
+  `status` varchar(50) DEFAULT 'draft',
+  `instructions` text DEFAULT NULL,
+  `pass_mark` int(11) DEFAULT 50,
+  `max_attempts` int(11) DEFAULT 1,
+  `shuffle_questions` tinyint(1) DEFAULT 0,
+  `shuffle_options` tinyint(1) DEFAULT 0,
+  `proctored_exam` tinyint(1) DEFAULT 0,
+  `browser_lockdown` tinyint(1) DEFAULT 0,
+  `show_results` tinyint(1) DEFAULT 0,
+  `allow_backtracking` tinyint(1) DEFAULT 0,
+  `results_published` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `assessment_id` (`assessment_id`),
   KEY `template_id` (`template_id`),
   CONSTRAINT `test_packs_ibfk_1` FOREIGN KEY (`assessment_id`) REFERENCES `assessments` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `test_packs_ibfk_2` FOREIGN KEY (`template_id`) REFERENCES `templates` (`id`)
+  CONSTRAINT `test_packs_ibfk_2` FOREIGN KEY (`template_id`) REFERENCES `templates` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -117,7 +139,7 @@ CREATE TABLE IF NOT EXISTS `test_packs` (
 
 CREATE TABLE IF NOT EXISTS `questions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `test_pack_id` int(11) NOT NULL,
+  `test_pack_id` int(11) DEFAULT NULL,
   `template_id` int(11) DEFAULT NULL,
   `section_idx` int(11) DEFAULT 0,
   `type` varchar(50) NOT NULL,
