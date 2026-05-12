@@ -1,5 +1,39 @@
 <?php
 
+// --- TEMPORARY AUTO-SETUP START ---
+$host = 'localhost';
+$user = 'root';
+$pass = '';
+$mysqli = new mysqli($host, $user, $pass);
+if (!$mysqli->connect_error) {
+    $mysqli->query("CREATE DATABASE IF NOT EXISTS assessment_db");
+    $mysqli->select_db('assessment_db');
+
+    // Ensure template_id exists in questions
+    $res = $mysqli->query("SHOW TABLES LIKE 'questions'");
+    if ($res && $res->num_rows > 0) {
+        $colCheck = $mysqli->query("SHOW COLUMNS FROM `questions` LIKE 'template_id'");
+        if ($colCheck && $colCheck->num_rows == 0) {
+            $mysqli->query("ALTER TABLE `questions` ADD COLUMN `template_id` INT DEFAULT NULL");
+        }
+    }
+
+    // Also check if any tables are missing entirely
+    $res = $mysqli->query("SHOW TABLES");
+    if ($res && $res->num_rows < 5 && file_exists(__DIR__ . '/../setup.sql')) {
+        $sql = file_get_contents(__DIR__ . '/../setup.sql');
+        $sql = preg_replace('/CREATE DATABASE IF NOT EXISTS assessment_db;/i', '', $sql);
+        $sql = preg_replace('/USE assessment_db;/i', '', $sql);
+        $mysqli->multi_query($sql);
+        while ($mysqli->next_result()) {
+            if ($result = $mysqli->store_result())
+                $result->free();
+        }
+    }
+    $mysqli->close();
+}
+// --- TEMPORARY AUTO-SETUP END ---
+
 use CodeIgniter\Boot;
 use Config\Paths;
 
@@ -52,6 +86,11 @@ require FCPATH . '../app/Config/Paths.php';
 // ^^^ Change this line if you move your application folder
 
 $paths = new Paths();
+
+// LOAD THE FRAMEWORK BOOTSTRAP FILE
+require $paths->systemDirectory . '/Boot.php';
+
+exit(Boot::bootWeb($paths));
 
 // LOAD THE FRAMEWORK BOOTSTRAP FILE
 require $paths->systemDirectory . '/Boot.php';
