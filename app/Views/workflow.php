@@ -64,7 +64,7 @@ if (!empty($Tests)) {
                     Toast.fire({ title: 'Success', text: <?= workflow_view_json(session()->getFlashdata('success')) ?>, icon: 'success' });
         <?php endif; ?>
         <?php if (session()->getFlashdata('error')): ?>
-                    Swal.fire({ title: 'Upload Failed', text: <?= workflow_view_json(session()->getFlashdata('error')) ?>, icon: 'error' });
+            Swal.fire({ title: 'Upload Failed', text: <?= workflow_view_json(session()->getFlashdata('error')) ?>, icon: 'error' });
         <?php endif; ?>
     });
 </script>
@@ -93,8 +93,6 @@ if (!empty($Tests)) {
     <!-- jsPDF and AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <!-- SheetJS for Excel Export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         .swal2-popup {
             border-radius: 20px !important;
@@ -126,10 +124,8 @@ if (!empty($Tests)) {
             height: 32px !important;
         }
 
-        /* ============================================
            MODERN RED PAGINATION (Bootstrap 5 DataTables)
            Targets: .dataTables_paginate ul.pagination > li.page-item > a.page-link
-           ============================================ */
         .dataTables_wrapper .dataTables_info {
             font-size: 11px !important;
             font-weight: 700 !important;
@@ -724,11 +720,14 @@ if (!empty($Tests)) {
 
         /* Blinking Animation for Pending Evaluations */
         @keyframes pulse-indigo-blink {
-            0%, 100% {
+
+            0%,
+            100% {
                 background-color: #f8fafc;
                 color: #94a3b8;
                 transform: scale(1);
             }
+
             50% {
                 background-color: #4f46e5;
                 color: #ffffff;
@@ -2363,9 +2362,7 @@ if (!empty($Tests)) {
             box-shadow: 0 0 0 3px rgba(220, 34, 48, 0.1);
         }
 
-        /* ============================================
            MODERN GLOBAL FOCUS STYLE — Red Brand Ring
-           ============================================ */
         .input,
         .select,
         textarea,
@@ -4949,11 +4946,18 @@ if (!empty($Tests)) {
                     <p class="text-sm text-gray-500">Review candidate performance and grade subjective answers.</p>
                 </div>
                 <div class="flex flex-col items-end gap-3 w-full xl:w-[36%] shrink-0">
-                    <button type="button"
-                        class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs inline-flex items-center gap-2 hover:bg-red-700 transition-all border border-red-600 shadow-sm shadow-red-100"
-                        onclick="window.backFromResultsPage()">
-                        <i class="bi bi-arrow-left"></i> Back to Inventory
-                    </button>
+                    <div class="flex flex-wrap items-center justify-end gap-2 w-full">
+                        <button type="button"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold text-xs inline-flex items-center gap-2 hover:bg-indigo-700 transition-all border border-indigo-600 shadow-sm shadow-indigo-100"
+                            onclick="App.openResultsAnalytics()" title="Charts for the current filtered leaderboard">
+                            <i class="bi bi-bar-chart-line-fill"></i> Result Analytics
+                        </button>
+                        <button type="button"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs inline-flex items-center gap-2 hover:bg-red-700 transition-all border border-red-600 shadow-sm shadow-red-100"
+                            onclick="window.backFromResultsPage()">
+                            <i class="bi bi-arrow-left"></i> Back to Inventory
+                        </button>
+                    </div>
                     <div id="resultsOverviewCards" class="w-full">
                         <h5 class="text-[10px] font-black text-[#1e293b] mb-2">Evaluation Overview</h5>
                         <div class="grid grid-cols-4 gap-2">
@@ -5601,7 +5605,7 @@ if (!empty($Tests)) {
                 </select>
                 <select id="tp_template" class="select">
                     <?php foreach ($templates as $t): ?>
-                                <option value="<?= $t['id'] ?>"><?= esc($t['name']) ?></option>
+                        <option value="<?= $t['id'] ?>"><?= esc($t['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -5647,8 +5651,8 @@ if (!empty($Tests)) {
                                     <option value="">-- No Template (Custom Questions Only) --</option>
                                     <?php if (!empty($templates)):
                                         foreach ($templates as $t): ?>
-                                                            <option value="<?= $t['id'] ?>"><?= $t['name'] ?></option>
-                                                <?php endforeach; endif; ?>
+                                            <option value="<?= $t['id'] ?>"><?= $t['name'] ?></option>
+                                        <?php endforeach; endif; ?>
                                 </select>
                                 <button class="btn btn-primary-custom px-6 h-12 text-xs font-bold rounded-lg shadow-sm"
                                     onclick="updatePackTemplate()">
@@ -6089,6 +6093,56 @@ if (!empty($Tests)) {
         </div>
     </div>
 
+    <!-- Results & Evaluation: analytics (uses current leaderboard filters) -->
+    <div class="modal fade" id="resultsAnalyticsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+                <div class="modal-header border-b border-slate-100 bg-slate-50/80 px-4 py-2">
+                    <div>
+                        <h5 class="modal-title fw-bold text-slate-800 mb-0 fs-6"><i
+                                class="bi bi-bar-chart-line-fill text-indigo-600 me-2"></i>Result Analytics</h5>
+                        <p class="text-[10px] text-slate-500 font-semibold mb-0 mt-1">Live view of the same data as the
+                            table below your current filters.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 pt-2 pb-3 bg-white">
+                    <p id="resultsAnalyticsFilterHint" class="text-[10px] text-slate-500 font-medium mb-2 leading-snug">
+                    </p>
+                    <div class="row g-2">
+                        <div class="col-lg-6 d-flex">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-3 w-100 d-flex flex-column">
+                                <h6
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">
+                                    Bar · Highest &amp; lowest</h6>
+                                <div id="resultsAnalyticsHighLowChart" class="w-100 results-am5-chart"
+                                    style="height: 200px;"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 d-flex">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-3 w-100 d-flex flex-column">
+                                <h6
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">
+                                    Donut · Pass / fail / pending</h6>
+                                <div id="resultsAnalyticsOutcomeChart" class="w-100 results-am5-chart"
+                                    style="height: 220px;"></div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
+                                <h6
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">
+                                    Area · Top scores (completed)</h6>
+                                <div id="resultsAnalyticsTopChart" class="w-100 results-am5-chart pt-1"
+                                    style="height: 200px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Submit Confirmation Modal -->
     <div id="submitConfirmModal" class="submit-confirm-overlay d-none">
         <div class="confirm-card">
@@ -6147,6 +6201,7 @@ if (!empty($Tests)) {
             quickModePaperSource: null,
             resultsContextTestName: '',
             activeEvaluatorSubmissionKey: '',
+            resultsLeaderboardFiltered: [],
 
             evaluationState: { submissions: {} },
 
@@ -6158,7 +6213,7 @@ if (!empty($Tests)) {
                     const result = await response.json();
                     if (result.status === 'success') {
                         App.Tests = result.tests;
-                        
+
                         // 2. Refresh Inventory Table
                         if (typeof window.initTestsDataTable === 'function') {
                             window.initTestsDataTable();
@@ -8185,7 +8240,7 @@ if (!empty($Tests)) {
                             const packs = row.test_packs || [];
                             const submissions = App.getAllSubmissions();
                             const hasPendingEval = packs.some(p => {
-                                return submissions.some(s => 
+                                return submissions.some(s =>
                                     String(s.pack_id) === String(p.id) &&
                                     (s.subjective_items || []).some(q => (q.candidate_answer || '').trim() && !q.graded)
                                 );
@@ -11199,7 +11254,7 @@ if (!empty($Tests)) {
                 let syncCounter = 0;
                 App.executionState.timerInterval = setInterval(async () => {
                     App.executionState.timeLeft--;
-                    
+
                     // Check for time extension from admin every 60 seconds
                     syncCounter++;
                     if (syncCounter >= 60) {
@@ -11224,7 +11279,7 @@ if (!empty($Tests)) {
                     if (res.status === 'success') {
                         const serverDuration = parseInt(res.duration);
                         const currentDuration = parseInt(App.executionState.durationMins || 60);
-                        
+
                         if (serverDuration > currentDuration) {
                             const addedMins = serverDuration - currentDuration;
                             App.executionState.timeLeft += (addedMins * 60);
@@ -11237,7 +11292,7 @@ if (!empty($Tests)) {
                             });
                         }
                     }
-                } catch(e) { console.error("Time sync failed", e); }
+                } catch (e) { console.error("Time sync failed", e); }
             },
 
             updateTimerUI: () => {
@@ -11979,7 +12034,7 @@ if (!empty($Tests)) {
                         testFilterEl.value = contextTestName;
                         activeSelectedTest = contextTestName;
                         if (groupFilterEl) {
-                           Array.from(groupFilterEl.options).forEach(o => o.selected = false);
+                            Array.from(groupFilterEl.options).forEach(o => o.selected = false);
                         }
                         if (dateFilterEl) dateFilterEl.value = '';
                     }
@@ -12022,6 +12077,8 @@ if (!empty($Tests)) {
                     if (tA && tB && tA !== tB) return tA - tB;
                     return norm(a.candidate_name).localeCompare(norm(b.candidate_name));
                 });
+
+                App.resultsLeaderboardFiltered = filtered;
 
                 const paginationState = App.resultsPagination || { page: 1, perPage: 10 };
                 App.resultsPagination = paginationState;
@@ -12150,12 +12207,12 @@ if (!empty($Tests)) {
 
                 const countEl = document.getElementById('breakdown-cat-count');
                 if (countEl) countEl.textContent = `${filtered.length} Candidate${filtered.length === 1 ? '' : 's'}`;
-                
+
                 // Store filtered results for report generation
                 App.currentFilteredResults = filtered;
 
             },
-            
+
             generateResultsReport: () => {
                 const data = App.currentFilteredResults || [];
                 if (!data.length) {
@@ -12241,7 +12298,7 @@ if (!empty($Tests)) {
                     });
 
                     const worksheet = XLSX.utils.json_to_sheet(wsData);
-                    
+
                     // Style the header row (optional but nice)
                     const range = XLSX.utils.decode_range(worksheet['!ref']);
                     for (let C = range.s.c; C <= range.e.c; ++C) {
@@ -12270,6 +12327,425 @@ if (!empty($Tests)) {
                 } catch (e) {
                     console.error("Excel Generation Error:", e);
                     Swal.fire('Error', 'Failed to generate Excel report. Please try again.', 'error');
+                }
+            },
+
+            openResultsAnalytics: () => {
+                const el = document.getElementById('resultsAnalyticsModal');
+                if (!el || typeof bootstrap === 'undefined' || !bootstrap.Modal) return;
+                if (!el.dataset.am5AnalyticsBound) {
+                    el.dataset.am5AnalyticsBound = '1';
+                    el.addEventListener('hidden.bs.modal', () => {
+                        App._resultsAnalyticsGen = (App._resultsAnalyticsGen || 0) + 1;
+                        if (typeof App.disposeResultsAnalyticsCharts === 'function') {
+                            App.disposeResultsAnalyticsCharts();
+                        }
+                    });
+                    el.addEventListener('shown.bs.modal', () => {
+                        if (typeof App.renderResultsAnalytics === 'function') {
+                            App.renderResultsAnalytics();
+                        }
+                    });
+                }
+                bootstrap.Modal.getOrCreateInstance(el).show();
+            },
+
+            disposeResultsAnalyticsCharts: () => {
+                if (Array.isArray(App._resultsAm5Roots)) {
+                    App._resultsAm5Roots.forEach((r) => {
+                        try {
+                            r.dispose();
+                        } catch (e) { /* ignore */ }
+                    });
+                }
+                App._resultsAm5Roots = [];
+            },
+
+            renderResultsAnalytics: () => {
+                const data = Array.isArray(App.resultsLeaderboardFiltered) ? App.resultsLeaderboardFiltered : [];
+                const hintEl = document.getElementById('resultsAnalyticsFilterHint');
+                const hiLoId = 'resultsAnalyticsHighLowChart';
+                const outId = 'resultsAnalyticsOutcomeChart';
+                const topId = 'resultsAnalyticsTopChart';
+                const sessionGen = (App._resultsAnalyticsGen = (App._resultsAnalyticsGen || 0) + 1);
+
+                if (hintEl) {
+                    hintEl.textContent = data.length
+                        ? `Showing ${data.length} candidate row${data.length === 1 ? '' : 's'} (same filters as the leaderboard).`
+                        : 'No rows match the current filters — adjust filters on the leaderboard and open again.';
+                }
+
+                App.disposeResultsAnalyticsCharts();
+
+                const setFallback = (id, html) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = html;
+                };
+
+                if (typeof am5 === 'undefined' || typeof am5xy === 'undefined' || typeof am5percent === 'undefined') {
+                    setFallback(hiLoId, '<p class="text-center text-slate-500 small p-3 mb-0">Charts could not load (amCharts scripts missing).</p>');
+                    setFallback(outId, '');
+                    setFallback(topId, '');
+                    return;
+                }
+
+                const completed = data.filter(r => r.status === 'Completed' && (parseInt(r.total_marks || 0, 10) || 0) > 0);
+                const trunc = (name, max) => {
+                    const s = String(name || '-');
+                    return s.length > max ? s.slice(0, max - 1) + '…' : s;
+                };
+
+                const disposeRootsBoundToEl = (domEl) => {
+                    if (!domEl || !am5.registry || !am5.registry.rootElements) return;
+                    am5.registry.rootElements.slice().forEach((r) => {
+                        try {
+                            if (r && r.dom && (r.dom === domEl || (domEl.id && r.dom.id === domEl.id))) {
+                                r.dispose();
+                            }
+                        } catch (e) { /* ignore */ }
+                    });
+                };
+
+                const applyAnimatedTheme = (root) => {
+                    const Th = typeof am5themes_Animated !== 'undefined' ? am5themes_Animated : null;
+                    const make = Th && (Th.new || (Th.default && Th.default.new));
+                    if (typeof make !== 'function') return;
+                    try {
+                        root.setThemes([make(root)]);
+                    } catch (e) {
+                        console.warn('amCharts theme skipped', e);
+                    }
+                };
+
+                /** Corner logo is skipped when am5.addLicense() has been set; otherwise dispose the default branding sprite. */
+                const removeAmChartsCornerLogo = (root) => {
+                    try {
+                        const logo = root._logo;
+                        if (logo && typeof logo.dispose === 'function') {
+                            logo.dispose();
+                        }
+                    } catch (e) { /* ignore */ }
+                };
+
+                const applyDigitalNumberFormat = (root) => {
+                    try {
+                        root.numberFormatter.set('numberFormat', '#');
+                    } catch (e) { /* ignore */ }
+                };
+
+                const pushRoot = (id, buildFn) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    disposeRootsBoundToEl(el);
+                    el.innerHTML = '';
+                    am5.ready(() => {
+                        if (sessionGen !== App._resultsAnalyticsGen) return;
+                        try {
+                            disposeRootsBoundToEl(el);
+                            if (sessionGen !== App._resultsAnalyticsGen) return;
+                            const root = am5.Root.new(el);
+                            App._resultsAm5Roots.push(root);
+                            applyAnimatedTheme(root);
+                            removeAmChartsCornerLogo(root);
+                            applyDigitalNumberFormat(root);
+                            buildFn(root);
+                            removeAmChartsCornerLogo(root);
+                            try {
+                                requestAnimationFrame(() => removeAmChartsCornerLogo(root));
+                            } catch (e2) { /* ignore */ }
+                        } catch (e) {
+                            console.error('amCharts build error', id, e);
+                            el.innerHTML = '<p class="text-center text-slate-500 small p-3 mb-0">Chart error.</p>';
+                        }
+                    });
+                };
+
+                App._resultsAm5Roots = [];
+
+                /* 1 — Gradient bar + cursor (highest / lowest) */
+                if (!completed.length) {
+                    setFallback(hiLoId, '<p class="text-[11px] text-slate-500 font-medium mb-0 text-center px-2 py-3">No completed attempts with a marked total in this view.</p>');
+                } else {
+                    const byDesc = [...completed].sort((a, b) => {
+                        if ((b.final_score || 0) !== (a.final_score || 0)) return (b.final_score || 0) - (a.final_score || 0);
+                        return (parseInt(a.duration_seconds || 0, 10) || 0) - (parseInt(b.duration_seconds || 0, 10) || 0);
+                    });
+                    const byAsc = [...completed].sort((a, b) => {
+                        if ((a.final_score || 0) !== (b.final_score || 0)) return (a.final_score || 0) - (b.final_score || 0);
+                        return (parseInt(a.duration_seconds || 0, 10) || 0) - (parseInt(b.duration_seconds || 0, 10) || 0);
+                    });
+                    const high = byDesc[0];
+                    const low = byAsc[0];
+                    const hFs = parseInt(high.final_score || 0, 10);
+                    const lFs = parseInt(low.final_score || 0, 10);
+                    const hTm = parseInt(high.total_marks || 0, 10);
+                    const lTm = parseInt(low.total_marks || 0, 10);
+                    /* Unique axis categories required — duplicate labels merge columns and break layout. Names stay in tooltip only. */
+                    const chartData = [
+                        {
+                            category: 'Highest',
+                            score: hFs,
+                            total: hTm,
+                            fullName: String(high.candidate_name || '-'),
+                            role: 'Highest'
+                        },
+                        {
+                            category: 'Lowest',
+                            score: lFs,
+                            total: lTm,
+                            fullName: String(low.candidate_name || '-'),
+                            role: 'Lowest'
+                        }
+                    ];
+                    const yMax = Math.max(hTm, lTm, hFs, lFs, 1);
+
+                    pushRoot(hiLoId, (root) => {
+                        const chart = root.container.children.push(am5xy.XYChart.new(root, {
+                            panX: false,
+                            panY: false,
+                            wheelX: 'none',
+                            wheelY: 'none',
+                            paddingLeft: 8,
+                            paddingRight: 8,
+                            paddingTop: 10,
+                            paddingBottom: 4
+                        }));
+                        const xRenderer = am5xy.AxisRendererX.new(root, {
+                            minGridDistance: 40,
+                            cellStartLocation: 0.1,
+                            cellEndLocation: 0.9
+                        });
+                        xRenderer.grid.template.setAll({ strokeOpacity: 0, visible: false });
+                        const xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+                            categoryField: 'category',
+                            renderer: xRenderer
+                        }));
+                        xAxis.get('renderer').labels.template.setAll({
+                            fontSize: 11,
+                            fill: am5.color(0x334155),
+                            fontWeight: '600',
+                            textAlign: 'center'
+                        });
+                        xAxis.data.setAll(chartData);
+                        const yRenderer = am5xy.AxisRendererY.new(root, {});
+                        yRenderer.grid.template.setAll({
+                            stroke: am5.color(0xcbd5e1),
+                            strokeOpacity: 0.6
+                        });
+                        const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+                            min: 0,
+                            max: yMax,
+                            strictMinMax: true,
+                            renderer: yRenderer
+                        }));
+                        yAxis.get('renderer').labels.template.setAll({ fontSize: 10, fill: am5.color(0x64748b) });
+                        const series = chart.series.push(am5xy.ColumnSeries.new(root, {
+                            name: 'Marks',
+                            xAxis,
+                            yAxis,
+                            valueYField: 'score',
+                            categoryXField: 'category',
+                            tooltip: am5.Tooltip.new(root, {
+                                labelText: '[bold fontSize:13px]{role}[/]\n[fontSize:11px #475569]{fullName}[/]\n[bold #0f172a]{score}[/] / [fontSize:12px]{total}[/]'
+                            })
+                        }));
+                        series.set('locationX', 0.5);
+                        series.columns.template.setAll({
+                            cornerRadiusTL: 6,
+                            cornerRadiusTR: 6,
+                            stroke: am5.color(0xffffff),
+                            strokeOpacity: 1,
+                            strokeWidth: 1.5
+                        });
+                        series.columns.template.adapters.add('fill', (fill, target) => {
+                            const ctx = target.dataItem && target.dataItem.dataContext;
+                            if (!ctx || !ctx.role) return fill;
+                            const hi = ctx.role === 'Highest';
+                            return am5.LinearGradient.new(root, {
+                                rotation: 90,
+                                stops: hi
+                                    ? [
+                                        { color: am5.color(0x7dd3fc) },
+                                        { color: am5.color(0x0ea5e9) },
+                                        { color: am5.color(0x0369a1) }
+                                    ]
+                                    : [
+                                        { color: am5.color(0xfde68a) },
+                                        { color: am5.color(0xf59e0b) },
+                                        { color: am5.color(0xb45309) }
+                                    ]
+                            });
+                        });
+                        series.data.setAll(chartData);
+                        series.appear(450, 60);
+                    });
+                }
+
+                /* 2 — Donut pie (pass / fail / pending) */
+                if (!data.length) {
+                    setFallback(outId, '<div class="d-flex align-items-center justify-content-center text-[11px] font-bold text-slate-400 text-uppercase tracking-widest" style="min-height:140px;">No data</div>');
+                } else {
+                    let pass = 0;
+                    let fail = 0;
+                    let pend = 0;
+                    data.forEach(r => {
+                        if (r.status === 'Pending') pend += 1;
+                        else if (r.pass_fail === 'Pass') pass += 1;
+                        else if (r.pass_fail === 'Fail') fail += 1;
+                    });
+                    const outcomeData = [
+                        { category: 'Pass', value: pass, color: am5.color(0x2dd4bf) },
+                        { category: 'Fail', value: fail, color: am5.color(0xf472b6) },
+                        { category: 'Pending', value: pend, color: am5.color(0xa5b4fc) }
+                    ];
+                    let pieData = outcomeData.filter(d => d.value > 0);
+                    if (!pieData.length) {
+                        pieData = [{ category: 'No status', value: 1, color: am5.color(0xe2e8f0) }];
+                    }
+
+                    pushRoot(outId, (root) => {
+                        const chart = root.container.children.push(am5percent.PieChart.new(root, {
+                            layout: root.verticalLayout,
+                            innerRadius: am5.percent(56),
+                            paddingTop: 2,
+                            paddingBottom: 2,
+                            paddingLeft: 4,
+                            paddingRight: 4
+                        }));
+                        const series = chart.series.push(am5percent.PieSeries.new(root, {
+                            name: 'Outcomes',
+                            valueField: 'value',
+                            categoryField: 'category',
+                            legendLabelText: '{category}',
+                            legendValueText: '{value} ({valuePercentTotal.formatNumber(\'0.0\')}%)'
+                        }));
+                        series.slices.template.setAll({
+                            stroke: am5.color(0xffffff),
+                            strokeWidth: 2,
+                            strokeOpacity: 1,
+                            cornerRadius: 6
+                        });
+                        series.slices.template.adapters.add('fill', (fill, target) => {
+                            const ctx = target.dataItem && target.dataItem.dataContext;
+                            return ctx && ctx.color ? ctx.color : fill;
+                        });
+                        series.labels.template.set('visible', false);
+                        series.ticks.template.set('visible', false);
+                        series.set('tooltip', am5.Tooltip.new(root, {
+                            labelText: '[bold]{category}[/]\nCount: [bold]{value}[/]\nShare: [bold]{valuePercentTotal.formatNumber(\'0.0\')}%[/]'
+                        }));
+                        series.data.setAll(pieData);
+                        const legend = chart.children.push(am5.Legend.new(root, {
+                            centerX: am5.p50,
+                            x: am5.p50,
+                            layout: root.horizontalLayout,
+                            marginTop: 4
+                        }));
+                        legend.labels.template.setAll({ fontSize: 10, fill: am5.color(0x334155) });
+                        legend.valueLabels.template.setAll({ fontSize: 10, fill: am5.color(0x64748b) });
+                        legend.markers.template.setAll({ width: 10, height: 10 });
+                        legend.data.setAll(series.dataItems);
+                        series.appear(600, 80);
+                    });
+                }
+
+                /* 3 — Smoothed area (top 5 scores) */
+                if (!completed.length) {
+                    setFallback(topId, '<p class="text-[11px] text-slate-500 font-medium mb-0 text-center py-3">No completed attempts to rank.</p>');
+                } else {
+                    const top = [...completed].sort((a, b) => {
+                        if ((b.final_score || 0) !== (a.final_score || 0)) return (b.final_score || 0) - (a.final_score || 0);
+                        return (parseInt(a.duration_seconds || 0, 10) || 0) - (parseInt(b.duration_seconds || 0, 10) || 0);
+                    }).slice(0, 5);
+                    const topMax = Math.max(...top.map(r => parseInt(r.final_score || 0, 10)), 1);
+                    const topData = top.map((r, i) => ({
+                        slot: `#${i + 1}`,
+                        fullName: String(r.candidate_name || '-'),
+                        score: parseInt(r.final_score || 0, 10),
+                        total: parseInt(r.total_marks || 0, 10)
+                    }));
+                    const LineCtor = am5xy.SmoothedXLineSeries || am5xy.LineSeries;
+
+                    pushRoot(topId, (root) => {
+                        const chart = root.container.children.push(am5xy.XYChart.new(root, {
+                            panX: false,
+                            panY: false,
+                            wheelX: 'none',
+                            wheelY: 'none',
+                            paddingLeft: 6,
+                            paddingRight: 10,
+                            paddingTop: 8,
+                            paddingBottom: 4
+                        }));
+                        const xRenderer = am5xy.AxisRendererX.new(root, {
+                            minGridDistance: 24,
+                            cellStartLocation: 0,
+                            cellEndLocation: 1
+                        });
+                        xRenderer.grid.template.setAll({ strokeOpacity: 0, visible: false });
+                        const xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+                            categoryField: 'slot',
+                            renderer: xRenderer
+                        }));
+                        xAxis.get('renderer').labels.template.setAll({
+                            fontSize: 11,
+                            fill: am5.color(0x4f46e5),
+                            fontWeight: '700',
+                            textAlign: 'center'
+                        });
+                        xAxis.data.setAll(topData);
+                        const yRenderer = am5xy.AxisRendererY.new(root, {});
+                        yRenderer.grid.template.setAll({
+                            stroke: am5.color(0xcbd5e1),
+                            strokeOpacity: 0.55
+                        });
+                        const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+                            min: 0,
+                            max: topMax,
+                            strictMinMax: false,
+                            renderer: yRenderer,
+                            extraMax: 0.12
+                        }));
+                        yAxis.get('renderer').labels.template.setAll({ fontSize: 10, fill: am5.color(0x64748b) });
+                        const lineStroke = am5.color(0x7c3aed);
+                        const series = chart.series.push(LineCtor.new(root, {
+                            name: 'Score',
+                            xAxis,
+                            yAxis,
+                            valueYField: 'score',
+                            categoryXField: 'slot',
+                            stroke: lineStroke,
+                            tooltip: am5.Tooltip.new(root, {
+                                labelText: '[bold]{fullName}[/]\n[fontSize:12px]{score} / {total}[/]'
+                            })
+                        }));
+                        series.set('locationX', 0.5);
+                        series.strokes.template.setAll({
+                            strokeWidth: 3,
+                            strokeOpacity: 1
+                        });
+                        series.fills.template.setAll({
+                            visible: true,
+                            fillOpacity: 1,
+                            fill: am5.LinearGradient.new(root, {
+                                rotation: 90,
+                                stops: [
+                                    { color: am5.color(0xc4b5fd), opacity: 0.45 },
+                                    { color: am5.color(0x7c3aed), opacity: 0.12 }
+                                ]
+                            })
+                        });
+                        series.bullets.push(() => am5.Bullet.new(root, {
+                            sprite: am5.Circle.new(root, {
+                                radius: 5,
+                                fill: am5.color(0xffffff),
+                                stroke: lineStroke,
+                                strokeWidth: 2.5
+                            })
+                        }));
+                        series.data.setAll(topData);
+                        series.appear(500, 50);
+                    });
                 }
             },
 
@@ -12601,19 +13077,19 @@ if (!empty($Tests)) {
             navigateEvaluator: (currentKey, direction) => {
                 const results = App.currentFilteredResults || [];
                 // Only consider results that CAN be evaluated (Completed + Answered Subjective)
-                const evaluatable = results.filter(r => 
-                    r.status === 'Completed' && 
+                const evaluatable = results.filter(r =>
+                    r.status === 'Completed' &&
                     !String(r.key).startsWith('pending::') &&
                     (r.subjective_items || []).some(q => (q.candidate_answer || '').trim() !== '')
                 );
-                
+
                 const currentIndex = evaluatable.findIndex(r => String(r.key) === String(currentKey));
                 if (currentIndex === -1) {
                     // Fallback to simple index search if key mapping is complex
                     console.warn("Evaluator navigation: Current key not found in filtered list.");
                     return;
                 }
-                
+
                 const nextIndex = currentIndex + direction;
                 if (nextIndex >= 0 && nextIndex < evaluatable.length) {
                     App.openEvaluatorForSubmission(evaluatable[nextIndex].key);
@@ -12991,13 +13467,13 @@ if (!empty($Tests)) {
                 // Move to next candidate after a short delay to let the user see the success
                 setTimeout(() => {
                     const results = App.currentFilteredResults || [];
-                    const evaluatable = results.filter(r => 
-                        r.status === 'Completed' && 
+                    const evaluatable = results.filter(r =>
+                        r.status === 'Completed' &&
                         !String(r.key).startsWith('pending::') &&
                         (r.subjective_items || []).some(q => (q.candidate_answer || '').trim() !== '')
                     );
                     const currentIndex = evaluatable.findIndex(r => String(r.key) === String(submissionKey));
-                    
+
                     if (currentIndex !== -1 && currentIndex < evaluatable.length - 1) {
                         App.navigateEvaluator(submissionKey, 1);
                     } else {
@@ -13866,7 +14342,8 @@ if (!empty($Tests)) {
                                                             Minimum to pass</p>
                                                     </div>
                                                 </div>
-                                                <input id="builder_pass_mark_visible" type="number" min="0" max="100" value="0"
+                                                <input id="builder_pass_mark_visible" type="number" min="0" max="100"
+                                                    value="0"
                                                     oninput="document.getElementById('builder_pass_mark_inline').value = this.value === '' ? '0' : this.value"
                                                     class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 focus:ring-2 focus:ring-emerald-100 focus:border-emerald-300 transition-all text-slate-700 shadow-inner"
                                                     placeholder="e.g. 60" />
@@ -13951,11 +14428,11 @@ if (!empty($Tests)) {
                                                     <div
                                                         class="col-span-4 py-3 pl-2 pr-3 flex items-center justify-end gap-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">
                                                         <span class="shrink-0 translate-x-[-4px]">Actions</span>
-                                                        <button type="button"
-                                                            onclick="addNewSectionRowInline()"
+                                                        <button type="button" onclick="addNewSectionRowInline()"
                                                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-red-600 bg-red-600 text-white hover:bg-red-700 hover:border-red-700 transition-all shadow-sm shadow-red-100"
                                                             title="Add section (save the current row first if it is being edited)">
-                                                            <i class="bi bi-plus-lg text-base leading-none font-bold text-white"></i>
+                                                            <i
+                                                                class="bi bi-plus-lg text-base leading-none font-bold text-white"></i>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -16560,7 +17037,7 @@ if (!empty($Tests)) {
             if (typeof App.loadEvaluationState === 'function') {
                 App.loadEvaluationState();
             }
-            
+
             if (typeof window.initTestsDataTable === 'function') {
                 window.initTestsDataTable();
             }
