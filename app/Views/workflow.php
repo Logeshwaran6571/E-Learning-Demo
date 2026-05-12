@@ -8105,7 +8105,7 @@ if (!empty($Tests)) {
                     <table id="BatchTable_${d.id}" class="w-full text-left border-collapse">
                         <thead class="bg-slate-50/50 border-b border-slate-100">
                             <tr>
-                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Batch Name</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Group Name</th>
                                 <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Template</th>
                                 <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Assign To</th>
                                 <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
@@ -8147,7 +8147,7 @@ if (!empty($Tests)) {
                             const stats = App.getPackSubmissionStats(row.id);
                             return `
                             <div class="flex flex-col gap-1">
-                                <input type="text" class="inline-editable-input" data-field="pack_name" value="${data}" placeholder="e.g. Morning Batch" ${row.status === 'published' ? 'readonly' : ''}>
+                                <input type="text" class="inline-editable-input" data-field="pack_name" value="${data}" placeholder="e.g. Morning Group" ${row.status === 'published' ? 'readonly' : ''}>
                                 ${row.status === 'published' ? '<div class="published-badge"><i class="bi bi-shield-check"></i> Published</div>' : ''}
                                 ${stats.total > 0 ? `<div class="text-[9px] font-black uppercase tracking-widest ${stats.subjectivePending > 0 ? 'text-amber-600' : 'text-emerald-600'}">${stats.completed}/${stats.total} Completed • ${stats.subjectivePending} Pending Eval</div>` : ''}
                             </div>
@@ -8300,14 +8300,14 @@ if (!empty($Tests)) {
                                     <button class="batch-action-btn bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white" onclick="toggleEditBatch(this)" title="Edit Row" data-action="edit">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="batch-action-btn bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white" onclick="publishBatch(this, '${row.id}', '${testId}')" title="Publish Batch">
+                                    <button class="batch-action-btn bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white" onclick="publishBatch(this, '${row.id}', '${testId}')" title="Publish Group">
                                         <i class="bi bi-send-check"></i>
                                     </button>
-                                    <button class="batch-action-btn bg-red-50 text-red-600 hover:bg-red-600 hover:text-white" onclick="deletePack('${row.id}')" title="Delete Batch">
+                                    <button class="batch-action-btn bg-red-50 text-red-600 hover:bg-red-600 hover:text-white" onclick="deletePack('${row.id}')" title="Delete Group">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 ` : `
-                                    <div class="w-8 h-8 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg" title="Batch Published & Locked">
+                                    <div class="w-8 h-8 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg" title="Group Published & Locked">
                                         <i class="bi bi-lock-fill"></i>
                                     </div>
                                     ${canPublishResults ? `
@@ -8332,7 +8332,7 @@ if (!empty($Tests)) {
                 dom: 't',
                 ordering: false,
                 language: {
-                    emptyTable: "No Batches found for this Test."
+                    emptyTable: "No Groups found for this Test."
                 }
             });
         }
@@ -8362,8 +8362,8 @@ if (!empty($Tests)) {
             }
 
             const result = await Swal.fire({
-                title: 'Publish Batch?',
-                text: "Once published, this batch cannot be edited.",
+                title: 'Publish Group?',
+                text: "Once published, this group cannot be edited.",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#4f46e5',
@@ -8390,7 +8390,7 @@ if (!empty($Tests)) {
                         Swal.fire({
                             icon: 'success',
                             title: 'Published!',
-                            text: 'Batch has been locked and published.',
+                            text: 'Group has been locked and published.',
                             timer: 1500,
                             showConfirmButton: false
                         });
@@ -8986,7 +8986,7 @@ if (!empty($Tests)) {
                 const template = document.getElementById('baseTemplateSelect').value;
                 const duration = document.getElementById('pack_duration').value;
                 let missing = [];
-                if (!name) missing.push("Batch Name");
+                if (!name) missing.push("Group Name");
                 if (!template) missing.push("Template Selection");
                 if (!duration || parseInt(duration) <= 0) missing.push("Valid Duration");
                 if (isQuickMode && !qbId) missing.push("Question Bank");
@@ -9079,7 +9079,7 @@ if (!empty($Tests)) {
 
                     Swal.fire({
                         title: 'Success!',
-                        text: 'Test batch and assignments saved successfully.',
+                        text: 'Test group and assignments saved successfully.',
                         icon: 'success',
                         timer: 2000,
                         showConfirmButton: false
@@ -10191,9 +10191,9 @@ if (!empty($Tests)) {
                 if (usage.length === 0) {
                     summaryEl.textContent = 'Not used yet';
                 } else if (usage.length === 1) {
-                    summaryEl.textContent = usage[0].pack_name || usage[0].assessment_name || '1 batch';
+                    summaryEl.textContent = usage[0].pack_name || usage[0].assessment_name || '1 group';
                 } else {
-                    summaryEl.textContent = usage.length + ' batches';
+                    summaryEl.textContent = usage.length + ' groups';
                 }
             }
 
@@ -10502,7 +10502,7 @@ if (!empty($Tests)) {
             }
 
             Swal.fire({
-                title: 'Creating Batch...',
+                title: 'Creating Group...',
                 didOpen: () => { Swal.showLoading(); }
             });
 
@@ -10888,7 +10888,7 @@ if (!empty($Tests)) {
                     App.executionState.durationMins = duration;
                     App.executionState.startedAt = Date.now();
                     App.executionState.testName = testMeta?.name || test?.name || 'Test';
-                    App.executionState.batchName = pack?.pack_name || 'Standard Batch';
+                    App.executionState.batchName = pack?.pack_name || 'Standard Group';
                     App.executionState.testType = testMeta?.assessment_type || test?.assessment_type || 'Standard';
                     App.executionState.assignedRoles = testMeta?.assigned_to || test?.assigned_to || pack?.user_role || 'General Access';
                     App.executionState.attachment = null;
@@ -11395,7 +11395,7 @@ if (!empty($Tests)) {
                     test_id: App.executionState.testId,
                     pack_id: App.executionState.packId,
                     test_name: App.executionState.testName || 'Test',
-                    batch_name: App.executionState.batchName || 'Batch',
+                    batch_name: App.executionState.batchName || 'Group',
                     test_type: App.executionState.testType || 'Standard',
                     assigned_roles: App.executionState.assignedRoles || 'General Access',
                     submitted_date: new Date().toISOString(),
@@ -11495,7 +11495,7 @@ if (!empty($Tests)) {
                             test_name: testName || '-',
                             test_type: testType || '-',
                             role: role || '-',
-                            group_name: norm(pack?.pack_name || 'Batch'),
+                            group_name: norm(pack?.pack_name || 'Group'),
                             date_ymd: ymd(pack?.scheduled_date || pack?.start_time)
                         };
                     });
@@ -12522,7 +12522,7 @@ if (!empty($Tests)) {
                     });
                     const result = await response.json();
                     if (result.status === 'success') {
-                        Swal.fire('Added!', 'Question has been added to the Batch.', 'success');
+                        Swal.fire('Added!', 'Question has been added to the Group.', 'success');
                         if (type === 'MCQ') {
                             document.getElementById('mcq_content').value = '';
                             document.getElementById('mcq_opt_a').value = '';
@@ -12793,7 +12793,7 @@ if (!empty($Tests)) {
         window.inlineSectionTypeDisplayName = inlineSectionTypeDisplayName;
     </script>
 
-    <!-- MODAL: QUICK BATCH CREATION (Full Screen Template) -->
+    <!-- MODAL: QUICK GROUP CREATION (Full Screen Template) -->
     <div class="modal fade quick-mode" id="createPackModal" tabindex="-1">
         <div class="modal-dialog modal-fullscreen">
             <div class="modal-content border-0 h-full flex flex-col overflow-hidden relative">
@@ -13102,13 +13102,13 @@ if (!empty($Tests)) {
                                                     <div class="flex items-center gap-2 mb-2">
                                                         <div class="w-1 h-4 bg-red-500 rounded-full"></div>
                                                         <label
-                                                            class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Batch
+                                                            class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Group
                                                             Name <span class="text-red-500">*</span></label>
                                                     </div>
                                                     <input id="quick_batch_name"
                                                         oninput="document.getElementById('pack_wizard_name').value = this.value; updateSummary();"
                                                         class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[11px] font-bold h-10 px-4 text-slate-700 focus:ring-4 focus:ring-red-50 transition-all shadow-sm"
-                                                        placeholder="Enter batch name..." />
+                                                        placeholder="Enter group name..." />
                                                 </div>
                                                 <div>
                                                     <div class="flex items-center gap-2 mb-2">
@@ -13512,9 +13512,9 @@ if (!empty($Tests)) {
                                         Basic Information</span>
                                 </div>
                                 <div class="form-group">
-                                    <label class="block text-[12px] font-bold text-slate-500 mb-1">Batch
+                                    <label class="block text-[12px] font-bold text-slate-500 mb-1">Group
                                         Name</label>
-                                    <input type="text" id="summary_name" placeholder="Enter batch name..."
+                                    <input type="text" id="summary_name" placeholder="Enter group name..."
                                         class="w-full bg-slate-50 border border-slate-100 rounded-xl h-10 px-4 text-[14px] font-bold text-slate-700 focus:ring-2 focus:ring-red-100 transition-all"
                                         oninput="syncSidebarToMain('pack_wizard_name', this.value)">
                                 </div>
@@ -13700,7 +13700,7 @@ if (!empty($Tests)) {
                                 <button
                                     class="py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-red-100"
                                     onclick="savePackFromWizard()">
-                                    Create Batch
+                                    Create Group
                                 </button>
                             </div>
                         </div>
@@ -14305,7 +14305,7 @@ if (!empty($Tests)) {
             }
 
             // 2. Reset Sidebar Interactive Inputs
-            document.getElementById('summary_name').value = 'New Batch';
+            document.getElementById('summary_name').value = 'New Group';
             document.getElementById('summary_duration_input').value = 60;
             document.getElementById('summary_start_input').value = '';
             document.getElementById('summary_end_input').value = '';
@@ -15660,7 +15660,7 @@ if (!empty($Tests)) {
 
             const result = await Swal.fire({
                 title: 'Delete Template?',
-                text: "This action cannot be undone. Any batches using this template might be affected.",
+                text: "This action cannot be undone. Any groups using this template might be affected.",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc2230',
@@ -16240,7 +16240,7 @@ if (!empty($Tests)) {
                     body: JSON.stringify(data)
                 });
                 const res = await resp.json();
-                if (res.status === 'success') Swal.fire('Success!', 'Test & Batch Published!', 'success').then(() => location.reload());
+                if (res.status === 'success') Swal.fire('Success!', 'Test & Group Published!', 'success').then(() => location.reload());
                 else Swal.fire('Error', res.message, 'error');
             } catch (e) { Swal.fire('Error', 'Failed to save Test.', 'error'); }
         }
@@ -16585,7 +16585,7 @@ if (!empty($Tests)) {
             App.selectedCandidates[data.assessment_id] = (data.candidates || '').split(',').filter(id => id.trim());
             updateWizardCandidateLabel();
 
-            document.querySelector('#createPackModal h3').textContent = 'Edit Batch';
+            document.querySelector('#createPackModal h3').textContent = 'Edit Group';
 
             const modalEl = document.getElementById('createPackModal');
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
