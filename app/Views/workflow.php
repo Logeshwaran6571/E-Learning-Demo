@@ -6123,10 +6123,13 @@ if (!empty($Tests)) {
             <p class="text-center text-slate-300 small mb-4 mb-md-5">Orientation screen is shown before the test starts.
                 Click the button below when you're ready to begin.</p>
             <div id="execIntroVideosMount" class="d-flex flex-column gap-4 mb-4"></div>
-            <div class="text-center pb-5">
+            <div class="flex items-center justify-center gap-3 pb-5">
+                <button type="button" id="execIntroPrevBtn"
+                    class="btn btn-lg btn-outline-light fw-bold px-4 rounded-pill d-none" style="min-width:180px;">
+                    <i class="bi bi-chevron-left"></i> Previous
+                </button>
                 <button type="button" id="execIntroCompleteBtn"
-                    class="btn btn-lg btn-danger fw-bold px-5 rounded-pill shadow" style="min-width:260px;"
-                    onclick="App.completeIntroGate()">
+                    class="btn btn-lg btn-danger fw-bold px-5 rounded-pill shadow" style="min-width:260px;">
                     I've completed watching — Begin test
                 </button>
             </div>
@@ -8259,17 +8262,25 @@ if (!empty($Tests)) {
                     {
                         data: 'name',
                         width: '35%',
-                        render: (data, type, row) => `
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center font-bold text-xs border border-red-100">
-                                ${data.charAt(0)}
-                            </div>
-                            <div>
-                                <div class="font-bold text-slate-700">${data}</div>
-                                <div class="text-[10px] text-slate-400 font-medium">Created on ${new Date(row.created_at).toLocaleDateString()}</div>
-                            </div>
-                        </div>
-                    `
+                        render: (data, type, row) => {
+                            const hasVideo = row.add_video === 'Yes' || row.add_video === 1 || row.add_video === '1' || row.add_video === true;
+                            const videoIndicator = hasVideo ? `
+                                <span class="ml-2 inline-flex items-center justify-center w-5 h-5 bg-red-50 text-red-600 rounded-full border border-red-100 shadow-sm" title="Intro Video Enabled">
+                                    <i class="bi bi-camera-video-fill text-[10px]"></i>
+                                </span>
+                            ` : '';
+                            return `
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center font-bold text-xs border border-red-100">
+                                        ${data.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-700 flex items-center">${data}${videoIndicator}</div>
+                                        <div class="text-[10px] text-slate-400 font-medium">Created on ${new Date(row.created_at).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }
                     },
                     {
                         data: 'category',
@@ -11125,6 +11136,7 @@ if (!empty($Tests)) {
                 const overlay = document.getElementById('execIntroOverlay');
                 const mount = document.getElementById('execIntroVideosMount');
                 const btn = document.getElementById('execIntroCompleteBtn');
+                
                 if (!overlay || !mount || !btn) {
                     document.getElementById('executionView').classList.remove('d-none');
                     document.body.style.overflow = 'hidden';
@@ -11134,61 +11146,102 @@ if (!empty($Tests)) {
                     App.updateProgress();
                     return;
                 }
-                mount.innerHTML = '';
-                App.introGateTotal = urls.length;
+
+                App.introGateUrls = urls || [];
+                App.introGateCurrentIdx = 0;
+                App.introGateTotal = App.introGateUrls.length;
                 App.introGateEnded = new Set();
-                btn.disabled = true;
-                btn.title = 'Watch all orientation videos to continue';
-                urls.forEach((url, idx) => {
-                    const box = document.createElement('div');
-                    box.className = 'bg-white rounded-3 p-3 shadow-sm';
-                    const v = document.createElement('video');
-                    v.className = 'w-100 rounded-3';
-                    v.controls = true;
-                    v.setAttribute('playsinline', '');
-                    v.preload = 'metadata';
-                    const candidates = App._resolveIntroVideoCandidates(url);
-                    let candidateIdx = 0;
-                    const tryLoadNext = () => {
-                        if (candidateIdx >= candidates.length) {
-                            console.warn('Intro video failed to load for all URL candidates:', url, candidates);
-                            return;
-                        }
-                        const src = candidates[candidateIdx++];
-                        v.src = src;
-                        v.load();
-                    };
-                    // Show video only (no poster/image fallback).
-                    v.removeAttribute('poster');
-                    v.addEventListener('ended', () => App.markIntroVideoEnded(idx));
-                    v.addEventListener('error', () => {
-                        tryLoadNext();
-                    });
-                    tryLoadNext();
-                    box.appendChild(v);
-                    mount.appendChild(box);
-                });
+                
                 overlay.classList.remove('d-none');
+                App.renderIntroVideoStep();
+            },
+
+            renderIntroVideoStep: () => {
+                const mount = document.getElementById('execIntroVideosMount');
+                const btnNext = document.getElementById('execIntroCompleteBtn');
+                const btnPrev = document.getElementById('execIntroPrevBtn');
+                const idx = App.introGateCurrentIdx;
+                const url = App.introGateUrls[idx];
+
+                if (!url) {
+                    App.completeIntroGate();
+                    return;
+                }
+
+                mount.innerHTML = '';
+                const box = document.createElement('div');
+                box.className = 'bg-white rounded-3 p-3 shadow-sm text-center';
+                
+                if (App.introGateTotal > 1) {
+                    const step = document.createElement('div');
+                    step.className = 'mb-3 text-slate-400 font-black uppercase tracking-[0.15em] text-[10px]';
+                    step.textContent = `Orientation Step ${idx + 1} of ${App.introGateTotal}`;
+                    box.appendChild(step);
+                }
+
+                const v = document.createElement('video');
+                v.className = 'w-100 rounded-3 shadow-sm';
+                v.controls = true;
+                v.autoplay = true;
+                v.setAttribute('playsinline', '');
+                v.preload = 'metadata';
+                
+                const candidates = App._resolveIntroVideoCandidates(url);
+                let candidateIdx = 0;
+                const tryLoadNext = () => {
+                    if (candidateIdx >= candidates.length) return;
+                    v.src = candidates[candidateIdx++];
+                    v.load();
+                };
+                
+                v.addEventListener('ended', () => {
+                    App.markIntroVideoEnded(idx);
+                });
+                v.addEventListener('error', tryLoadNext);
+                tryLoadNext();
+                
+                box.appendChild(v);
+                mount.appendChild(box);
+
+                // Handle Previous Button
+                if (btnPrev) {
+                    if (idx > 0) {
+                        btnPrev.classList.remove('d-none');
+                        btnPrev.onclick = () => {
+                            App.introGateCurrentIdx--;
+                            App.renderIntroVideoStep();
+                        };
+                    } else {
+                        btnPrev.classList.add('d-none');
+                    }
+                }
+
+                // Handle Next / Complete Button
+                const isLast = idx >= App.introGateTotal - 1;
+                if (isLast) {
+                    btnNext.innerHTML = `I've completed watching — Begin test <i class="bi bi-rocket-takeoff ms-2"></i>`;
+                    btnNext.onclick = () => App.completeIntroGate();
+                    btnNext.disabled = false;
+                    btnNext.title = '';
+                } else {
+                    btnNext.innerHTML = `Next Orientation Video <i class="bi bi-arrow-right ms-2"></i>`;
+                    btnNext.onclick = () => {
+                        App.introGateCurrentIdx++;
+                        App.renderIntroVideoStep();
+                    };
+                    btnNext.disabled = false;
+                    btnNext.title = 'Skip or continue to next video';
+                }
             },
 
             markIntroVideoEnded: (idx) => {
                 if (!App.introGateEnded) App.introGateEnded = new Set();
                 App.introGateEnded.add(idx);
-                const btn = document.getElementById('execIntroCompleteBtn');
-                if (btn) {
-                    const done = App.introGateEnded.size >= (App.introGateTotal || 0);
-                    btn.disabled = !done;
-                    btn.title = done ? '' : 'Watch all orientation videos to continue';
-                }
+                // In sequential mode, we might want to auto-advance or just highlight the Next button.
+                // For now, we've allowed skipping anyway based on "allow to skill".
             },
 
             completeIntroGate: () => {
-                const total = App.introGateTotal || 0;
-                const done = App.introGateEnded ? App.introGateEnded.size : 0;
-                if (total > 0 && done < total) {
-                    Swal.fire('Watch required videos', 'Please watch all orientation videos before beginning the test.', 'warning');
-                    return;
-                }
                 const overlay = document.getElementById('execIntroOverlay');
                 if (overlay) overlay.classList.add('d-none');
                 const ev = document.getElementById('executionView');
@@ -17734,13 +17787,19 @@ if (!empty($Tests)) {
         }
 
         function resetCreateTestExamConfigDefaults() {
-            const map = [['test_form_proctored', true], ['test_form_lockdown', false], ['test_form_show_results', false], ['test_form_backtrack', false]];
-            map.forEach(([id, on]) => {
-                const el = document.getElementById(id);
-                if (el) el.checked = on;
-            });
+            const p = document.getElementById('test_form_proctored');
+            const l = document.getElementById('test_form_lockdown');
+            const sr = document.getElementById('test_form_show_results');
+            const bt = document.getElementById('test_form_backtrack');
             const vid = document.getElementById('ass_add_video');
+            if (p) p.checked = true;
+            if (l) l.checked = false;
+            if (sr) sr.checked = true;
+            if (bt) bt.checked = false;
             if (vid) vid.value = 'No';
+            
+            const msg = document.getElementById('lockdown_info_msg');
+            if (msg) msg.classList.add('hidden');
         }
 
         function toggleCreateTest() {
@@ -17839,7 +17898,11 @@ if (!empty($Tests)) {
             const sr = document.getElementById('test_form_show_results');
             const bt = document.getElementById('test_form_backtrack');
             if (p) p.checked = yn(data.proctored_exam);
-            if (l) l.checked = yn(data.browser_lockdown);
+            if (l) {
+                l.checked = yn(data.browser_lockdown);
+                const msg = document.getElementById('lockdown_info_msg');
+                if (msg) msg.classList.toggle('hidden', !l.checked);
+            }
             if (sr) sr.checked = yn(data.show_results);
             if (bt) bt.checked = yn(data.allow_backtracking);
             const av = document.getElementById('ass_add_video');
