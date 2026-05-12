@@ -34,10 +34,17 @@ if (!empty($Tests)) {
 }
 ?>
 
-<script>window.__APP_BASE__ = <?= workflow_view_json(rtrim(base_url(), '/')) ?>;</script>
+<script>console.log('Workflow Script Load Start'); window.__APP_BASE__ = <?= workflow_view_json(rtrim(base_url(), '/')) ?>;</script>
 
 <!-- Flash Message Handler -->
 <script>
+    // --- Global State Declarations (Early Init) ---
+    var currentEditTestId = null;
+    var currentEditingTemplateId = null;
+    var testIntroVideoFrozen = false;
+    var assIntroVideoUrls = [];
+    var assIntroVideoFiles = [];
+
     document.addEventListener('DOMContentLoaded', () => {
         <?php if (session()->getFlashdata('success')): ?>
             Swal.fire({ title: 'Success', text: <?= workflow_view_json(session()->getFlashdata('success')) ?>, icon: 'success', timer: 3000 });
@@ -74,11 +81,6 @@ if (!empty($Tests)) {
     <!-- jsPDF and AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <!-- amCharts 5 (Result Analytics: XY + percent/pie) -->
-    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
-    <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
-    <script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
-    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
     <style>
         .swal2-popup {
             border-radius: 20px !important;
@@ -658,11 +660,14 @@ if (!empty($Tests)) {
 
         /* Blinking Animation for Pending Evaluations */
         @keyframes pulse-indigo-blink {
-            0%, 100% {
+
+            0%,
+            100% {
                 background-color: #f8fafc;
                 color: #94a3b8;
                 transform: scale(1);
             }
+
             50% {
                 background-color: #4f46e5;
                 color: #ffffff;
@@ -4592,7 +4597,8 @@ if (!empty($Tests)) {
                         <input type="hidden" id="ass_code" value="" />
 
                         <!-- Row 1: compact balanced horizontal layout -->
-                        <div id="test_form_row1" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 mb-6 items-start">
+                        <div id="test_form_row1"
+                            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 mb-6 items-start">
                             <div class="form-group min-w-0">
                                 <label
                                     class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Test
@@ -4671,7 +4677,8 @@ if (!empty($Tests)) {
                                 </div>
                             </div>
                             <div id="ass_add_video_group" class="form-group min-w-0">
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Add
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Add
                                     Video <span class="text-red-500">*</span></label>
                                 <select id="ass_add_video"
                                     class="select h-11 w-full bg-slate-50 border-slate-100 rounded-xl px-3 text-sm"
@@ -4682,16 +4689,16 @@ if (!empty($Tests)) {
                                 <span class="error-msg hidden" id="err_ass_add_video">Please choose an option</span>
                             </div>
                             <div id="ass_intro_upload_col" class="hidden form-group min-w-0 flex flex-col">
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Upload
+                                <label
+                                    class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Upload
                                     Videos <span class="text-red-500">*</span></label>
                                 <div id="ass_intro_upload_strip"
                                     class="w-full rounded-xl border border-slate-100 bg-slate-50 shrink-0 overflow-hidden">
-                                    <input type="file" id="ass_intro_video_input" accept="video/*" multiple class="hidden"
-                                        onchange="onAssIntroVideoFilesChange(this)" />
+                                    <input type="file" id="ass_intro_video_input" accept="video/*" multiple
+                                        class="hidden" onchange="onAssIntroVideoFilesChange(this)" />
                                     <div id="ass_intro_upload_strip_head"
                                         class="flex items-center justify-between gap-2 h-11 px-2.5">
-                                        <button type="button"
-                                            id="ass_intro_video_browse_btn"
+                                        <button type="button" id="ass_intro_video_browse_btn"
                                             class="px-2 py-1 rounded-lg border border-slate-200 bg-white text-[9px] font-black uppercase tracking-wider text-slate-600 hover:border-red-200 hover:text-red-600 shrink-0 leading-none"
                                             onclick="document.getElementById('ass_intro_video_input').click()">
                                             Browse
@@ -4702,8 +4709,10 @@ if (!empty($Tests)) {
                                     </div>
                                     <div id="ass_intro_video_chips" class="hidden w-full"></div>
                                 </div>
-                                <p class="text-[9px] text-slate-400 font-medium leading-snug mt-1.5 mb-0">File names appear as tags; hover the count for the full list.</p>
-                                <span class="error-msg hidden mt-1" id="err_ass_intro_videos">Add at least one video or set Add Video to No</span>
+                                <p class="text-[9px] text-slate-400 font-medium leading-snug mt-1.5 mb-0">File names
+                                    appear as tags; hover the count for the full list.</p>
+                                <span class="error-msg hidden mt-1" id="err_ass_intro_videos">Add at least one video or
+                                    set Add Video to No</span>
                             </div>
                             <input id="ass_pass_mark" type="hidden" value="60" />
                         </div>
@@ -4835,7 +4844,7 @@ if (!empty($Tests)) {
                     </div>
                 </div>
                 <div class="table-responsive p-0">
-                    <table id="TestsDataTable" class="w-full text-left">
+                    <table id="TestsDataTable" class="w-full text-left" style="width: 100% !important;">
                         <thead class="bg-white border-b border-slate-100">
                             <tr>
                                 <th class="hidden">ID</th>
@@ -4882,8 +4891,7 @@ if (!empty($Tests)) {
                     <div class="flex flex-wrap items-center justify-end gap-2 w-full">
                         <button type="button"
                             class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold text-xs inline-flex items-center gap-2 hover:bg-indigo-700 transition-all border border-indigo-600 shadow-sm shadow-indigo-100"
-                            onclick="App.openResultsAnalytics()"
-                            title="Charts for the current filtered leaderboard">
+                            onclick="App.openResultsAnalytics()" title="Charts for the current filtered leaderboard">
                             <i class="bi bi-bar-chart-line-fill"></i> Result Analytics
                         </button>
                         <button type="button"
@@ -4893,41 +4901,41 @@ if (!empty($Tests)) {
                         </button>
                     </div>
                     <div id="resultsOverviewCards" class="w-full">
-                    <h5 class="text-[10px] font-black text-[#1e293b] mb-2">Evaluation Overview</h5>
-                    <div class="grid grid-cols-4 gap-2">
-                        <div
-                            class="bg-[#f8fbff] border border-[#dbeafe] rounded-lg p-2 border-t-[3px] border-t-[#3b82f6] min-h-[62px] flex flex-col justify-between">
-                            <p
-                                class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
-                                Total Mark</p>
-                            <p id="resSummaryTotalMark" title=""
-                                class="text-[16px] font-black text-[#0f172a] leading-none text-center mb-0">0</p>
+                        <h5 class="text-[10px] font-black text-[#1e293b] mb-2">Evaluation Overview</h5>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div
+                                class="bg-[#f8fbff] border border-[#dbeafe] rounded-lg p-2 border-t-[3px] border-t-[#3b82f6] min-h-[62px] flex flex-col justify-between">
+                                <p
+                                    class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
+                                    Total Mark</p>
+                                <p id="resSummaryTotalMark" title=""
+                                    class="text-[16px] font-black text-[#0f172a] leading-none text-center mb-0">0</p>
+                            </div>
+                            <div
+                                class="bg-[#f0fdf4] border border-[#dcfce7] rounded-lg p-2 border-t-[3px] border-t-[#16a34a] min-h-[62px] flex flex-col justify-between">
+                                <p
+                                    class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
+                                    Overall Pass %</p>
+                                <p id="resSummaryPassPct"
+                                    class="text-[16px] font-black text-[#16a34a] leading-none text-center mb-0">0%</p>
+                            </div>
+                            <div
+                                class="bg-[#fef2f2] border border-[#fee2e2] rounded-lg p-2 border-t-[3px] border-t-[#dc2626] min-h-[62px] flex flex-col justify-between">
+                                <p
+                                    class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
+                                    Fail Count</p>
+                                <p id="resSummaryFailCount"
+                                    class="text-[16px] font-black text-[#dc2626] leading-none text-center mb-0">0</p>
+                            </div>
+                            <div
+                                class="bg-[#faf5ff] border border-[#f3e8ff] rounded-lg p-2 border-t-[3px] border-t-[#7c3aed] min-h-[62px] flex flex-col justify-between">
+                                <p
+                                    class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
+                                    Pending Count</p>
+                                <p id="resSummaryPendingCount"
+                                    class="text-[16px] font-black text-[#475569] leading-none text-center mb-0">0</p>
+                            </div>
                         </div>
-                        <div
-                            class="bg-[#f0fdf4] border border-[#dcfce7] rounded-lg p-2 border-t-[3px] border-t-[#16a34a] min-h-[62px] flex flex-col justify-between">
-                            <p
-                                class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
-                                Overall Pass %</p>
-                            <p id="resSummaryPassPct"
-                                class="text-[16px] font-black text-[#16a34a] leading-none text-center mb-0">0%</p>
-                        </div>
-                        <div
-                            class="bg-[#fef2f2] border border-[#fee2e2] rounded-lg p-2 border-t-[3px] border-t-[#dc2626] min-h-[62px] flex flex-col justify-between">
-                            <p
-                                class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
-                                Fail Count</p>
-                            <p id="resSummaryFailCount"
-                                class="text-[16px] font-black text-[#dc2626] leading-none text-center mb-0">0</p>
-                        </div>
-                        <div
-                            class="bg-[#faf5ff] border border-[#f3e8ff] rounded-lg p-2 border-t-[3px] border-t-[#7c3aed] min-h-[62px] flex flex-col justify-between">
-                            <p
-                                class="text-[8px] font-black text-[#64748b] uppercase tracking-[0.12em] text-center mb-0">
-                                Pending Count</p>
-                            <p id="resSummaryPendingCount"
-                                class="text-[16px] font-black text-[#475569] leading-none text-center mb-0">0</p>
-                        </div>
-                    </div>
                     </div>
                 </div>
             </div>
@@ -5008,7 +5016,8 @@ if (!empty($Tests)) {
                                     <div class="multiselect-options" id="resultsGroupFilter_options">
                                         <!-- Dynamically populated -->
                                     </div>
-                                    <select id="resultsGroupFilter" class="hidden" multiple onchange="App.loadCandidateResult()">
+                                    <select id="resultsGroupFilter" class="hidden" multiple
+                                        onchange="App.loadCandidateResult()">
                                     </select>
                                 </div>
                                 <select id="resultsDateFilter" onchange="App.loadCandidateResult()"
@@ -6032,30 +6041,42 @@ if (!empty($Tests)) {
             <div class="modal-content rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
                 <div class="modal-header border-b border-slate-100 bg-slate-50/80 px-4 py-2">
                     <div>
-                        <h5 class="modal-title fw-bold text-slate-800 mb-0 fs-6"><i class="bi bi-bar-chart-line-fill text-indigo-600 me-2"></i>Result Analytics</h5>
-                        <p class="text-[10px] text-slate-500 font-semibold mb-0 mt-1">Live view of the same data as the table below your current filters.</p>
+                        <h5 class="modal-title fw-bold text-slate-800 mb-0 fs-6"><i
+                                class="bi bi-bar-chart-line-fill text-indigo-600 me-2"></i>Result Analytics</h5>
+                        <p class="text-[10px] text-slate-500 font-semibold mb-0 mt-1">Live view of the same data as the
+                            table below your current filters.</p>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body px-4 pt-2 pb-3 bg-white">
-                    <p id="resultsAnalyticsFilterHint" class="text-[10px] text-slate-500 font-medium mb-2 leading-snug"></p>
+                    <p id="resultsAnalyticsFilterHint" class="text-[10px] text-slate-500 font-medium mb-2 leading-snug">
+                    </p>
                     <div class="row g-2">
                         <div class="col-lg-6 d-flex">
                             <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-3 w-100 d-flex flex-column">
-                                <h6 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">Bar · Highest &amp; lowest</h6>
-                                <div id="resultsAnalyticsHighLowChart" class="w-100 results-am5-chart" style="height: 200px;"></div>
+                                <h6
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">
+                                    Bar · Highest &amp; lowest</h6>
+                                <div id="resultsAnalyticsHighLowChart" class="w-100 results-am5-chart"
+                                    style="height: 200px;"></div>
                             </div>
                         </div>
                         <div class="col-lg-6 d-flex">
                             <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-3 w-100 d-flex flex-column">
-                                <h6 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">Donut · Pass / fail / pending</h6>
-                                <div id="resultsAnalyticsOutcomeChart" class="w-100 results-am5-chart" style="height: 220px;"></div>
+                                <h6
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">
+                                    Donut · Pass / fail / pending</h6>
+                                <div id="resultsAnalyticsOutcomeChart" class="w-100 results-am5-chart"
+                                    style="height: 220px;"></div>
                             </div>
                         </div>
                         <div class="col-12">
                             <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
-                                <h6 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">Area · Top scores (completed)</h6>
-                                <div id="resultsAnalyticsTopChart" class="w-100 results-am5-chart pt-1" style="height: 200px;"></div>
+                                <h6
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">
+                                    Area · Top scores (completed)</h6>
+                                <div id="resultsAnalyticsTopChart" class="w-100 results-am5-chart pt-1"
+                                    style="height: 200px;"></div>
                             </div>
                         </div>
                     </div>
@@ -6125,6 +6146,42 @@ if (!empty($Tests)) {
             resultsLeaderboardFiltered: [],
 
             evaluationState: { submissions: {} },
+
+            refreshAllData: async () => {
+                console.log("App: Comprehensive dynamic refresh starting...");
+                try {
+                    // 1. Fetch latest assessment data from server
+                    const response = await fetch('Test/getTests');
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        App.Tests = result.tests;
+
+                        // 2. Refresh Inventory Table
+                        if (typeof window.initTestsDataTable === 'function') {
+                            window.initTestsDataTable();
+                        }
+                    }
+
+                    // 3. Refresh Evaluation State (Counts & Blinking Icons)
+                    if (typeof App.loadEvaluationState === 'function') {
+                        App.loadEvaluationState();
+                    }
+
+                    // 4. Refresh Results & Evaluation Leaderboard
+                    if (typeof App.loadCandidateResult === 'function') {
+                        App.loadCandidateResult();
+                    }
+
+                    // 5. Refresh Execution Dashboard
+                    if (typeof App.initExecutionDashboard === 'function') {
+                        App.initExecutionDashboard();
+                    }
+
+                    console.log("App: Comprehensive refresh completed.");
+                } catch (e) {
+                    console.error("App: Dynamic refresh failed.", e);
+                }
+            },
 
             loadEvaluationState: function () {
                 try {
@@ -6306,21 +6363,7 @@ if (!empty($Tests)) {
     <script>
 
         // --- Test Execution Engine ---
-        // Modal Helpers
-        function openModal(id) {
-            const modalEl = document.getElementById(id);
-            if (modalEl) {
-                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-                modal.show();
-            }
-        }
-        function closeModal(id) {
-            const modalEl = document.getElementById(id);
-            if (modalEl) {
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
-            }
-        }
+
 
         let QuestionBanks = App.QuestionBanks || [];
         let activeQB = null;
@@ -6346,6 +6389,16 @@ if (!empty($Tests)) {
                 modal.classList.remove('open');
                 document.body.style.overflow = '';
             }
+        };
+
+        window.rescheduleTest = function (testId) {
+            console.log('Reschedule test:', testId);
+            Swal.fire({
+                title: 'Reschedule Test',
+                text: 'This will allow you to modify batch timings. Opening management...',
+                icon: 'info',
+                confirmButtonColor: 'var(--brand)'
+            });
         };
 
         function qbSortedNewestFirst() {
@@ -7845,7 +7898,7 @@ if (!empty($Tests)) {
                             icon: 'success',
                             confirmButtonColor: '#dc2230'
                         }).then(() => {
-                            location.reload(); // Hard refresh to ensure everything is in sync with DB
+                            App.refreshAllData();
                         });
                     } else {
                         throw new Error(result.message);
@@ -8062,10 +8115,14 @@ if (!empty($Tests)) {
                 return;
             }
             if ($.fn.dataTable.isDataTable('#TestsDataTable')) {
+                const dt = $('#TestsDataTable').DataTable();
+                dt.clear().rows.add(App.Tests).draw();
                 return;
             }
 
             TestsDataTable = $('#TestsDataTable').DataTable({
+                width: '100%',
+                autoWidth: false,
                 data: App.Tests,
                 order: [[0, 'desc']],
                 columns: [
@@ -8079,6 +8136,7 @@ if (!empty($Tests)) {
                     },
                     {
                         data: 'name',
+                        width: '35%',
                         render: (data, type, row) => `
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center font-bold text-xs border border-red-100">
@@ -8094,11 +8152,13 @@ if (!empty($Tests)) {
                     {
                         data: 'category',
                         className: 'text-center',
+                        width: '12%',
                         render: (data) => `<span class="chip bg-blue-50 text-blue-600 border-blue-100">${data || 'General'}</span>`
                     },
                     {
                         data: 'assessment_type',
                         className: 'text-center',
+                        width: '10%',
                         render: (data) => `<span class="text-xs font-bold text-slate-600">${data || 'Standard'}</span>`
                     },
                     {
@@ -8127,11 +8187,12 @@ if (!empty($Tests)) {
                     {
                         data: null,
                         className: 'text-center px-6',
+                        width: '15%',
                         render: (data, type, row) => {
                             const packs = row.test_packs || [];
                             const submissions = App.getAllSubmissions();
                             const hasPendingEval = packs.some(p => {
-                                return submissions.some(s => 
+                                return submissions.some(s =>
                                     String(s.pack_id) === String(p.id) &&
                                     (s.subjective_items || []).some(q => (q.candidate_answer || '').trim() && !q.graded)
                                 );
@@ -8422,6 +8483,9 @@ if (!empty($Tests)) {
                                     <div class="w-8 h-8 flex items-center justify-center text-emerald-500 bg-emerald-50 rounded-lg" title="Group Published & Locked">
                                         <i class="bi bi-lock-fill"></i>
                                     </div>
+                                    <button class="batch-action-btn bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white" onclick="enableRescheduleMode(this, '${row.id}', '${testId}')" title="Reschedule Group">
+                                        <i class="bi bi-calendar-range"></i>
+                                    </button>
                                     ${canPublishResults ? `
                                         <button type="button" class="batch-action-btn bg-violet-50 text-violet-600 hover:bg-violet-600 hover:text-white" onclick="publishEvaluatedPackResults(this, '${row.id}', '${testId}')" title="Publish evaluated results to candidates">
                                             <i class="bi bi-megaphone-fill"></i>
@@ -8448,6 +8512,75 @@ if (!empty($Tests)) {
                 }
             });
         }
+
+        window.enableRescheduleMode = function (btn, batchId, testId) {
+            const tr = $(btn).closest('tr');
+            tr.find('input[data-field="scheduled_date"], input[data-field="start_time"], input[data-field="end_time"], input[data-field="duration"]')
+                .removeAttr('readonly')
+                .prop('readonly', false)
+                .prop('disabled', false)
+                .css({
+                    'pointer-events': 'auto',
+                    'position': 'relative',
+                    'z-index': '50'
+                })
+                .addClass('border-amber-300 bg-amber-50')
+                .first().focus();
+
+            $(btn).html('<i class="bi bi-check2"></i>').attr('onclick', `saveReschedule('${batchId}', '${testId}', this)`).attr('title', 'Confirm Reschedule').removeClass('bg-amber-50 text-amber-600').addClass('bg-emerald-600 text-white');
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Reschedule mode enabled. Change the date/time and click checkmark.',
+                showConfirmButton: false,
+                timer: 3000
+            });
+        };
+
+        window.saveReschedule = async function (batchId, testId, btn) {
+            const tr = $(btn).closest('tr');
+            const data = {
+                id: batchId,
+                assessment_id: testId,
+                pack_name: tr.find('input[data-field="pack_name"]').val(),
+                template_id: tr.find('select[data-field="template_id"]').val(),
+                candidates: tr.find('input[data-field="candidates"]').val(),
+                candidates_type: tr.find('input[data-field="candidates_type"]').val(),
+                scheduled_date: tr.find('input[data-field="scheduled_date"]').val(),
+                start_time: tr.find('input[data-field="start_time"]').val(),
+                end_time: tr.find('input[data-field="end_time"]').val(),
+                duration: tr.find('input[data-field="duration"]').val()
+            };
+
+            // Ensure template_id is valid
+            if (!data.template_id || data.template_id === '') {
+                // Try to find it in the data object if DOM fails
+                const table = tr.closest('table').DataTable();
+                const rowData = table.row(tr).data();
+                if (rowData && rowData.template_id) {
+                    data.template_id = rowData.template_id;
+                }
+            }
+
+            try {
+                const response = await fetch('Test/createTestPack', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(data)
+                });
+                const res = await response.json();
+                if (res.status === 'success') {
+                    Swal.fire('Success', 'Group rescheduled successfully!', 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'Failed to save schedule.', 'error');
+            }
+        };
 
         function updateDuration(input) {
             const tr = $(input).closest('tr');
@@ -10660,7 +10793,10 @@ if (!empty($Tests)) {
                         text: 'Batch has been created.',
                         icon: 'success',
                         timer: 1500
-                    }).then(() => location.reload());
+                    }).then(() => {
+                        if (typeof closeModal === 'function') closeModal('assignModal');
+                        App.refreshAllData();
+                    });
                 } else {
                     Swal.fire('Error', result.message || 'Failed to create Batch', 'error');
                 }
@@ -11084,14 +11220,51 @@ if (!empty($Tests)) {
             startTimer: () => {
                 if (App.executionState.timerInterval) clearInterval(App.executionState.timerInterval);
 
-                App.executionState.timerInterval = setInterval(() => {
+                let syncCounter = 0;
+                App.executionState.timerInterval = setInterval(async () => {
                     App.executionState.timeLeft--;
+
+                    // Check for time extension from admin every 60 seconds
+                    syncCounter++;
+                    if (syncCounter >= 60) {
+                        syncCounter = 0;
+                        await App.syncExamTime();
+                    }
+
                     if (App.executionState.timeLeft <= 0) {
                         clearInterval(App.executionState.timerInterval);
                         App.submitTest(true);
                     }
                     App.updateTimerUI();
                 }, 1000);
+            },
+
+            syncExamTime: async () => {
+                const packId = App.executionState.packId;
+                if (!packId) return;
+                try {
+                    const response = await fetch(`Test/getPackDuration/${packId}`);
+                    const res = await response.json();
+                    if (res.status === 'success') {
+                        const serverDuration = parseInt(res.duration);
+                        const currentDuration = parseInt(App.executionState.durationMins || 60);
+
+                        if (serverDuration > currentDuration) {
+                            const addedMins = serverDuration - currentDuration;
+                            App.executionState.timeLeft += (addedMins * 60);
+                            App.executionState.durationMins = serverDuration;
+
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: `Time Extended! Admin added ${addedMins} extra minutes.`,
+                                showConfirmButton: false,
+                                timer: 5000
+                            });
+                        }
+                    }
+                } catch (e) { console.error("Time sync failed", e); }
             },
 
             updateTimerUI: () => {
@@ -11104,6 +11277,8 @@ if (!empty($Tests)) {
                     const timerPill = document.getElementById('execTimer');
                     if (App.executionState.timeLeft < 300) {
                         timerPill.classList.add('warning');
+                    } else {
+                        timerPill.classList.remove('warning');
                     }
                 }
             },
@@ -11561,7 +11736,12 @@ if (!empty($Tests)) {
 
 
             backToDashboard: () => {
-                location.reload();
+                if (typeof window.switchMainTab === 'function') {
+                    window.switchMainTab('execution');
+                    App.refreshAllData();
+                } else {
+                    location.reload();
+                }
             },
 
             // --- Results & Evaluation ---
@@ -11826,7 +12006,7 @@ if (!empty($Tests)) {
                         testFilterEl.value = contextTestName;
                         activeSelectedTest = contextTestName;
                         if (groupFilterEl) {
-                           Array.from(groupFilterEl.options).forEach(o => o.selected = false);
+                            Array.from(groupFilterEl.options).forEach(o => o.selected = false);
                         }
                         if (dateFilterEl) dateFilterEl.value = '';
                     }
@@ -11999,12 +12179,12 @@ if (!empty($Tests)) {
 
                 const countEl = document.getElementById('breakdown-cat-count');
                 if (countEl) countEl.textContent = `${filtered.length} Candidate${filtered.length === 1 ? '' : 's'}`;
-                
+
                 // Store filtered results for report generation
                 App.currentFilteredResults = filtered;
 
             },
-            
+
             generateResultsReport: () => {
                 const data = App.currentFilteredResults || [];
                 if (!data.length) {
@@ -12016,95 +12196,86 @@ if (!empty($Tests)) {
                     });
                     return;
                 }
+                const modalEl = document.getElementById('reportExportModal');
+                const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modal.show();
+            },
+
+            toggleAllExportColumns: (state) => {
+                const checkboxes = document.querySelectorAll('#report_column_selector input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = state);
+            },
+
+            exportToExcel: () => {
+                const data = App.currentFilteredResults || [];
+                if (!data.length) return;
+
+                const selectedCols = Array.from(document.querySelectorAll('#report_column_selector input[type="checkbox"]:checked'))
+                    .map(cb => ({ key: cb.value, label: cb.closest('label').querySelector('span').textContent }));
+
+                if (selectedCols.length === 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No Columns Selected',
+                        text: 'Please select at least one column to export.',
+                        confirmButtonColor: '#dc2230'
+                    });
+                    return;
+                }
 
                 try {
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
-
-                    // Branding & Metadata
-                    const timestamp = new Date().toLocaleString();
-                    const logoColor = [220, 34, 48]; // Brand Red (#dc2230)
-                    
-                    // Header Title
-                    doc.setFontSize(22);
-                    doc.setTextColor(30, 41, 59); // slate-800
-                    doc.text("Candidate Performance Report", 14, 18);
-                    
-                    doc.setFontSize(10);
-                    doc.setTextColor(100, 116, 139); // slate-500
-                    doc.text(`Generated on: ${timestamp}`, 14, 24);
-                    doc.text(`Total Records: ${data.length}`, 14, 29);
-                    
-                    // Prepare Table Data
-                    const headers = [['Candidate Name', 'Test Name', 'Test Type', 'Group', 'Status', 'Marks', 'Score', 'Accuracy', 'Pass/Fail']];
-                    const rows = data.map(item => [
-                        item.candidate_name || '-',
-                        item.test_name || '-',
-                        item.test_type || '-',
-                        item.group_name || '-',
-                        item.status || '-',
-                        item.marks_text || '0 / 0',
-                        item.final_score || 0,
-                        (item.overall_pct || 0) + '%',
-                        item.pass_fail || '-'
-                    ]);
-
-                    // Generate Table using AutoTable
-                    doc.autoTable({
-                        head: headers,
-                        body: rows,
-                        startY: 35,
-                        theme: 'striped',
-                        headStyles: { 
-                            fillColor: logoColor,
-                            textColor: [255, 255, 255],
-                            fontSize: 10,
-                            fontStyle: 'bold',
-                            halign: 'left',
-                            cellPadding: 4
-                        },
-                        bodyStyles: { 
-                            fontSize: 9,
-                            textColor: [51, 65, 85], // slate-700
-                            valign: 'middle',
-                            cellPadding: 3
-                        },
-                        alternateRowStyles: {
-                            fillColor: [248, 250, 252] // slate-50
-                        },
-                        columnStyles: {
-                            0: { fontStyle: 'bold', cellWidth: 'auto' }, // Candidate
-                            5: { halign: 'center' }, // Marks
-                            6: { halign: 'center' }, // Score
-                            7: { halign: 'center' }, // Accuracy
-                            8: { halign: 'center' }  // Pass/Fail
-                        },
-                        margin: { top: 35, bottom: 20 },
-                        didDrawPage: (pageData) => {
-                            // Footer (Page Numbering)
-                            const str = "Page " + doc.internal.getNumberOfPages();
-                            doc.setFontSize(9);
-                            doc.setTextColor(148, 163, 184); // slate-400
-                            const pageSize = doc.internal.pageSize;
-                            const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
-                            doc.text(str, pageData.settings.margin.left, pageHeight - 10);
-                        }
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Generating Excel...',
+                        text: 'Please wait while we prepare your report.',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
                     });
 
-                    // Save the PDF
+                    const wsData = data.map(item => {
+                        const row = {};
+                        selectedCols.forEach(col => {
+                            let value = item[col.key];
+                            if (col.key === 'overall_pct' && value !== undefined) {
+                                value = value + '%';
+                            }
+                            row[col.label] = (value === null || value === undefined) ? '-' : value;
+                        });
+                        return row;
+                    });
+
+                    const worksheet = XLSX.utils.json_to_sheet(wsData);
+
+                    // Style the header row (optional but nice)
+                    const range = XLSX.utils.decode_range(worksheet['!ref']);
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const address = XLSX.utils.encode_col(C) + "1";
+                        if (!worksheet[address]) continue;
+                        worksheet[address].s = {
+                            font: { bold: true },
+                            fill: { fgColor: { rgb: "F1F5F9" } }
+                        };
+                    }
+
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Performance Report");
+
                     const dateStr = new Date().toISOString().slice(0, 10);
-                    doc.save(`Candidate_Performance_Report_${dateStr}.pdf`);
+                    XLSX.writeFile(workbook, `Candidate_Performance_Report_${dateStr}.xlsx`);
+
+                    const modalEl = document.getElementById('reportExportModal');
+                    bootstrap.Modal.getInstance(modalEl).hide();
 
                     Swal.fire({
                         icon: 'success',
-                        title: 'PDF Generated',
-                        text: 'Professional performance report downloaded.',
-                        timer: 1500,
+                        title: 'Export Complete',
+                        text: 'Your Excel report has been downloaded.',
+                        timer: 2000,
                         showConfirmButton: false
                     });
                 } catch (e) {
-                    console.error("PDF Generation Error:", e);
-                    Swal.fire('Error', 'Failed to generate PDF report. Please try again.', 'error');
+                    console.error("Excel Generation Error:", e);
+                    Swal.fire('Error', 'Failed to generate Excel report. Please try again.', 'error');
                 }
             },
 
@@ -12854,6 +13025,37 @@ if (!empty($Tests)) {
                 inst.show();
             },
 
+            navigateEvaluator: (currentKey, direction) => {
+                const results = App.currentFilteredResults || [];
+                // Only consider results that CAN be evaluated (Completed + Answered Subjective)
+                const evaluatable = results.filter(r =>
+                    r.status === 'Completed' &&
+                    !String(r.key).startsWith('pending::') &&
+                    (r.subjective_items || []).some(q => (q.candidate_answer || '').trim() !== '')
+                );
+
+                const currentIndex = evaluatable.findIndex(r => String(r.key) === String(currentKey));
+                if (currentIndex === -1) {
+                    // Fallback to simple index search if key mapping is complex
+                    console.warn("Evaluator navigation: Current key not found in filtered list.");
+                    return;
+                }
+
+                const nextIndex = currentIndex + direction;
+                if (nextIndex >= 0 && nextIndex < evaluatable.length) {
+                    App.openEvaluatorForSubmission(evaluatable[nextIndex].key);
+                } else {
+                    const label = direction > 0 ? 'next' : 'previous';
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'End of list',
+                        text: `No more candidates to evaluate in the ${label} direction.`,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }
+            },
+
             openEvaluatorForSubmission: (submissionKey) => {
                 if (!submissionKey) return;
                 App.activeEvaluatorSubmissionKey = submissionKey;
@@ -13062,10 +13264,15 @@ if (!empty($Tests)) {
                             </div>
                         `).join('')}
                     </div>
-                    <div class="flex justify-end mt-3">
+                    </div>
+                    <div class="flex justify-end mt-3 gap-2">
+                        <button class="bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#64748b] px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all border border-[#e2e8f0]"
+                            onclick="App.navigateEvaluator('${submission.key}', -1)">
+                            Previous
+                        </button>
                         <button class="bg-[#dc2230] hover:bg-[#c61e2b] text-white px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm"
                             onclick="App.submitAllManualGrades('${submission.key}')">
-                            Submit Grade
+                            Submit & Next
                         </button>
                     </div>
                 `;
@@ -13193,17 +13400,33 @@ if (!empty($Tests)) {
                 App.saveEvaluationState();
                 App.loadCandidateResult();
                 App.activeEvaluatorSubmissionKey = submissionKey;
-                if (typeof window.switchResultView === 'function') {
-                    window.switchResultView('student');
-                }
-
                 Swal.fire({
                     icon: 'success',
                     title: 'Evaluation Saved',
-                    text: 'Final score is updated in student score table.',
-                    timer: 1200,
+                    text: 'Final score updated. Moving to next candidate...',
+                    timer: 1000,
                     showConfirmButton: false
                 });
+
+                // Move to next candidate after a short delay to let the user see the success
+                setTimeout(() => {
+                    const results = App.currentFilteredResults || [];
+                    const evaluatable = results.filter(r =>
+                        r.status === 'Completed' &&
+                        !String(r.key).startsWith('pending::') &&
+                        (r.subjective_items || []).some(q => (q.candidate_answer || '').trim() !== '')
+                    );
+                    const currentIndex = evaluatable.findIndex(r => String(r.key) === String(submissionKey));
+
+                    if (currentIndex !== -1 && currentIndex < evaluatable.length - 1) {
+                        App.navigateEvaluator(submissionKey, 1);
+                    } else {
+                        // End of list, go back to main view
+                        if (typeof window.switchResultView === 'function') {
+                            window.switchResultView('student');
+                        }
+                    }
+                }, 1000);
             },
 
             // --- Assign Questions Logic ---
@@ -14063,7 +14286,8 @@ if (!empty($Tests)) {
                                                             Minimum to pass</p>
                                                     </div>
                                                 </div>
-                                                <input id="builder_pass_mark_visible" type="number" min="0" max="100" value="0"
+                                                <input id="builder_pass_mark_visible" type="number" min="0" max="100"
+                                                    value="0"
                                                     oninput="document.getElementById('builder_pass_mark_inline').value = this.value === '' ? '0' : this.value"
                                                     class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 focus:ring-2 focus:ring-emerald-100 focus:border-emerald-300 transition-all text-slate-700 shadow-inner"
                                                     placeholder="e.g. 60" />
@@ -14148,11 +14372,11 @@ if (!empty($Tests)) {
                                                     <div
                                                         class="col-span-4 py-3 pl-2 pr-3 flex items-center justify-end gap-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">
                                                         <span class="shrink-0 translate-x-[-4px]">Actions</span>
-                                                        <button type="button"
-                                                            onclick="addNewSectionRowInline()"
+                                                        <button type="button" onclick="addNewSectionRowInline()"
                                                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-red-600 bg-red-600 text-white hover:bg-red-700 hover:border-red-700 transition-all shadow-sm shadow-red-100"
                                                             title="Add section (save the current row first if it is being edited)">
-                                                            <i class="bi bi-plus-lg text-base leading-none font-bold text-white"></i>
+                                                            <i
+                                                                class="bi bi-plus-lg text-base leading-none font-bold text-white"></i>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -14653,6 +14877,8 @@ if (!empty($Tests)) {
             return false;
         };
 
+
+
         // --- Global Helpers & Navigation ---
         // Restore tab on load
         window.addEventListener('DOMContentLoaded', () => {
@@ -14669,14 +14895,39 @@ if (!empty($Tests)) {
         function openModal(id) {
             if (id === 'createPackModal') { openPackWizard(); return; }
             const el = document.getElementById(id);
-            if (el) el.classList.add('open');
+            if (!el) return;
+
+            // Custom Modals (Glassmorphism / Inline Panels)
+            if (el.classList.contains('test-form-inline-panel') || el.classList.contains('custom-modal-backdrop') || el.classList.contains('template-builder-overlay')) {
+                el.classList.add('open');
+            } else {
+                // Bootstrap Modals
+                if (window.bootstrap && bootstrap.Modal) {
+                    const inst = bootstrap.Modal.getOrCreateInstance(el);
+                    if (inst) inst.show();
+                } else {
+                    el.classList.add('open'); // Fallback
+                }
+            }
+
             if (id === 'TestModal' && typeof updateNewTestButtonState === 'function') {
                 updateNewTestButtonState(true);
             }
         }
+
         function closeModal(id) {
             const el = document.getElementById(id);
-            if (el) el.classList.remove('open');
+            if (!el) return;
+
+            if (el.classList.contains('open')) {
+                el.classList.remove('open');
+            } else if (window.bootstrap && bootstrap.Modal) {
+                const inst = bootstrap.Modal.getInstance(el);
+                if (inst) inst.hide();
+            } else {
+                el.classList.remove('open'); // Fallback
+            }
+
             if (id === 'TestModal' && typeof updateNewTestButtonState === 'function') {
                 updateNewTestButtonState(false);
             }
@@ -14855,7 +15106,7 @@ if (!empty($Tests)) {
             document.getElementById('builder_section_count').textContent = totalSections + ' Sections';
         }
 
-        let currentEditingTemplateId = null;
+
 
         function loadTemplateToBuilder(id, btn, isClone = false) {
             currentEditingTemplateId = isClone ? null : id;
@@ -16729,7 +16980,7 @@ if (!empty($Tests)) {
             if (typeof App.loadEvaluationState === 'function') {
                 App.loadEvaluationState();
             }
-            
+
             if (typeof window.initTestsDataTable === 'function') {
                 window.initTestsDataTable();
             }
@@ -16912,7 +17163,7 @@ if (!empty($Tests)) {
                         timer: 2000,
                         showConfirmButton: false
                     }).then(() => {
-                        location.reload();
+                        App.refreshAllData();
                     });
                 } else {
                     Swal.fire('Error', result.message || 'Failed to publish.', 'error');
@@ -16929,11 +17180,7 @@ if (!empty($Tests)) {
         window.toggleFlag = (idx) => App.toggleFlag(idx);
         window.confirmSubmitTest = () => App.confirmSubmit();
 
-        let currentEditTestId = null;
-        let testIntroVideoFrozen = false;
 
-        let assIntroVideoUrls = [];
-        let assIntroVideoFiles = [];
 
         function parseTestIntroVideosRow(data) {
             if (!data || data.intro_videos == null) return [];
@@ -17304,7 +17551,12 @@ if (!empty($Tests)) {
                     body: JSON.stringify(data)
                 });
                 const res = await resp.json();
-                if (res.status === 'success') Swal.fire('Success!', 'Test & Group Published!', 'success').then(() => location.reload());
+                if (res.status === 'success') {
+                    Swal.fire('Success!', 'Test & Group Published!', 'success').then(() => {
+                        closeModal('TestModal');
+                        App.refreshAllData();
+                    });
+                }
                 else Swal.fire('Error', res.message, 'error');
             } catch (e) { Swal.fire('Error', 'Failed to save Test.', 'error'); }
         }
@@ -17496,7 +17748,10 @@ if (!empty($Tests)) {
                     })
                 });
                 if (response.ok) {
-                    Swal.fire({ title: 'Updated!', text: 'Test has been updated', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
+                    Swal.fire({ title: 'Updated!', text: 'Test has been updated', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => {
+                        closeModal('TestModal');
+                        App.refreshAllData();
+                    });
                 } else {
                     throw new Error();
                 }
@@ -17516,7 +17771,8 @@ if (!empty($Tests)) {
             });
 
             await fetch(`/Test/deleteTest/${id}`, { method: 'POST' });
-            location.reload();
+            Swal.fire({ icon: 'success', title: 'Test Deleted', timer: 1000, showConfirmButton: false });
+            App.refreshAllData();
         }
 
         async function createTest() {
@@ -17576,7 +17832,10 @@ if (!empty($Tests)) {
                     }
                 }
 
-                Swal.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => location.reload());
+                Swal.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => {
+                    closeModal('TestModal');
+                    App.refreshAllData();
+                });
             } catch (e) {
                 Swal.fire('Error', e.message || 'Failed to create Test.', 'error');
             }
@@ -17616,7 +17875,10 @@ if (!empty($Tests)) {
                     }))
                 })
             });
-            Swal.fire({ title: 'Template Saved', text: 'Your template has been created successfully', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => location.reload());
+            Swal.fire({ title: 'Template Saved', text: 'Your template has been created successfully', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => {
+                if (typeof closeQuickTemplateModal === 'function') closeQuickTemplateModal();
+                App.refreshAllData();
+            });
         }
 
         function setTestAndRedirect(id) {
@@ -17661,7 +17923,8 @@ if (!empty($Tests)) {
             Swal.fire({ title: 'Delete this pack?', text: "This action cannot be undone.", icon: 'warning', showCancelButton: true }).then(async (result) => {
                 if (result.isConfirmed) {
                     await fetch(`/Test/deletePack/${id}`, { method: 'POST' });
-                    location.reload();
+                    Swal.fire({ icon: 'success', title: 'Batch Deleted', timer: 1000, showConfirmButton: false });
+                    App.refreshAllData();
                 }
             });
         }
@@ -18123,6 +18386,248 @@ if (!empty($Tests)) {
         </div>
     </div>
 
+    <!-- REPORT EXPORT MODAL -->
+    <div class="modal fade" id="reportExportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-2xl rounded-3xl overflow-hidden">
+                <div class="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-9 h-9 bg-red-600 text-white rounded-xl flex items-center justify-center shadow-md">
+                            <i class="bi bi-file-earmark-excel"></i>
+                        </div>
+                        <h5 class="text-[14px] font-black text-slate-800 uppercase tracking-widest mb-0">Export Report
+                        </h5>
+                    </div>
+                    <button type="button" class="btn-close text-[10px]" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="p-8">
+                    <p
+                        class="text-[11px] font-bold text-slate-500 mb-6 uppercase tracking-widest border-b border-slate-100 pb-2">
+                        Select Columns for Excel Report</p>
+
+                    <div class="grid grid-cols-2 gap-y-4 gap-x-6" id="report_column_selector">
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="candidate_name" checked
+                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div
+                                    class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0">
+                                </div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                                    stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span
+                                class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Candidate
+                                Name</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="test_name" checked
+                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div
+                                    class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0">
+                                </div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                                    stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span
+                                class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Test
+                                Name</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="test_type" checked
+                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div
+                                    class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0">
+                                </div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                                    stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span
+                                class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Test
+                                Type</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="group_name" checked
+                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div
+                                    class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0">
+                                </div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                                    stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span
+                                class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Group
+                                / Batch</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="status" checked
+                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div
+                                    class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0">
+                                </div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                                    stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span
+                                class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Status</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="marks_text" checked
+                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div
+                                    class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0">
+                                </div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                                    stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span
+                                class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Marks
+                                (Obtained/Total)</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="final_score" checked
+                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div
+                                    class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0">
+                                </div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                                    stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span
+                                class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Score</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="overall_pct" checked
+                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div
+                                    class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0">
+                                </div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                                    stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span
+                                class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Accuracy
+                                (%)</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="pass_fail" checked
+                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div
+                                    class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0">
+                                </div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                                    stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span
+                                class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Result
+                                (Pass/Fail)</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="date_ymd" checked
+                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div
+                                    class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0">
+                                </div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                                    stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span
+                                class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Date</span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group col-span-2 relative">
+                            <div class="relative w-5 h-5 flex-shrink-0">
+                                <input type="checkbox" value="duration_seconds" checked
+                                    class="peer absolute opacity-0 w-full h-full cursor-pointer z-20">
+                                <div
+                                    class="w-full h-full bg-white border-2 border-slate-200 rounded-md peer-checked:bg-red-600 peer-checked:border-red-600 transition-all z-0">
+                                </div>
+                                <svg class="w-3.5 h-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none z-10"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                                    stroke-width="4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <span
+                                class="text-[12px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Duration
+                                (Seconds)</span>
+                        </label>
+                    </div>
+
+                    <div class="mt-8 flex items-center justify-between border-t border-slate-50 pt-6">
+                        <button type="button" onclick="App.toggleAllExportColumns(true)"
+                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-600 transition-colors">Select
+                            All</button>
+                        <button type="button" onclick="App.toggleAllExportColumns(false)"
+                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-600 transition-colors">Deselect
+                            All</button>
+                    </div>
+                </div>
+                <div class="p-6 bg-slate-50/50 border-t border-slate-50 flex gap-4">
+                    <button type="button"
+                        class="flex-1 py-3 bg-white border border-slate-200 text-slate-500 font-bold rounded-xl text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="button"
+                        class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl text-[11px] uppercase tracking-widest shadow-lg shadow-red-100 hover:bg-red-700 transition-all"
+                        onclick="App.exportToExcel()">Download Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
 </body>
 
 </html>
