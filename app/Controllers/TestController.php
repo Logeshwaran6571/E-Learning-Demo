@@ -34,8 +34,10 @@ class TestController extends BaseController
         $usageByTemplate = [];
         foreach ($allPacksForUsage as $pack) {
             $tid = $pack['template_id'] ?? null;
-            if (!$tid) continue;
-            if (!isset($usageByTemplate[$tid])) $usageByTemplate[$tid] = [];
+            if (!$tid)
+                continue;
+            if (!isset($usageByTemplate[$tid]))
+                $usageByTemplate[$tid] = [];
             $usageByTemplate[$tid][] = [
                 'pack_id' => $pack['id'],
                 'pack_name' => $pack['pack_name'],
@@ -67,13 +69,13 @@ class TestController extends BaseController
 
         try {
             $employees = (new EmployeeModel())->findAll();
-            
+
             $repoModel = new QuestionBankRepositoryModel();
             $qModel = new QuestionBankModel();
-            
+
             $repos = $repoModel->orderBy('id', 'DESC')->findAll();
             $questionBank = [];
-            
+
             foreach ($repos as $repo) {
                 $questionBank[] = [
                     'id' => $repo['id'],
@@ -98,8 +100,8 @@ class TestController extends BaseController
         if (empty($questionBank)) {
             $questionBank = [
                 [
-                    'id' => 1, 
-                    'name' => 'General', 
+                    'id' => 1,
+                    'name' => 'General',
                     'questions' => [
                         ['id' => 1, 'question' => 'What is the output of 2 + "2"?', 'type' => 'MCQ', 'category' => 'General', 'option_a' => '4', 'option_b' => '22', 'option_c' => 'Error', 'option_d' => 'None', 'correct_answer' => 'B', 'marks' => 1],
                         ['id' => 2, 'question' => 'Explain closures in JavaScript.', 'type' => 'Short Answer', 'category' => 'General', 'marks' => 2]
@@ -193,14 +195,15 @@ class TestController extends BaseController
         $savedTemplate['questions'] = $questionModel->where('template_id', $templateId)->findAll();
 
         return $this->response->setJSON([
-            'status' => 'success', 
+            'status' => 'success',
             'template' => $savedTemplate
         ]);
     }
 
-    private function calculateTotalMarks($sections) {
+    private function calculateTotalMarks($sections)
+    {
         $total = 0;
-        foreach($sections as $s) {
+        foreach ($sections as $s) {
             $total += ($s['count'] ?? 0) * ($s['marks'] ?? 0);
         }
         return $total;
@@ -254,16 +257,16 @@ class TestController extends BaseController
     {
         $templateModel = new TemplateModel();
         $sectionModel = new TemplateSectionModel();
-        
+
         // Delete associated sections first
         $sectionModel->where('template_id', $id)->delete();
-        
+
         // Delete associated questions
         (new QuestionModel())->where('template_id', $id)->delete();
-        
+
         // Delete the template
         $templateModel->delete($id);
-        
+
         return $this->response->setJSON(['status' => 'success']);
     }
 
@@ -271,8 +274,9 @@ class TestController extends BaseController
     {
         $model = new TestModel();
         $data = $this->request->getJSON(true);
-        if (!$data) $data = $this->request->getPost();
-        
+        if (!$data)
+            $data = $this->request->getPost();
+
         $id = $model->insert([
             'name' => $data['name'],
             'category' => $data['category'],
@@ -319,7 +323,8 @@ class TestController extends BaseController
         return $this->response->setJSON(['status' => 'success', 'id' => $id]);
     }
 
-    public function updateTestPackTemplate() {
+    public function updateTestPackTemplate()
+    {
         $data = $this->request->getJSON(true);
         $packId = $data['pack_id'] ?? null;
         $templateId = $data['template_id'] ?? null;
@@ -338,8 +343,9 @@ class TestController extends BaseController
     {
         $model = new TestModel();
         $data = $this->request->getJSON(true);
-        if (!$data) $data = $this->request->getPost();
-        
+        if (!$data)
+            $data = $this->request->getPost();
+
         $update = [
             'name' => $data['name'],
             'category' => $data['category'],
@@ -406,7 +412,7 @@ class TestController extends BaseController
             return $json;
         }
         $arr = json_decode($json, true);
-        if (! is_array($arr)) {
+        if (!is_array($arr)) {
             return $json;
         }
         $out = [];
@@ -505,7 +511,7 @@ class TestController extends BaseController
         if (empty($uploaded)) {
             $uploaded = $this->request->getFileMultiple('videos[]');
         }
-        if (! is_array($uploaded)) {
+        if (!is_array($uploaded)) {
             $uploaded = [];
         }
         if (empty($uploaded)) {
@@ -516,15 +522,19 @@ class TestController extends BaseController
         }
 
         $allowedMime = [
-            'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo',
-            'video/mpeg', 'video/ogg',
+            'video/mp4',
+            'video/webm',
+            'video/quicktime',
+            'video/x-msvideo',
+            'video/mpeg',
+            'video/ogg',
         ];
         $allowedExt = ['mp4', 'webm', 'mov', 'avi', 'mpeg', 'mpg', 'ogv', 'm4v', 'mkv'];
         $maxFiles = 5;
         $maxBytes = 120 * 1024 * 1024; // 120 MB per file
 
         $rootUpload = FCPATH . 'uploads';
-        if (! is_dir($rootUpload)) {
+        if (!is_dir($rootUpload)) {
             mkdir($rootUpload, 0755, true);
         }
 
@@ -547,7 +557,7 @@ class TestController extends BaseController
             $ext = strtolower((string) $file->getExtension());
             $mimeAllowed = $mime && in_array($mime, $allowedMime, true);
             $extAllowed = $ext !== '' && in_array($ext, $allowedExt, true);
-            if (! $mimeAllowed && ! $extAllowed) {
+            if (!$mimeAllowed && !$extAllowed) {
                 $rejectedCount++;
                 continue;
             }
@@ -584,16 +594,16 @@ class TestController extends BaseController
     {
         $TestModel = new TestModel();
         $testPackModel = new TestPackModel();
-        
+
         // Delete associated test packs (and their questions)
         $packs = $testPackModel->where('assessment_id', $id)->findAll();
-        foreach($packs as $p) {
+        foreach ($packs as $p) {
             $this->deletePack($p['id']);
         }
-        
+
         // Delete the Test
         $TestModel->delete($id);
-        
+
         return $this->response->setJSON(['status' => 'success']);
     }
 
@@ -605,7 +615,7 @@ class TestController extends BaseController
         $templateId = (isset($data['template_id']) && $data['template_id'] !== '')
             ? (int) $data['template_id']
             : null;
-        
+
         $packData = [
             'assessment_id' => $data['assessment_id'],
             'pack_name' => $data['pack_name'],
@@ -736,14 +746,14 @@ class TestController extends BaseController
     public function publishPackResults()
     {
         $id = $this->request->getPost('id');
-        if (! $id) {
+        if (!$id) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Batch ID is missing']);
         }
 
         $model = new \App\Models\TestPackModel();
         try {
             $row = $model->find($id);
-            if (! $row) {
+            if (!$row) {
                 return $this->response->setJSON(['status' => 'error', 'message' => 'Batch not found']);
             }
             if (($row['status'] ?? '') !== 'published') {
@@ -761,13 +771,13 @@ class TestController extends BaseController
     {
         $testPackModel = new TestPackModel();
         $questionModel = new QuestionModel();
-        
+
         // Delete associated questions
         $questionModel->where('test_pack_id', $id)->delete();
-        
+
         // Delete the pack
         $testPackModel->delete($id);
-        
+
         return $this->response->setJSON(['status' => 'success']);
     }
 
@@ -781,49 +791,54 @@ class TestController extends BaseController
         // Get the limit from template
         $tpModel = new \App\Models\TestPackModel();
         $tp = $tpModel->find($testPackId);
-        if (!$tp) return redirect()->back()->with('error', 'Batch not found');
+        if (!$tp)
+            return redirect()->back()->with('error', 'Batch not found');
 
         $tsModel = new \App\Models\TemplateSectionModel();
-        
+
         // Map upload type to template marks_type
         $isMcq = $this->uploadPackUsesMcqQuestions($type);
         $targetMarksType = $isMcq ? 'Multiple Choice' : 'Short Answer';
         $friendlyKind = $isMcq ? 'MCQ' : 'descriptive question';
 
         $sections = $tsModel->where('template_id', $tp['template_id'])
-                            ->where('marks_type', $targetMarksType)
-                            ->findAll();
-        
+            ->where('marks_type', $targetMarksType)
+            ->findAll();
+
         $limit = 0;
-        foreach($sections as $s) {
-            $limit += (int)$s['num_questions'];
+        foreach ($sections as $s) {
+            $limit += (int) $s['num_questions'];
         }
 
         if ($file->isValid() && !$file->hasMoved()) {
             $csvData = file_get_contents($file->getTempName());
             $lines = explode("\n", $csvData);
-            
+
             // Skip instruction lines (starting with #)
             $actualLines = [];
-            foreach($lines as $line) {
-                if (trim($line) === '' || strpos(trim($line), '#') === 0) continue;
+            foreach ($lines as $line) {
+                if (trim($line) === '' || strpos(trim($line), '#') === 0)
+                    continue;
                 $actualLines[] = $line;
             }
 
-            if (empty($actualLines)) return redirect()->back()->with('error', 'CSV is empty or only contains instructions');
+            if (empty($actualLines))
+                return redirect()->back()->with('error', 'CSV is empty or only contains instructions');
 
             $headers = str_getcsv(array_shift($actualLines));
-            
+
             // Check count
             if (count($actualLines) > $limit) {
                 return redirect()->back()->with('error', "Upload limit exceeded! This template only allows {$limit} {$friendlyKind} questions. You tried to upload " . count($actualLines));
             }
 
             foreach ($actualLines as $line) {
-                if (empty(trim($line))) continue;
+                if (empty(trim($line)))
+                    continue;
                 $row = str_getcsv($line);
-                if (count($row) < count($headers)) continue;
-                
+                if (count($row) < count($headers))
+                    continue;
+
                 $data = array_combine($headers, $row);
                 $data['test_pack_id'] = $testPackId;
                 $data['type'] = $this->normalizePersistedPackQuestionType((string) $type);
@@ -840,21 +855,21 @@ class TestController extends BaseController
     public function downloadTemplate($type)
     {
         $filename = ($type == 'mcq') ? 'mcq_template.csv' : 'descriptive_question_template.csv';
-        
+
         if ($type == 'mcq') {
             $instructions = "# MCQ UPLOAD INSTRUCTIONS:\n"
-                          . "# 1. Provide the question text in the 'question' column.\n"
-                          . "# 2. options A, B, C, D are required.\n"
-                          . "# 3. 'correct_answer' must be one of: A, B, C, D.\n"
-                          . "# 4. 'marks' should be 1.\n"
-                          . "# 5. 'pedagogy': label for this item (e.g. Bloom level, subject strand). Legacy CSV may use 'knowledge_type' instead.\n";
+                . "# 1. Provide the question text in the 'question' column.\n"
+                . "# 2. options A, B, C, D are required.\n"
+                . "# 3. 'correct_answer' must be one of: A, B, C, D.\n"
+                . "# 4. 'marks' should be 1.\n"
+                . "# 5. 'pedagogy': label for this item (e.g. Bloom level, subject strand). Legacy CSV may use 'knowledge_type' instead.\n";
             $header = "question,option_a,option_b,option_c,option_d,correct_answer,marks,pedagogy";
         } else {
             $instructions = "# DESCRIPTIVE QUESTION CSV — UPLOAD INSTRUCTIONS:\n"
-                          . "# 1. Provide the question text in the 'question' column.\n"
-                          . "# 2. Provide the 'expected_answer' for evaluation.\n"
-                          . "# 3. 'marks' records the score weight (typically 2).\n"
-                          . "# 4. 'pedagogy': label for this item (e.g. Bloom level, subject strand). Legacy CSV may use 'knowledge_type' instead.\n";
+                . "# 1. Provide the question text in the 'question' column.\n"
+                . "# 2. Provide the 'expected_answer' for evaluation.\n"
+                . "# 3. 'marks' records the score weight (typically 2).\n"
+                . "# 4. 'pedagogy': label for this item (e.g. Bloom level, subject strand). Legacy CSV may use 'knowledge_type' instead.\n";
             $header = "question,expected_answer,marks,pedagogy";
         }
 
@@ -868,7 +883,7 @@ class TestController extends BaseController
     {
         $model = new QuestionModel();
         $raw = $this->request->getJSON(true);
-        if (! $raw) {
+        if (!$raw) {
             $raw = $this->request->getPost();
         }
 
@@ -905,10 +920,10 @@ class TestController extends BaseController
     {
         $questionModel = new QuestionModel();
         $packQuestions = $questionModel->where('test_pack_id', $id)->findAll();
-        
+
         $tpModel = new TestPackModel();
         $pack = $tpModel->find($id);
-        
+
         // Fetch template info
         $templateModel = new TemplateModel();
         $template = $templateModel->find($pack['template_id']);
@@ -917,14 +932,14 @@ class TestController extends BaseController
         $templateQuestions = $questionModel->where('template_id', $template['id'])->findAll();
 
         $sections = (new TemplateSectionModel())->where('template_id', $template['id'])->findAll();
-        
+
         // Fetch parent assessment for shuffle settings
         $testModel = new TestModel();
         $test = $testModel->find($pack['assessment_id']);
         if ($test) {
             $this->normalizeIntroVideosOnTestRow($test);
         }
-        
+
         return $this->response->setJSON([
             'status' => 'success',
             'pack' => $pack,
@@ -936,31 +951,45 @@ class TestController extends BaseController
         ]);
     }
 
+    public function getPackDuration($id)
+    {
+        $tpModel = new TestPackModel();
+        $pack = $tpModel->find($id);
+        if (!$pack) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+        return $this->response->setJSON([
+            'status' => 'success',
+            'duration' => (int)$pack['duration']
+        ]);
+    }
+
     public function downloadTemplateByTemplateId($id)
     {
         $templateModel = new \App\Models\TemplateModel();
         $sectionModel = new \App\Models\TemplateSectionModel();
-        
+
         $template = $templateModel->find($id);
-        if (!$template) die("Template not found");
+        if (!$template)
+            die("Template not found");
 
         $sections = $sectionModel->where('template_id', $id)->findAll();
-        
+
         $filename = preg_replace('/[^a-z0-9_]/i', '_', $template['name']) . "_template.csv";
-        
+
         header('Content-Type: text/csv');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
-        
+
         echo "# TEMPLATE: " . $template['name'] . "\n";
         echo "# INSTRUCTIONS: Fill in the questions below. For MCQs, provide 4 options and correct answer (A-D). For Short Answer, provide expected answer in correct_answer column. Use pedagogy for the teaching/learning label.\n";
         echo "section_name,question,type,option_a,option_b,option_c,option_d,correct_answer,marks,pedagogy\n";
 
         foreach ($sections as $s) {
-            $count = (int)($s['num_questions'] ?? 0);
-            $marks = (int)($s['marks_per_question'] ?? 0);
+            $count = (int) ($s['num_questions'] ?? 0);
+            $marks = (int) ($s['marks_per_question'] ?? 0);
             $type = (stripos(($s['marks_type'] ?? ''), 'mcq') !== false || stripos(($s['marks_type'] ?? ''), 'multiple') !== false) ? 'MCQ' : 'Short Answer';
             $sectionName = $s['marks_type'] ?? $s['name'] ?? 'Section';
-            
+
             for ($i = 0; $i < $count; $i++) {
                 echo '"' . $sectionName . '","","' . $type . '","","","","","","' . $marks . '",""' . "\n";
             }
@@ -972,12 +1001,13 @@ class TestController extends BaseController
     {
         $model = new QuestionBankModel();
         $data = $this->request->getJSON(true);
-        if (!$data) $data = $this->request->getPost();
+        if (!$data)
+            $data = $this->request->getPost();
 
         $id = $model->insert([
             'repository_id' => $data['repository_id'],
             'question' => $data['question'],
-            'type' => $this->normalizeQuestionBankStoredType((string)($data['type'] ?? 'MCQ')),
+            'type' => $this->normalizeQuestionBankStoredType((string) ($data['type'] ?? 'MCQ')),
             'option_a' => $data['option_a'] ?? '',
             'option_b' => $data['option_b'] ?? '',
             'option_c' => $data['option_c'] ?? '',
@@ -998,9 +1028,10 @@ class TestController extends BaseController
     {
         $model = new QuestionBankModel();
         $data = $this->request->getJSON(true);
-        if (!$data) $data = $this->request->getPost();
+        if (!$data)
+            $data = $this->request->getPost();
 
-        $questionText = trim((string)($data['question'] ?? ''));
+        $questionText = trim((string) ($data['question'] ?? ''));
         if ($questionText === '') {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -1032,7 +1063,8 @@ class TestController extends BaseController
     {
         $repoModel = new QuestionBankRepositoryModel();
         $data = $this->request->getJSON(true);
-        if (!$data) $data = $this->request->getPost();
+        if (!$data)
+            $data = $this->request->getPost();
 
         $id = $repoModel->insert([
             'name' => $data['name']
@@ -1053,7 +1085,8 @@ class TestController extends BaseController
     {
         $model = new QuestionBankModel();
         $data = $this->request->getJSON(true);
-        if (!$data) $data = $this->request->getPost();
+        if (!$data)
+            $data = $this->request->getPost();
 
         $repoId = $data['repository_id'] ?? null;
         $questions = $data['questions'] ?? [];
@@ -1063,7 +1096,7 @@ class TestController extends BaseController
         }
 
         foreach ($questions as $q) {
-            $questionText = trim((string)($q['question'] ?? ''));
+            $questionText = trim((string) ($q['question'] ?? ''));
             if ($questionText === '') {
                 continue;
             }
@@ -1071,7 +1104,7 @@ class TestController extends BaseController
             $model->insert([
                 'repository_id' => $repoId,
                 'question' => $questionText,
-                'type' => $this->normalizeQuestionBankStoredType((string)($q['type'] ?? 'MCQ')),
+                'type' => $this->normalizeQuestionBankStoredType((string) ($q['type'] ?? 'MCQ')),
                 'option_a' => $q['option_a'] ?? '',
                 'option_b' => $q['option_b'] ?? '',
                 'option_c' => $q['option_c'] ?? '',
@@ -1093,7 +1126,7 @@ class TestController extends BaseController
 
         // Delete all questions in this bank first
         $qModel->where('repository_id', $id)->delete();
-        
+
         if ($repoModel->delete($id)) {
             return $this->response->setJSON(['status' => 'success']);
         }
