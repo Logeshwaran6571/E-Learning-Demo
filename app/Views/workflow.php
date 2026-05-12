@@ -4950,10 +4950,19 @@ if (!empty($Tests)) {
                                     class="h-9 text-[11px] font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3 rounded-lg">
                                     <option value="">All Test Names</option>
                                 </select>
-                                <select id="resultsGroupFilter" onchange="App.loadCandidateResult()"
-                                    class="h-9 text-[11px] font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3 rounded-lg">
-                                    <option value="">All Groups</option>
-                                </select>
+                                <div class="custom-multiselect" id="resultsGroupFilter_container">
+                                    <button type="button"
+                                        class="multiselect-btn h-9 bg-white border-[#e2e8f0] rounded-lg px-3 text-[11px] font-bold text-[#475569] w-full leading-tight"
+                                        id="resultsGroupFilter_btn" onclick="toggleResultsGroupMultiselect()">
+                                        <span id="resultsGroupFilter_label">All Groups</span>
+                                        <i class="bi bi-chevron-down text-[10px] opacity-60"></i>
+                                    </button>
+                                    <div class="multiselect-options" id="resultsGroupFilter_options">
+                                        <!-- Dynamically populated -->
+                                    </div>
+                                    <select id="resultsGroupFilter" class="hidden" multiple onchange="App.loadCandidateResult()">
+                                    </select>
+                                </div>
                                 <select id="resultsDateFilter" onchange="App.loadCandidateResult()"
                                     class="h-9 text-[11px] font-bold text-[#475569] bg-white border border-[#e2e8f0] px-3 rounded-lg">
                                     <option value="">All Dates</option>
@@ -11433,7 +11442,7 @@ if (!empty($Tests)) {
 
                 const selectedType = testTypeFilterEl?.value || '';
                 const selectedTest = testFilterEl?.value || '';
-                const selectedGroup = groupFilterEl?.value || '';
+                const selectedGroups = Array.from(groupFilterEl?.selectedOptions || []).map(opt => opt.value);
                 const selectedDate = dateFilterEl?.value || '';
                 const sortMode = sortFilterEl?.value || 'high';
                 const candidateSearch = (candidateSearchEl?.value || '').trim().toLowerCase();
@@ -11605,6 +11614,30 @@ if (!empty($Tests)) {
                     if (safeOptions.includes(current)) el.value = current;
                 };
 
+                const bindMultiselectOptions = (el, options, allText, btnId, labelId, optionsId) => {
+                    if (!el) return;
+                    const safeOptions = [...new Set(options.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+                    const selected = Array.from(el.selectedOptions).map(opt => opt.value);
+                    el.innerHTML = safeOptions.map(v => `<option value="${v}" ${selected.includes(v) ? 'selected' : ''}>${v}</option>`).join('');
+                    const optionsDiv = document.getElementById(optionsId);
+                    if (optionsDiv) {
+                        let html = `<label class="ms-option font-bold text-slate-800 border-b border-slate-100 rounded-none mb-0 pb-1.5">
+                                        <input type="checkbox" id="results_select_all" onchange="selectAllResultsGroups(this)" ${selected.length === safeOptions.length && safeOptions.length > 0 ? 'checked' : ''}> Select All
+                                    </label>`;
+                        html += safeOptions.map(v => `
+                            <label class="ms-option">
+                                <input type="checkbox" value="${v}" ${selected.includes(v) ? 'checked' : ''} onchange="updateResultsGroupLabel()"> ${v}
+                            </label>
+                        `).join('');
+                        optionsDiv.innerHTML = html;
+                    }
+                    const label = document.getElementById(labelId);
+                    if (label) {
+                        if (selected.length === 0) label.textContent = allText;
+                        else label.textContent = selected.length > 1 ? selected.length + ' selected' : selected[0];
+                    }
+                };
+
                 bindOptions(testTypeFilterEl, rows.map(r => r.test_type), 'All Test Types');
                 bindOptions(testFilterEl, rows.map(r => r.test_name), 'All Test Names');
 
@@ -11615,7 +11648,9 @@ if (!empty($Tests)) {
                     if (matchingOption) {
                         testFilterEl.value = contextTestName;
                         activeSelectedTest = contextTestName;
-                        if (groupFilterEl) groupFilterEl.value = '';
+                        if (groupFilterEl) {
+                           Array.from(groupFilterEl.options).forEach(o => o.selected = false);
+                        }
                         if (dateFilterEl) dateFilterEl.value = '';
                     }
                     App.resultsContextTestName = '';
@@ -11624,13 +11659,13 @@ if (!empty($Tests)) {
                 const groupScopeRows = activeSelectedTest
                     ? rows.filter(r => r.test_name === activeSelectedTest)
                     : rows;
-                bindOptions(groupFilterEl, groupScopeRows.map(r => r.group_name), 'All Groups');
+                bindMultiselectOptions(groupFilterEl, groupScopeRows.map(r => r.group_name), 'All Groups', 'resultsGroupFilter_btn', 'resultsGroupFilter_label', 'resultsGroupFilter_options');
                 bindOptions(dateFilterEl, groupScopeRows.map(r => r.date_ymd), 'All Dates');
 
                 let filtered = rows.filter(r => {
                     if (selectedType && r.test_type !== selectedType) return false;
                     if (activeSelectedTest && r.test_name !== activeSelectedTest) return false;
-                    if (selectedGroup && r.group_name !== selectedGroup) return false;
+                    if (selectedGroups.length > 0 && !selectedGroups.includes(r.group_name)) return false;
                     if (selectedDate && r.date_ymd !== selectedDate) return false;
                     if (candidateSearch && !normLower(r.candidate_name).includes(candidateSearch)) return false;
                     return true;
@@ -11730,7 +11765,7 @@ if (!empty($Tests)) {
                     }
                 }
 
-                const hasAnyFilter = !!(selectedType || activeSelectedTest || selectedGroup || selectedDate || candidateSearch);
+                const hasAnyFilter = !!(selectedType || activeSelectedTest || selectedGroups.length > 0 || selectedDate || candidateSearch);
                 const totalScore = hasAnyFilter ? filtered.reduce((sum, r) => sum + (r.final_score || 0), 0) : 0;
                 const completedRows = hasAnyFilter ? filtered.filter(r => r.status === 'Completed') : [];
                 const evaluatedRows = completedRows.filter(r => r.pass_fail === 'Pass' || r.pass_fail === 'Fail');
@@ -16710,6 +16745,41 @@ if (!empty($Tests)) {
             document.getElementById('multiselect_options').classList.toggle('show');
         }
 
+        function toggleResultsGroupMultiselect() {
+            const opts = document.getElementById('resultsGroupFilter_options');
+            if (opts) opts.classList.toggle('show');
+        }
+
+        function selectAllResultsGroups(checkbox) {
+            const checkboxes = document.querySelectorAll('#resultsGroupFilter_options input[type="checkbox"]:not(#results_select_all)');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+            updateResultsGroupLabel();
+            App.loadCandidateResult();
+        }
+
+        function updateResultsGroupLabel() {
+            const allCheckboxes = document.querySelectorAll('#resultsGroupFilter_options input[type="checkbox"]:not(#results_select_all)');
+            const selectAllCb = document.getElementById('results_select_all');
+            const selected = Array.from(allCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+
+            if (selectAllCb) {
+                selectAllCb.checked = (selected.length === allCheckboxes.length && allCheckboxes.length > 0);
+            }
+
+            const label = document.getElementById('resultsGroupFilter_label');
+            const realSelect = document.getElementById('resultsGroupFilter');
+            if (label) {
+                if (selected.length === 0) label.textContent = 'All Groups';
+                else label.textContent = selected.length > 1 ? selected.length + ' selected' : selected[0];
+            }
+            if (realSelect) {
+                Array.from(realSelect.options).forEach(opt => {
+                    opt.selected = selected.includes(opt.value);
+                });
+            }
+            App.loadCandidateResult();
+        }
+
         function selectAllRoles(checkbox) {
             const checkboxes = document.querySelectorAll('#multiselect_options input[type="checkbox"]:not(#select_all_roles)');
             checkboxes.forEach(cb => cb.checked = checkbox.checked);
@@ -16748,6 +16818,12 @@ if (!empty($Tests)) {
             const options = document.getElementById('multiselect_options');
             if (container && options && !container.contains(e.target)) {
                 options.classList.remove('show');
+            }
+
+            const resultsGroupContainer = document.getElementById('resultsGroupFilter_container');
+            const resultsGroupOptions = document.getElementById('resultsGroupFilter_options');
+            if (resultsGroupContainer && resultsGroupOptions && !resultsGroupContainer.contains(e.target)) {
+                resultsGroupOptions.classList.remove('show');
             }
 
             if (!e.target.closest('.candidate-selector-wrapper')) {
