@@ -34,6 +34,7 @@ if (!empty($Tests)) {
 }
 ?>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>console.log('Workflow Script Load Start'); window.__APP_BASE__ = <?= workflow_view_json(rtrim(base_url(), '/')) ?>;</script>
 
 <!-- Flash Message Handler -->
@@ -44,13 +45,26 @@ if (!empty($Tests)) {
     var testIntroVideoFrozen = false;
     var assIntroVideoUrls = [];
     var assIntroVideoFiles = [];
+    
+    // Global Toast configuration for success messages
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
         <?php if (session()->getFlashdata('success')): ?>
-                    Swal.fire({ title: 'Success', text: <?= workflow_view_json(session()->getFlashdata('success')) ?>, icon: 'success', timer: 3000 });
+                    Toast.fire({ title: 'Success', text: <?= workflow_view_json(session()->getFlashdata('success')) ?>, icon: 'success' });
         <?php endif; ?>
         <?php if (session()->getFlashdata('error')): ?>
-                    Swal.fire({ title: 'Upload Failed', text: <?= workflow_view_json(session()->getFlashdata('error')) ?>, icon: 'error' });
+            Swal.fire({ title: 'Upload Failed', text: <?= workflow_view_json(session()->getFlashdata('error')) ?>, icon: 'error' });
         <?php endif; ?>
     });
 </script>
@@ -66,8 +80,6 @@ if (!empty($Tests)) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -81,6 +93,16 @@ if (!empty($Tests)) {
     <!-- jsPDF and AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- amCharts 5 -->
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+
     <style>
         .swal2-popup {
             border-radius: 20px !important;
@@ -112,10 +134,8 @@ if (!empty($Tests)) {
             height: 32px !important;
         }
 
-        /* ============================================
            MODERN RED PAGINATION (Bootstrap 5 DataTables)
            Targets: .dataTables_paginate ul.pagination > li.page-item > a.page-link
-           ============================================ */
         .dataTables_wrapper .dataTables_info {
             font-size: 11px !important;
             font-weight: 700 !important;
@@ -485,6 +505,88 @@ if (!empty($Tests)) {
             gap: 0.5rem;
         }
 
+        /* Export Modal Card Design - Redesigned Compact Style */
+        .column-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            border: 1px solid #f1f5f9 !important;
+            background-color: #fff;
+        }
+        
+        .column-card:hover {
+            border-color: #e2e8f0 !important;
+            background-color: #f8fafc;
+        }
+
+        .column-card.is-selected {
+            background-color: #fef2f2 !important;
+            border-color: #fecaca !important;
+            box-shadow: 0 2px 4px rgba(220, 34, 48, 0.05);
+        }
+
+        .column-card input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 2px solid #cbd5e1;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background: #fff;
+            margin: 0;
+        }
+
+        .column-card input[type="checkbox"]:checked {
+            background-color: #dc2230;
+            border-color: #dc2230;
+        }
+
+        .column-card input[type="checkbox"]:checked::after {
+            content: "\F26E";
+            font-family: "bootstrap-icons";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        #selectAllCols {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1.5px solid #cbd5e1;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background: #fff;
+            margin: 0;
+        }
+
+        #selectAllCols:checked {
+            background-color: #dc2230;
+            border-color: #dc2230;
+        }
+
+        #selectAllCols:checked::after {
+            content: "\F26E";
+            font-family: "bootstrap-icons";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 8px;
+            font-weight: 900;
+        }
+
+
         tr.is-editing .inline-editable-input {
             background-color: #ffffff !important;
             border-color: #e2e8f0 !important;
@@ -660,11 +762,14 @@ if (!empty($Tests)) {
 
         /* Blinking Animation for Pending Evaluations */
         @keyframes pulse-indigo-blink {
-            0%, 100% {
+
+            0%,
+            100% {
                 background-color: #f8fafc;
                 color: #94a3b8;
                 transform: scale(1);
             }
+
             50% {
                 background-color: #4f46e5;
                 color: #ffffff;
@@ -2299,9 +2404,7 @@ if (!empty($Tests)) {
             box-shadow: 0 0 0 3px rgba(220, 34, 48, 0.1);
         }
 
-        /* ============================================
            MODERN GLOBAL FOCUS STYLE — Red Brand Ring
-           ============================================ */
         .input,
         .select,
         textarea,
@@ -4757,12 +4860,16 @@ if (!empty($Tests)) {
                                                 Browser Lockdown</div>
                                             <p class="text-[10px] text-slate-500 font-medium mb-0 leading-snug">Restrict
                                                 tab switches</p>
+                                            <div id="lockdown_info_msg" class="hidden mt-1">
+                                                <span class="text-[9px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-bold border border-red-100 animate-pulse">Only the tab is restricted</span>
+                                            </div>
                                         </div>
                                         <div class="form-check form-switch mb-0 ps-0">
                                             <input class="form-check-input ms-0" type="checkbox" id="test_form_lockdown"
-                                                role="switch">
+                                                role="switch" onchange="document.getElementById('lockdown_info_msg').classList.toggle('hidden', !this.checked)">
                                         </div>
                                     </div>
+
                                     <div class="test-exam-config-card">
                                         <div
                                             class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-red-500 shrink-0 shadow-sm">
@@ -4885,11 +4992,18 @@ if (!empty($Tests)) {
                     <p class="text-sm text-gray-500">Review candidate performance and grade subjective answers.</p>
                 </div>
                 <div class="flex flex-col items-end gap-3 w-full xl:w-[36%] shrink-0">
-                    <button type="button"
-                        class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs inline-flex items-center gap-2 hover:bg-red-700 transition-all border border-red-600 shadow-sm shadow-red-100"
-                        onclick="window.backFromResultsPage()">
-                        <i class="bi bi-arrow-left"></i> Back to Inventory
-                    </button>
+                    <div class="flex flex-wrap items-center justify-end gap-2 w-full">
+                        <button type="button"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold text-xs inline-flex items-center gap-2 hover:bg-indigo-700 transition-all border border-indigo-600 shadow-sm shadow-indigo-100"
+                            onclick="App.openResultsAnalytics()" title="Charts for the current filtered leaderboard">
+                            <i class="bi bi-bar-chart-line-fill"></i> Result Analytics
+                        </button>
+                        <button type="button"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs inline-flex items-center gap-2 hover:bg-red-700 transition-all border border-red-600 shadow-sm shadow-red-100"
+                            onclick="window.backFromResultsPage()">
+                            <i class="bi bi-arrow-left"></i> Back to Inventory
+                        </button>
+                    </div>
                     <div id="resultsOverviewCards" class="w-full">
                         <h5 class="text-[10px] font-black text-[#1e293b] mb-2">Evaluation Overview</h5>
                         <div class="grid grid-cols-4 gap-2">
@@ -5537,7 +5651,7 @@ if (!empty($Tests)) {
                 </select>
                 <select id="tp_template" class="select">
                     <?php foreach ($templates as $t): ?>
-                                <option value="<?= $t['id'] ?>"><?= esc($t['name']) ?></option>
+                        <option value="<?= $t['id'] ?>"><?= esc($t['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -5583,8 +5697,8 @@ if (!empty($Tests)) {
                                     <option value="">-- No Template (Custom Questions Only) --</option>
                                     <?php if (!empty($templates)):
                                         foreach ($templates as $t): ?>
-                                                            <option value="<?= $t['id'] ?>"><?= $t['name'] ?></option>
-                                                <?php endforeach; endif; ?>
+                                            <option value="<?= $t['id'] ?>"><?= $t['name'] ?></option>
+                                        <?php endforeach; endif; ?>
                                 </select>
                                 <button class="btn btn-primary-custom px-6 h-12 text-xs font-bold rounded-lg shadow-sm"
                                     onclick="updatePackTemplate()">
@@ -5974,39 +6088,67 @@ if (!empty($Tests)) {
                     </div>
 
                     <div id="finalSubmissionPage" class="d-none mt-4 bg-white border border-slate-200 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-[14px] font-black text-slate-800 mb-0">Final Submission</h4>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Optional
-                                Upload</span>
-                        </div>
-                        <p class="text-[12px] text-slate-500 mb-3">You can upload one or multiple files before
-                            submitting. This is optional.</p>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50">
-                                <label
-                                    class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Single
-                                    File</label>
-                                <input type="file" id="execFinalSingleFileInput" class="form-control text-[12px]"
-                                    onchange="App.onExecutionAttachmentsChange(this)">
+                        <div id="execUploadSection">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-[14px] font-black text-slate-800 mb-0">Final Submission</h4>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Optional
+                                    Upload</span>
                             </div>
-                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50">
-                                <label
-                                    class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Bulk
-                                    Upload</label>
-                                <input type="file" id="execFinalBulkFileInput" multiple class="form-control text-[12px]"
-                                    onchange="App.onExecutionAttachmentsChange(this)">
+                            <p class="text-[12px] text-slate-500 mb-3">You can upload one or multiple files before
+                                submitting. This is optional.</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                                    <label
+                                        class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Single
+                                        File</label>
+                                    <input type="file" id="execFinalSingleFileInput" class="form-control text-[12px]"
+                                        onchange="App.onExecutionAttachmentsChange(this)">
+                                </div>
+                                <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                                    <label
+                                        class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Bulk
+                                        Upload</label>
+                                    <input type="file" id="execFinalBulkFileInput" multiple class="form-control text-[12px]"
+                                        onchange="App.onExecutionAttachmentsChange(this)">
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mb-2">Maximum file size: 2 MB each. Any format allowed.</p>
+                            <div id="execFinalAttachmentList" class="space-y-1 mb-4"></div>
+                        </div>
+
+                        <!-- Phase 2: Completion Summary -->
+                        <div id="execCompletionSection" class="d-none mb-6">
+                            <div class="text-center py-6">
+                                <div class="w-16 h-16 bg-red-50 text-[#dc2230] rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="bi bi-check2-all text-3xl"></i>
+                                </div>
+                                <h3 class="text-lg font-black text-slate-800 mb-2">Test Completion</h3>
+                                <p class="text-sm text-slate-500 max-w-sm mx-auto">
+                                    Your responses and any uploaded documents are ready for final submission. 
+                                    Please click 'Submit Test' to complete your assessment.
+                                </p>
                             </div>
                         </div>
-                        <p class="text-[10px] text-slate-400 mb-2">Maximum file size: 2 MB each. Any format allowed.</p>
-                        <div id="execFinalAttachmentList" class="space-y-1 mb-4"></div>
 
-                        <div class="flex items-center justify-end gap-2">
-                            <button class="btn btn-light px-4 py-2 text-[11px] font-bold"
-                                onclick="App.backToQuestionsFromFinal()">Back</button>
-                            <button class="btn btn-danger px-5 py-2 text-[11px] font-black uppercase tracking-widest"
-                                onclick="App.submitTest()">Submit Test</button>
+
+                        <div class="flex items-center justify-end gap-2" id="finalSubmissionActions">
+                            <!-- Phase 1: Skip / Save -->
+                            <div id="initialSubActions" class="flex items-center gap-2">
+                                <button class="btn btn-light px-4 py-2 text-[11px] font-bold border border-slate-200"
+                                    onclick="App.showFinalSubActions()">Skip</button>
+                                <button class="btn btn-primary px-4 py-2 text-[11px] font-bold"
+                                    onclick="App.showFinalSubActions()">Save</button>
+                            </div>
+                            <!-- Phase 2: Back / Submit Test (Hidden initially) -->
+                            <div id="finalSubActions" class="d-none flex items-center gap-2">
+                                <button class="btn btn-light px-4 py-2 text-[11px] font-bold border border-slate-200"
+                                    onclick="App.backToQuestionsFromFinal()">Back</button>
+                                <button class="btn btn-danger px-5 py-2 text-[11px] font-black uppercase tracking-widest"
+                                    onclick="App.submitTest()">Submit Test</button>
+                            </div>
                         </div>
+
                     </div>
                 </div>
             </main>
@@ -6069,10 +6211,13 @@ if (!empty($Tests)) {
             <p class="text-center text-slate-300 small mb-4 mb-md-5">Orientation screen is shown before the test starts.
                 Click the button below when you're ready to begin.</p>
             <div id="execIntroVideosMount" class="d-flex flex-column gap-4 mb-4"></div>
-            <div class="text-center pb-5">
+            <div class="flex items-center justify-center gap-3 pb-5">
+                <button type="button" id="execIntroPrevBtn"
+                    class="btn btn-lg btn-outline-light fw-bold px-4 rounded-pill d-none" style="min-width:180px;">
+                    <i class="bi bi-chevron-left"></i> Previous
+                </button>
                 <button type="button" id="execIntroCompleteBtn"
-                    class="btn btn-lg btn-danger fw-bold px-5 rounded-pill shadow" style="min-width:260px;"
-                    onclick="App.completeIntroGate()">
+                    class="btn btn-lg btn-danger fw-bold px-5 rounded-pill shadow" style="min-width:260px;">
                     I've completed watching — Begin test
                 </button>
             </div>
@@ -6108,6 +6253,56 @@ if (!empty($Tests)) {
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body px-4 pt-2 pb-4" id="studentResultSummaryBody">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results & Evaluation: analytics (uses current leaderboard filters) -->
+    <div class="modal fade" id="resultsAnalyticsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+                <div class="modal-header border-b border-slate-100 bg-slate-50/80 px-4 py-2">
+                    <div>
+                        <h5 class="modal-title fw-bold text-slate-800 mb-0 fs-6"><i
+                                class="bi bi-bar-chart-line-fill text-indigo-600 me-2"></i>Result Analytics</h5>
+                        <p class="text-[10px] text-slate-500 font-semibold mb-0 mt-1">Live view of the same data as the
+                            table below your current filters.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 pt-2 pb-3 bg-white">
+                    <p id="resultsAnalyticsFilterHint" class="text-[10px] text-slate-500 font-medium mb-2 leading-snug">
+                    </p>
+                    <div class="row g-2">
+                        <div class="col-lg-6 d-flex">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-3 w-100 d-flex flex-column">
+                                <h6
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">
+                                    Bar · Highest &amp; lowest</h6>
+                                <div id="resultsAnalyticsHighLowChart" class="w-100 results-am5-chart"
+                                    style="height: 200px;"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 d-flex">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-3 w-100 d-flex flex-column">
+                                <h6
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">
+                                    Donut · Pass / fail / pending</h6>
+                                <div id="resultsAnalyticsOutcomeChart" class="w-100 results-am5-chart"
+                                    style="height: 220px;"></div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
+                                <h6
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0 pb-2 border-b border-slate-200/80">
+                                    Area · Top scores (completed)</h6>
+                                <div id="resultsAnalyticsTopChart" class="w-100 results-am5-chart pt-1"
+                                    style="height: 200px;"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -6171,6 +6366,7 @@ if (!empty($Tests)) {
             quickModePaperSource: null,
             resultsContextTestName: '',
             activeEvaluatorSubmissionKey: '',
+            resultsLeaderboardFiltered: [],
 
             evaluationState: { submissions: {} },
 
@@ -6182,7 +6378,7 @@ if (!empty($Tests)) {
                     const result = await response.json();
                     if (result.status === 'success') {
                         App.Tests = result.tests;
-                        
+
                         // 2. Refresh Inventory Table
                         if (typeof window.initTestsDataTable === 'function') {
                             window.initTestsDataTable();
@@ -7023,7 +7219,7 @@ if (!empty($Tests)) {
                     }
 
                     renderQuestionBanks();
-                    Swal.fire({ icon: 'success', title: 'Bank Deleted', timer: 1500, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Bank Deleted' });
                 } else {
                     throw new Error(result.message);
                 }
@@ -7167,7 +7363,7 @@ if (!empty($Tests)) {
                     syncQBDropdowns();
                     selectQuestionBank(newBank.id);
                     collapseFreshQBAfterSave(newBank);
-                    Swal.fire({ icon: 'success', title: 'Bank Created!', timer: 1500, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Bank Created!' });
                 } else {
                     throw new Error(result.message);
                 }
@@ -7354,12 +7550,10 @@ if (!empty($Tests)) {
             activeQB.name = bankName;
 
             if (activeQB.id) {
-                Swal.fire({
+                Toast.fire({
                     icon: 'success',
                     title: 'Saved!',
-                    text: 'Repository changes are already synced.',
-                    timer: 1400,
-                    showConfirmButton: false
+                    text: 'Repository changes are already synced.'
                 });
                 renderQuestionBanks();
                 renderQBQuestions();
@@ -7422,7 +7616,7 @@ if (!empty($Tests)) {
                     syncQBDropdowns();
                     selectQuestionBank(activeQB.id);
                     collapseFreshQBAfterSave(activeQB);
-                    Swal.fire({ icon: 'success', title: 'Repository Saved!', timer: 1500, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Repository Saved!' });
                 })
                 .catch(error => {
                     Swal.fire('Error', error.message || 'Failed to save repository', 'error');
@@ -7627,7 +7821,7 @@ if (!empty($Tests)) {
                 renderQBQuestions();
                 renderQuestionBanks();
                 syncQBDropdowns();
-                Swal.fire({ icon: 'success', title: 'Question Added', text: 'Saved in draft. Click Save to persist.', timer: 1300, showConfirmButton: false });
+                Toast.fire({ icon: 'success', title: 'Question Added', text: 'Saved in draft. Click Save to persist.' });
                 return;
             }
 
@@ -7646,7 +7840,7 @@ if (!empty($Tests)) {
                     renderQBQuestions();
                     renderQuestionBanks();
                     syncQBDropdowns();
-                    Swal.fire({ icon: 'success', title: 'Question Saved', timer: 1000, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Question Saved' });
                 }
             } catch (e) { console.error(e); }
         }
@@ -7673,7 +7867,7 @@ if (!empty($Tests)) {
                 updateQBCounters();
                 renderQBQuestions();
                 renderQuestionBanks();
-                Swal.fire({ icon: 'success', title: 'Removed', timer: 1000, showConfirmButton: false });
+                Toast.fire({ icon: 'success', title: 'Removed' });
                 return;
             }
 
@@ -7685,7 +7879,7 @@ if (!empty($Tests)) {
                     updateQBCounters();
                     renderQBQuestions();
                     renderQuestionBanks();
-                    Swal.fire({ icon: 'success', title: 'Deleted!', timer: 1000, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Deleted' });
                 }
             } catch (e) { console.error(e); }
         }
@@ -7801,7 +7995,7 @@ if (!empty($Tests)) {
             if (!isQBQuestionPersisted(id)) {
                 Object.assign(q, updatedData);
                 renderQBQuestions();
-                Swal.fire({ icon: 'success', title: 'Updated', text: 'Saved in draft. Use Save on the bank to persist.', timer: 1400, showConfirmButton: false });
+                Toast.fire({ icon: 'success', title: 'Updated', text: 'Saved in draft. Use Save on the bank to persist.' });
                 return;
             }
 
@@ -7816,7 +8010,7 @@ if (!empty($Tests)) {
                 if (result.status === 'success') {
                     Object.assign(q, updatedData);
                     renderQBQuestions();
-                    Swal.fire({ icon: 'success', title: 'Updated!', timer: 1000, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Updated!' });
                 } else {
                     throw new Error(result.message);
                 }
@@ -7900,12 +8094,10 @@ if (!empty($Tests)) {
                     updateQBCounters();
                     renderQBQuestions();
                     renderQuestionBanks();
-                    Swal.fire({
+                    Toast.fire({
                         title: 'Imported to Draft',
                         text: `${localQuestions.length} questions added. Click Save to persist.`,
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false
+                        icon: 'success'
                     });
                     return;
                 }
@@ -7923,14 +8115,8 @@ if (!empty($Tests)) {
                     if (result.status === 'success') {
                         // Refresh activeQB questions by refetching or just adding locally (if backend doesn't return them)
                         // For simplicity, we'll just reload the page or refetch the list
-                        Swal.fire({
-                            title: 'Success!',
-                            text: `${questions.length} questions imported and saved permanently.`,
-                            icon: 'success',
-                            confirmButtonColor: '#dc2230'
-                        }).then(() => {
-                            App.refreshAllData();
-                        });
+                        Toast.fire({ icon: 'success', title: 'Success!', text: `${questions.length} questions imported and saved permanently.` });
+                        App.refreshAllData();
                     } else {
                         throw new Error(result.message);
                     }
@@ -8168,17 +8354,25 @@ if (!empty($Tests)) {
                     {
                         data: 'name',
                         width: '35%',
-                        render: (data, type, row) => `
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center font-bold text-xs border border-red-100">
-                                ${data.charAt(0)}
-                            </div>
-                            <div>
-                                <div class="font-bold text-slate-700">${data}</div>
-                                <div class="text-[10px] text-slate-400 font-medium">Created on ${new Date(row.created_at).toLocaleDateString()}</div>
-                            </div>
-                        </div>
-                    `
+                        render: (data, type, row) => {
+                            const hasVideo = row.add_video === 'Yes' || row.add_video === 1 || row.add_video === '1' || row.add_video === true;
+                            const videoIndicator = hasVideo ? `
+                                <span class="ml-2 inline-flex items-center justify-center w-5 h-5 bg-red-50 text-red-600 rounded-full border border-red-100 shadow-sm" title="Intro Video Enabled">
+                                    <i class="bi bi-camera-video-fill text-[10px]"></i>
+                                </span>
+                            ` : '';
+                            return `
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center font-bold text-xs border border-red-100">
+                                        ${data.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-700 flex items-center">${data}${videoIndicator}</div>
+                                        <div class="text-[10px] text-slate-400 font-medium">Created on ${new Date(row.created_at).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }
                     },
                     {
                         data: 'category',
@@ -8223,7 +8417,7 @@ if (!empty($Tests)) {
                             const packs = row.test_packs || [];
                             const submissions = App.getAllSubmissions();
                             const hasPendingEval = packs.some(p => {
-                                return submissions.some(s => 
+                                return submissions.some(s =>
                                     String(s.pack_id) === String(p.id) &&
                                     (s.subjective_items || []).some(q => (q.candidate_answer || '').trim() && !q.graded)
                                 );
@@ -8602,9 +8796,8 @@ if (!empty($Tests)) {
                 });
                 const res = await response.json();
                 if (res.status === 'success') {
-                    Swal.fire('Success', 'Group rescheduled successfully!', 'success').then(() => {
-                        location.reload();
-                    });
+                    Toast.fire({ icon: 'success', title: 'Group rescheduled successfully!' });
+                    location.reload();
                 } else {
                     Swal.fire('Error', res.message, 'error');
                 }
@@ -8663,12 +8856,10 @@ if (!empty($Tests)) {
 
                     const data = await response.json();
                     if (data.status === 'success') {
-                        Swal.fire({
+                        Toast.fire({
                             icon: 'success',
                             title: 'Published!',
-                            text: 'Group has been locked and published.',
-                            timer: 1500,
-                            showConfirmButton: false
+                            text: 'Group has been locked and published.'
                         });
 
                         const table = $(`#BatchTable_${testId}`).DataTable();
@@ -8719,12 +8910,10 @@ if (!empty($Tests)) {
                 });
                 const data = await response.json();
                 if (data.status === 'success') {
-                    Swal.fire({
+                    Toast.fire({
                         icon: 'success',
                         title: 'Results published',
-                        text: 'Candidates can now open their results.',
-                        timer: 1800,
-                        showConfirmButton: false
+                        text: 'Candidates can now open their results.'
                     });
 
                     const table = $(`#BatchTable_${testId}`).DataTable();
@@ -8935,13 +9124,9 @@ if (!empty($Tests)) {
 
                 const result = await response.json();
                 if (result.status === 'success') {
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
+                    Toast.fire({
                         icon: 'success',
-                        title: data.id ? 'Batch updated successfully' : 'Batch created successfully',
-                        showConfirmButton: false,
-                        timer: 2000
+                        title: data.id ? 'Batch updated successfully' : 'Batch created successfully'
                     });
 
                     // Update the row data with the new ID and exit edit mode
@@ -9353,16 +9538,13 @@ if (!empty($Tests)) {
                         }
                     }
 
-                    Swal.fire({
-                        title: 'Success!',
-                        text: 'Test group and assignments saved successfully.',
+                    Toast.fire({
                         icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        if (typeof renderTable === 'function') renderTable();
-                        closeModal('createPackModal');
+                        title: 'Success!',
+                        text: 'Test group and assignments saved successfully.'
                     });
+                    closeModal('createPackModal');
+                    if (typeof renderTable === 'function') renderTable();
                 } else {
                     throw new Error(result.message || 'Failed to save batch');
                 }
@@ -9958,11 +10140,10 @@ if (!empty($Tests)) {
                     }
 
                     App.manualQuestions = questions;
-                    Swal.fire({
-                        title: 'Questions Uploaded',
-                        text: `${questions.length} questions integrated into the template.`,
+                    Toast.fire({
                         icon: 'success',
-                        timer: 2000
+                        title: 'Questions Uploaded',
+                        text: `${questions.length} questions integrated into the template.`
                     });
 
                     if (typeof updateManualQCount === 'function') updateManualQCount();
@@ -10123,12 +10304,10 @@ if (!empty($Tests)) {
                         loadSidebarTemplates();
                     }
 
-                    Swal.fire({
+                    Toast.fire({
                         icon: 'success',
                         title: isEditMode ? 'Template Updated!' : 'Template Saved!',
-                        text: isEditMode ? 'Template changes have been saved.' : 'Template has been created and is ready to use.',
-                        timer: 2000,
-                        showConfirmButton: false
+                        text: isEditMode ? 'Template changes have been saved.' : 'Template has been created and is ready to use.'
                     });
 
                     // Optional: Scroll to the new card
@@ -10834,15 +11013,13 @@ if (!empty($Tests)) {
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    Swal.fire({
-                        title: 'Success!',
-                        text: 'Batch has been created.',
+                    Toast.fire({
                         icon: 'success',
-                        timer: 1500
-                    }).then(() => {
-                        if (typeof closeModal === 'function') closeModal('assignModal');
-                        App.refreshAllData();
+                        title: 'Success!',
+                        text: 'Batch has been created.'
                     });
+                    if (typeof closeModal === 'function') closeModal('assignModal');
+                    App.refreshAllData();
                 } else {
                     Swal.fire('Error', result.message || 'Failed to create Batch', 'error');
                 }
@@ -11066,6 +11243,7 @@ if (!empty($Tests)) {
                 const overlay = document.getElementById('execIntroOverlay');
                 const mount = document.getElementById('execIntroVideosMount');
                 const btn = document.getElementById('execIntroCompleteBtn');
+                
                 if (!overlay || !mount || !btn) {
                     document.getElementById('executionView').classList.remove('d-none');
                     document.body.style.overflow = 'hidden';
@@ -11075,61 +11253,102 @@ if (!empty($Tests)) {
                     App.updateProgress();
                     return;
                 }
-                mount.innerHTML = '';
-                App.introGateTotal = urls.length;
+
+                App.introGateUrls = urls || [];
+                App.introGateCurrentIdx = 0;
+                App.introGateTotal = App.introGateUrls.length;
                 App.introGateEnded = new Set();
-                btn.disabled = true;
-                btn.title = 'Watch all orientation videos to continue';
-                urls.forEach((url, idx) => {
-                    const box = document.createElement('div');
-                    box.className = 'bg-white rounded-3 p-3 shadow-sm';
-                    const v = document.createElement('video');
-                    v.className = 'w-100 rounded-3';
-                    v.controls = true;
-                    v.setAttribute('playsinline', '');
-                    v.preload = 'metadata';
-                    const candidates = App._resolveIntroVideoCandidates(url);
-                    let candidateIdx = 0;
-                    const tryLoadNext = () => {
-                        if (candidateIdx >= candidates.length) {
-                            console.warn('Intro video failed to load for all URL candidates:', url, candidates);
-                            return;
-                        }
-                        const src = candidates[candidateIdx++];
-                        v.src = src;
-                        v.load();
-                    };
-                    // Show video only (no poster/image fallback).
-                    v.removeAttribute('poster');
-                    v.addEventListener('ended', () => App.markIntroVideoEnded(idx));
-                    v.addEventListener('error', () => {
-                        tryLoadNext();
-                    });
-                    tryLoadNext();
-                    box.appendChild(v);
-                    mount.appendChild(box);
-                });
+                
                 overlay.classList.remove('d-none');
+                App.renderIntroVideoStep();
+            },
+
+            renderIntroVideoStep: () => {
+                const mount = document.getElementById('execIntroVideosMount');
+                const btnNext = document.getElementById('execIntroCompleteBtn');
+                const btnPrev = document.getElementById('execIntroPrevBtn');
+                const idx = App.introGateCurrentIdx;
+                const url = App.introGateUrls[idx];
+
+                if (!url) {
+                    App.completeIntroGate();
+                    return;
+                }
+
+                mount.innerHTML = '';
+                const box = document.createElement('div');
+                box.className = 'bg-white rounded-3 p-3 shadow-sm text-center';
+                
+                if (App.introGateTotal > 1) {
+                    const step = document.createElement('div');
+                    step.className = 'mb-3 text-slate-400 font-black uppercase tracking-[0.15em] text-[10px]';
+                    step.textContent = `Orientation Step ${idx + 1} of ${App.introGateTotal}`;
+                    box.appendChild(step);
+                }
+
+                const v = document.createElement('video');
+                v.className = 'w-100 rounded-3 shadow-sm';
+                v.controls = true;
+                v.autoplay = true;
+                v.setAttribute('playsinline', '');
+                v.preload = 'metadata';
+                
+                const candidates = App._resolveIntroVideoCandidates(url);
+                let candidateIdx = 0;
+                const tryLoadNext = () => {
+                    if (candidateIdx >= candidates.length) return;
+                    v.src = candidates[candidateIdx++];
+                    v.load();
+                };
+                
+                v.addEventListener('ended', () => {
+                    App.markIntroVideoEnded(idx);
+                });
+                v.addEventListener('error', tryLoadNext);
+                tryLoadNext();
+                
+                box.appendChild(v);
+                mount.appendChild(box);
+
+                // Handle Previous Button
+                if (btnPrev) {
+                    if (idx > 0) {
+                        btnPrev.classList.remove('d-none');
+                        btnPrev.onclick = () => {
+                            App.introGateCurrentIdx--;
+                            App.renderIntroVideoStep();
+                        };
+                    } else {
+                        btnPrev.classList.add('d-none');
+                    }
+                }
+
+                // Handle Next / Complete Button
+                const isLast = idx >= App.introGateTotal - 1;
+                if (isLast) {
+                    btnNext.innerHTML = `I've completed watching — Begin test <i class="bi bi-rocket-takeoff ms-2"></i>`;
+                    btnNext.onclick = () => App.completeIntroGate();
+                    btnNext.disabled = false;
+                    btnNext.title = '';
+                } else {
+                    btnNext.innerHTML = `Next Orientation Video <i class="bi bi-arrow-right ms-2"></i>`;
+                    btnNext.onclick = () => {
+                        App.introGateCurrentIdx++;
+                        App.renderIntroVideoStep();
+                    };
+                    btnNext.disabled = false;
+                    btnNext.title = 'Skip or continue to next video';
+                }
             },
 
             markIntroVideoEnded: (idx) => {
                 if (!App.introGateEnded) App.introGateEnded = new Set();
                 App.introGateEnded.add(idx);
-                const btn = document.getElementById('execIntroCompleteBtn');
-                if (btn) {
-                    const done = App.introGateEnded.size >= (App.introGateTotal || 0);
-                    btn.disabled = !done;
-                    btn.title = done ? '' : 'Watch all orientation videos to continue';
-                }
+                // In sequential mode, we might want to auto-advance or just highlight the Next button.
+                // For now, we've allowed skipping anyway based on "allow to skill".
             },
 
             completeIntroGate: () => {
-                const total = App.introGateTotal || 0;
-                const done = App.introGateEnded ? App.introGateEnded.size : 0;
-                if (total > 0 && done < total) {
-                    Swal.fire('Watch required videos', 'Please watch all orientation videos before beginning the test.', 'warning');
-                    return;
-                }
                 const overlay = document.getElementById('execIntroOverlay');
                 if (overlay) overlay.classList.add('d-none');
                 const ev = document.getElementById('executionView');
@@ -11209,6 +11428,8 @@ if (!empty($Tests)) {
                     App.executionState.assignedRoles = testMeta?.assigned_to || test?.assigned_to || pack?.user_role || 'General Access';
                     App.executionState.attachment = null;
                     App.executionState.attachments = [];
+                    App.executionState.browserLockdown = !!(pack && parseInt(pack.browser_lockdown) === 1);
+
                     const attachInput = document.getElementById('execSubmissionAttachmentInput');
                     const attachMeta = document.getElementById('execSubmissionAttachmentMeta');
                     const singleInput = document.getElementById('execFinalSingleFileInput');
@@ -11269,7 +11490,7 @@ if (!empty($Tests)) {
                 let syncCounter = 0;
                 App.executionState.timerInterval = setInterval(async () => {
                     App.executionState.timeLeft--;
-                    
+
                     // Check for time extension from admin every 60 seconds
                     syncCounter++;
                     if (syncCounter >= 60) {
@@ -11294,23 +11515,20 @@ if (!empty($Tests)) {
                     if (res.status === 'success') {
                         const serverDuration = parseInt(res.duration);
                         const currentDuration = parseInt(App.executionState.durationMins || 60);
-                        
+
                         if (serverDuration > currentDuration) {
                             const addedMins = serverDuration - currentDuration;
                             App.executionState.timeLeft += (addedMins * 60);
                             App.executionState.durationMins = serverDuration;
                             
-                            Swal.fire({
-                                toast: true,
-                                position: 'top-end',
+                            Toast.fire({
                                 icon: 'success',
-                                title: `Time Extended! Admin added ${addedMins} extra minutes.`,
-                                showConfirmButton: false,
-                                timer: 5000
+                                title: 'Time Extended!',
+                                text: 'Sync Successful: Database and state are now aligned.'
                             });
                         }
                     }
-                } catch(e) { console.error("Time sync failed", e); }
+                } catch (e) { console.error("Time sync failed", e); }
             },
 
             updateTimerUI: () => {
@@ -11606,8 +11824,26 @@ if (!empty($Tests)) {
                 document.getElementById('questionCard')?.classList.add('d-none');
                 document.getElementById('execQuestionFooter')?.classList.add('d-none');
                 document.getElementById('finalSubmissionPage')?.classList.remove('d-none');
+                
+                // Reset UI to initial state (Upload Section + Skip/Save)
+                document.getElementById('execUploadSection')?.classList.remove('d-none');
+                document.getElementById('execCompletionSection')?.classList.add('d-none');
+                document.getElementById('initialSubActions')?.classList.remove('d-none');
+                document.getElementById('finalSubActions')?.classList.add('d-none');
+
                 App.renderExecutionAttachmentList();
             },
+
+
+            showFinalSubActions: () => {
+                // Switch to Completion Section + Submit/Back
+                document.getElementById('execUploadSection')?.classList.add('d-none');
+                document.getElementById('execCompletionSection')?.classList.remove('d-none');
+                document.getElementById('initialSubActions')?.classList.add('d-none');
+                document.getElementById('finalSubActions')?.classList.remove('d-none');
+            },
+
+
 
             backToQuestionsFromFinal: () => {
                 document.getElementById('questionCard')?.classList.remove('d-none');
@@ -11782,6 +12018,12 @@ if (!empty($Tests)) {
 
 
             backToDashboard: () => {
+                // Hide the success overlay and all execution-related screens
+                document.getElementById('submissionSuccessOverlay')?.classList.add('d-none');
+                document.getElementById('finalSubmissionPage')?.classList.add('d-none');
+                document.getElementById('execIntroOverlay')?.classList.add('d-none');
+                
+                // Ensure the main UI state is clean
                 if (typeof window.switchMainTab === 'function') {
                     window.switchMainTab('execution');
                     App.refreshAllData();
@@ -11789,6 +12031,7 @@ if (!empty($Tests)) {
                     location.reload();
                 }
             },
+
 
             // --- Results & Evaluation ---
             loadCandidateResult: () => {
@@ -12052,7 +12295,7 @@ if (!empty($Tests)) {
                         testFilterEl.value = contextTestName;
                         activeSelectedTest = contextTestName;
                         if (groupFilterEl) {
-                           Array.from(groupFilterEl.options).forEach(o => o.selected = false);
+                            Array.from(groupFilterEl.options).forEach(o => o.selected = false);
                         }
                         if (dateFilterEl) dateFilterEl.value = '';
                     }
@@ -12095,6 +12338,8 @@ if (!empty($Tests)) {
                     if (tA && tB && tA !== tB) return tA - tB;
                     return norm(a.candidate_name).localeCompare(norm(b.candidate_name));
                 });
+
+                App.resultsLeaderboardFiltered = filtered;
 
                 const paginationState = App.resultsPagination || { page: 1, perPage: 10 };
                 App.resultsPagination = paginationState;
@@ -12223,12 +12468,12 @@ if (!empty($Tests)) {
 
                 const countEl = document.getElementById('breakdown-cat-count');
                 if (countEl) countEl.textContent = `${filtered.length} Candidate${filtered.length === 1 ? '' : 's'}`;
-                
+
                 // Store filtered results for report generation
                 App.currentFilteredResults = filtered;
 
             },
-            
+
             generateResultsReport: () => {
                 const data = App.currentFilteredResults || [];
                 if (!data.length) {
@@ -12240,95 +12485,547 @@ if (!empty($Tests)) {
                     });
                     return;
                 }
+                const modalEl = document.getElementById('reportExportModal');
+                const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                App.initExportSearch();
+                App.updateExportColCount();
+                modal.show();
+            },
+
+            toggleAllExportColumns: (state) => {
+                const checkboxes = document.querySelectorAll('#report_column_selector input[type="checkbox"]');
+                checkboxes.forEach(cb => {
+                    cb.checked = state;
+                });
+                App.updateExportColCount();
+                const selectAll = document.getElementById('selectAllCols');
+                if (selectAll) selectAll.checked = state;
+            },
+
+            updateExportColCount: () => {
+                const total = document.querySelectorAll('#report_column_selector .column-card').length;
+                const checkboxes = document.querySelectorAll('#report_column_selector input[type="checkbox"]');
+                const selected = Array.from(checkboxes).filter(cb => cb.checked).length;
+                
+                // Update row highlights
+                checkboxes.forEach(cb => {
+                    const card = cb.closest('.column-card');
+                    if (card) {
+                        if (cb.checked) card.classList.add('is-selected');
+                        else card.classList.remove('is-selected');
+                    }
+                });
+
+                const countEl = document.getElementById('selectedColCount');
+                if (countEl) countEl.textContent = `${selected} of ${total} selected`;
+
+                const selectAll = document.getElementById('selectAllCols');
+                if (selectAll) {
+                    selectAll.checked = (selected === total && total > 0);
+                    selectAll.indeterminate = (selected > 0 && selected < total);
+                }
+            },
+
+            initExportSearch: () => {
+                const searchInput = document.getElementById('columnSearch');
+                if (!searchInput || searchInput.dataset.initialized) return;
+                searchInput.addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    document.querySelectorAll('#report_column_selector .column-card').forEach(card => {
+                        const text = card.querySelector('span').textContent.toLowerCase();
+                        card.style.display = text.includes(term) ? 'flex' : 'none';
+                    });
+                });
+                searchInput.dataset.initialized = "true";
+            },
+
+            exportToExcel: () => {
+                const data = App.currentFilteredResults || [];
+                if (!data.length) return;
+
+                const selectedCols = Array.from(document.querySelectorAll('#report_column_selector input[type="checkbox"]:checked'))
+                    .map(cb => ({ key: cb.value, label: cb.closest('label').querySelector('span').textContent }));
+
+                if (selectedCols.length === 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No Columns Selected',
+                        text: 'Please select at least one column to export.',
+                        confirmButtonColor: '#dc2230'
+                    });
+                    return;
+                }
 
                 try {
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
-
-                    // Branding & Metadata
-                    const timestamp = new Date().toLocaleString();
-                    const logoColor = [220, 34, 48]; // Brand Red (#dc2230)
-                    
-                    // Header Title
-                    doc.setFontSize(22);
-                    doc.setTextColor(30, 41, 59); // slate-800
-                    doc.text("Candidate Performance Report", 14, 18);
-                    
-                    doc.setFontSize(10);
-                    doc.setTextColor(100, 116, 139); // slate-500
-                    doc.text(`Generated on: ${timestamp}`, 14, 24);
-                    doc.text(`Total Records: ${data.length}`, 14, 29);
-                    
-                    // Prepare Table Data
-                    const headers = [['Candidate Name', 'Test Name', 'Test Type', 'Group', 'Status', 'Marks', 'Score', 'Accuracy', 'Pass/Fail']];
-                    const rows = data.map(item => [
-                        item.candidate_name || '-',
-                        item.test_name || '-',
-                        item.test_type || '-',
-                        item.group_name || '-',
-                        item.status || '-',
-                        item.marks_text || '0 / 0',
-                        item.final_score || 0,
-                        (item.overall_pct || 0) + '%',
-                        item.pass_fail || '-'
-                    ]);
-
-                    // Generate Table using AutoTable
-                    doc.autoTable({
-                        head: headers,
-                        body: rows,
-                        startY: 35,
-                        theme: 'striped',
-                        headStyles: { 
-                            fillColor: logoColor,
-                            textColor: [255, 255, 255],
-                            fontSize: 10,
-                            fontStyle: 'bold',
-                            halign: 'left',
-                            cellPadding: 4
-                        },
-                        bodyStyles: { 
-                            fontSize: 9,
-                            textColor: [51, 65, 85], // slate-700
-                            valign: 'middle',
-                            cellPadding: 3
-                        },
-                        alternateRowStyles: {
-                            fillColor: [248, 250, 252] // slate-50
-                        },
-                        columnStyles: {
-                            0: { fontStyle: 'bold', cellWidth: 'auto' }, // Candidate
-                            5: { halign: 'center' }, // Marks
-                            6: { halign: 'center' }, // Score
-                            7: { halign: 'center' }, // Accuracy
-                            8: { halign: 'center' }  // Pass/Fail
-                        },
-                        margin: { top: 35, bottom: 20 },
-                        didDrawPage: (pageData) => {
-                            // Footer (Page Numbering)
-                            const str = "Page " + doc.internal.getNumberOfPages();
-                            doc.setFontSize(9);
-                            doc.setTextColor(148, 163, 184); // slate-400
-                            const pageSize = doc.internal.pageSize;
-                            const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
-                            doc.text(str, pageData.settings.margin.left, pageHeight - 10);
-                        }
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Generating Excel...',
+                        text: 'Please wait while we prepare your report.',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
                     });
 
-                    // Save the PDF
-                    const dateStr = new Date().toISOString().slice(0, 10);
-                    doc.save(`Candidate_Performance_Report_${dateStr}.pdf`);
+                    const wsData = data.map(item => {
+                        const row = {};
+                        selectedCols.forEach(col => {
+                            let value = item[col.key];
+                            if (col.key === 'overall_pct' && value !== undefined) {
+                                value = value + '%';
+                            }
+                            row[col.label] = (value === null || value === undefined) ? '-' : value;
+                        });
+                        return row;
+                    });
 
-                    Swal.fire({
+                    const worksheet = XLSX.utils.json_to_sheet(wsData);
+
+                    // Style the header row (optional but nice)
+                    const range = XLSX.utils.decode_range(worksheet['!ref']);
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const address = XLSX.utils.encode_col(C) + "1";
+                        if (!worksheet[address]) continue;
+                        worksheet[address].s = {
+                            font: { bold: true },
+                            fill: { fgColor: { rgb: "F1F5F9" } }
+                        };
+                    }
+
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Performance Report");
+
+                    const dateStr = new Date().toISOString().slice(0, 10);
+                    XLSX.writeFile(workbook, `Candidate_Performance_Report_${dateStr}.xlsx`);
+
+                    const modalEl = document.getElementById('reportExportModal');
+                    bootstrap.Modal.getInstance(modalEl).hide();
+                    
+                    Toast.fire({
                         icon: 'success',
-                        title: 'PDF Generated',
-                        text: 'Professional performance report downloaded.',
-                        timer: 1500,
-                        showConfirmButton: false
+                        title: 'Export Complete',
+                        text: 'Your Excel report has been downloaded.'
                     });
                 } catch (e) {
-                    console.error("PDF Generation Error:", e);
-                    Swal.fire('Error', 'Failed to generate PDF report. Please try again.', 'error');
+                    console.error("Excel Generation Error:", e);
+                    Swal.fire('Error', 'Failed to generate Excel report. Please try again.', 'error');
+                }
+            },
+
+            openResultsAnalytics: () => {
+                const el = document.getElementById('resultsAnalyticsModal');
+                if (!el || typeof bootstrap === 'undefined' || !bootstrap.Modal) return;
+                if (!el.dataset.am5AnalyticsBound) {
+                    el.dataset.am5AnalyticsBound = '1';
+                    el.addEventListener('hidden.bs.modal', () => {
+                        App._resultsAnalyticsGen = (App._resultsAnalyticsGen || 0) + 1;
+                        if (typeof App.disposeResultsAnalyticsCharts === 'function') {
+                            App.disposeResultsAnalyticsCharts();
+                        }
+                    });
+                    el.addEventListener('shown.bs.modal', () => {
+                        if (typeof App.renderResultsAnalytics === 'function') {
+                            App.renderResultsAnalytics();
+                        }
+                    });
+                }
+                bootstrap.Modal.getOrCreateInstance(el).show();
+            },
+
+            disposeResultsAnalyticsCharts: () => {
+                if (Array.isArray(App._resultsAm5Roots)) {
+                    App._resultsAm5Roots.forEach((r) => {
+                        try {
+                            r.dispose();
+                        } catch (e) { /* ignore */ }
+                    });
+                }
+                App._resultsAm5Roots = [];
+            },
+
+            renderResultsAnalytics: () => {
+                const data = Array.isArray(App.resultsLeaderboardFiltered) ? App.resultsLeaderboardFiltered : [];
+                const hintEl = document.getElementById('resultsAnalyticsFilterHint');
+                const hiLoId = 'resultsAnalyticsHighLowChart';
+                const outId = 'resultsAnalyticsOutcomeChart';
+                const topId = 'resultsAnalyticsTopChart';
+                const sessionGen = (App._resultsAnalyticsGen = (App._resultsAnalyticsGen || 0) + 1);
+
+                if (hintEl) {
+                    hintEl.textContent = data.length
+                        ? `Showing ${data.length} candidate row${data.length === 1 ? '' : 's'} (same filters as the leaderboard).`
+                        : 'No rows match the current filters — adjust filters on the leaderboard and open again.';
+                }
+
+                App.disposeResultsAnalyticsCharts();
+
+                const setFallback = (id, html) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = html;
+                };
+
+                if (typeof am5 === 'undefined' || typeof am5xy === 'undefined' || typeof am5percent === 'undefined') {
+                    setFallback(hiLoId, '<p class="text-center text-slate-500 small p-3 mb-0">Charts could not load (amCharts scripts missing).</p>');
+                    setFallback(outId, '');
+                    setFallback(topId, '');
+                    return;
+                }
+
+                const completed = data.filter(r => r.status === 'Completed' && (parseInt(r.total_marks || 0, 10) || 0) > 0);
+                const trunc = (name, max) => {
+                    const s = String(name || '-');
+                    return s.length > max ? s.slice(0, max - 1) + '…' : s;
+                };
+
+                const disposeRootsBoundToEl = (domEl) => {
+                    if (!domEl || !am5.registry || !am5.registry.rootElements) return;
+                    am5.registry.rootElements.slice().forEach((r) => {
+                        try {
+                            if (r && r.dom && (r.dom === domEl || (domEl.id && r.dom.id === domEl.id))) {
+                                r.dispose();
+                            }
+                        } catch (e) { /* ignore */ }
+                    });
+                };
+
+                const applyAnimatedTheme = (root) => {
+                    const Th = typeof am5themes_Animated !== 'undefined' ? am5themes_Animated : null;
+                    const make = Th && (Th.new || (Th.default && Th.default.new));
+                    if (typeof make !== 'function') return;
+                    try {
+                        root.setThemes([make(root)]);
+                    } catch (e) {
+                        console.warn('amCharts theme skipped', e);
+                    }
+                };
+
+                /** Corner logo is skipped when am5.addLicense() has been set; otherwise dispose the default branding sprite. */
+                const removeAmChartsCornerLogo = (root) => {
+                    try {
+                        const logo = root._logo;
+                        if (logo && typeof logo.dispose === 'function') {
+                            logo.dispose();
+                        }
+                    } catch (e) { /* ignore */ }
+                };
+
+                const applyDigitalNumberFormat = (root) => {
+                    try {
+                        root.numberFormatter.set('numberFormat', '#');
+                    } catch (e) { /* ignore */ }
+                };
+
+                const pushRoot = (id, buildFn) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    disposeRootsBoundToEl(el);
+                    el.innerHTML = '';
+                    am5.ready(() => {
+                        if (sessionGen !== App._resultsAnalyticsGen) return;
+                        try {
+                            disposeRootsBoundToEl(el);
+                            if (sessionGen !== App._resultsAnalyticsGen) return;
+                            const root = am5.Root.new(el);
+                            App._resultsAm5Roots.push(root);
+                            applyAnimatedTheme(root);
+                            removeAmChartsCornerLogo(root);
+                            applyDigitalNumberFormat(root);
+                            buildFn(root);
+                            removeAmChartsCornerLogo(root);
+                            try {
+                                requestAnimationFrame(() => removeAmChartsCornerLogo(root));
+                            } catch (e2) { /* ignore */ }
+                        } catch (e) {
+                            console.error('amCharts build error', id, e);
+                            el.innerHTML = '<p class="text-center text-slate-500 small p-3 mb-0">Chart error.</p>';
+                        }
+                    });
+                };
+
+                App._resultsAm5Roots = [];
+
+                /* 1 — Gradient bar + cursor (highest / lowest) */
+                if (!completed.length) {
+                    setFallback(hiLoId, '<p class="text-[11px] text-slate-500 font-medium mb-0 text-center px-2 py-3">No completed attempts with a marked total in this view.</p>');
+                } else {
+                    const byDesc = [...completed].sort((a, b) => {
+                        if ((b.final_score || 0) !== (a.final_score || 0)) return (b.final_score || 0) - (a.final_score || 0);
+                        return (parseInt(a.duration_seconds || 0, 10) || 0) - (parseInt(b.duration_seconds || 0, 10) || 0);
+                    });
+                    const byAsc = [...completed].sort((a, b) => {
+                        if ((a.final_score || 0) !== (b.final_score || 0)) return (a.final_score || 0) - (b.final_score || 0);
+                        return (parseInt(a.duration_seconds || 0, 10) || 0) - (parseInt(b.duration_seconds || 0, 10) || 0);
+                    });
+                    const high = byDesc[0];
+                    const low = byAsc[0];
+                    const hFs = parseInt(high.final_score || 0, 10);
+                    const lFs = parseInt(low.final_score || 0, 10);
+                    const hTm = parseInt(high.total_marks || 0, 10);
+                    const lTm = parseInt(low.total_marks || 0, 10);
+                    /* Unique axis categories required — duplicate labels merge columns and break layout. Names stay in tooltip only. */
+                    const chartData = [
+                        {
+                            category: 'Highest',
+                            score: hFs,
+                            total: hTm,
+                            fullName: String(high.candidate_name || '-'),
+                            role: 'Highest'
+                        },
+                        {
+                            category: 'Lowest',
+                            score: lFs,
+                            total: lTm,
+                            fullName: String(low.candidate_name || '-'),
+                            role: 'Lowest'
+                        }
+                    ];
+                    const yMax = Math.max(hTm, lTm, hFs, lFs, 1);
+
+                    pushRoot(hiLoId, (root) => {
+                        const chart = root.container.children.push(am5xy.XYChart.new(root, {
+                            panX: false,
+                            panY: false,
+                            wheelX: 'none',
+                            wheelY: 'none',
+                            paddingLeft: 8,
+                            paddingRight: 8,
+                            paddingTop: 10,
+                            paddingBottom: 4
+                        }));
+                        const xRenderer = am5xy.AxisRendererX.new(root, {
+                            minGridDistance: 40,
+                            cellStartLocation: 0.1,
+                            cellEndLocation: 0.9
+                        });
+                        xRenderer.grid.template.setAll({ strokeOpacity: 0, visible: false });
+                        const xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+                            categoryField: 'category',
+                            renderer: xRenderer
+                        }));
+                        xAxis.get('renderer').labels.template.setAll({
+                            fontSize: 11,
+                            fill: am5.color(0x334155),
+                            fontWeight: '600',
+                            textAlign: 'center'
+                        });
+                        xAxis.data.setAll(chartData);
+                        const yRenderer = am5xy.AxisRendererY.new(root, {});
+                        yRenderer.grid.template.setAll({
+                            stroke: am5.color(0xcbd5e1),
+                            strokeOpacity: 0.6
+                        });
+                        const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+                            min: 0,
+                            max: yMax,
+                            strictMinMax: true,
+                            renderer: yRenderer
+                        }));
+                        yAxis.get('renderer').labels.template.setAll({ fontSize: 10, fill: am5.color(0x64748b) });
+                        const series = chart.series.push(am5xy.ColumnSeries.new(root, {
+                            name: 'Marks',
+                            xAxis,
+                            yAxis,
+                            valueYField: 'score',
+                            categoryXField: 'category',
+                            tooltip: am5.Tooltip.new(root, {
+                                labelText: '[bold fontSize:13px]{role}[/]\n[fontSize:11px #475569]{fullName}[/]\n[bold #0f172a]{score}[/] / [fontSize:12px]{total}[/]'
+                            })
+                        }));
+                        series.set('locationX', 0.5);
+                        series.columns.template.setAll({
+                            cornerRadiusTL: 6,
+                            cornerRadiusTR: 6,
+                            stroke: am5.color(0xffffff),
+                            strokeOpacity: 1,
+                            strokeWidth: 1.5
+                        });
+                        series.columns.template.adapters.add('fill', (fill, target) => {
+                            const ctx = target.dataItem && target.dataItem.dataContext;
+                            if (!ctx || !ctx.role) return fill;
+                            const hi = ctx.role === 'Highest';
+                            return am5.LinearGradient.new(root, {
+                                rotation: 90,
+                                stops: hi
+                                    ? [
+                                        { color: am5.color(0x7dd3fc) },
+                                        { color: am5.color(0x0ea5e9) },
+                                        { color: am5.color(0x0369a1) }
+                                    ]
+                                    : [
+                                        { color: am5.color(0xfde68a) },
+                                        { color: am5.color(0xf59e0b) },
+                                        { color: am5.color(0xb45309) }
+                                    ]
+                            });
+                        });
+                        series.data.setAll(chartData);
+                        series.appear(450, 60);
+                    });
+                }
+
+                /* 2 — Donut pie (pass / fail / pending) */
+                if (!data.length) {
+                    setFallback(outId, '<div class="d-flex align-items-center justify-content-center text-[11px] font-bold text-slate-400 text-uppercase tracking-widest" style="min-height:140px;">No data</div>');
+                } else {
+                    let pass = 0;
+                    let fail = 0;
+                    let pend = 0;
+                    data.forEach(r => {
+                        if (r.status === 'Pending') pend += 1;
+                        else if (r.pass_fail === 'Pass') pass += 1;
+                        else if (r.pass_fail === 'Fail') fail += 1;
+                    });
+                    const outcomeData = [
+                        { category: 'Pass', value: pass, color: am5.color(0x2dd4bf) },
+                        { category: 'Fail', value: fail, color: am5.color(0xf472b6) },
+                        { category: 'Pending', value: pend, color: am5.color(0xa5b4fc) }
+                    ];
+                    let pieData = outcomeData.filter(d => d.value > 0);
+                    if (!pieData.length) {
+                        pieData = [{ category: 'No status', value: 1, color: am5.color(0xe2e8f0) }];
+                    }
+
+                    pushRoot(outId, (root) => {
+                        const chart = root.container.children.push(am5percent.PieChart.new(root, {
+                            layout: root.verticalLayout,
+                            innerRadius: am5.percent(56),
+                            paddingTop: 2,
+                            paddingBottom: 2,
+                            paddingLeft: 4,
+                            paddingRight: 4
+                        }));
+                        const series = chart.series.push(am5percent.PieSeries.new(root, {
+                            name: 'Outcomes',
+                            valueField: 'value',
+                            categoryField: 'category',
+                            legendLabelText: '{category}',
+                            legendValueText: '{value} ({valuePercentTotal.formatNumber(\'0.0\')}%)'
+                        }));
+                        series.slices.template.setAll({
+                            stroke: am5.color(0xffffff),
+                            strokeWidth: 2,
+                            strokeOpacity: 1,
+                            cornerRadius: 6
+                        });
+                        series.slices.template.adapters.add('fill', (fill, target) => {
+                            const ctx = target.dataItem && target.dataItem.dataContext;
+                            return ctx && ctx.color ? ctx.color : fill;
+                        });
+                        series.labels.template.set('visible', false);
+                        series.ticks.template.set('visible', false);
+                        series.set('tooltip', am5.Tooltip.new(root, {
+                            labelText: '[bold]{category}[/]\nCount: [bold]{value}[/]\nShare: [bold]{valuePercentTotal.formatNumber(\'0.0\')}%[/]'
+                        }));
+                        series.data.setAll(pieData);
+                        const legend = chart.children.push(am5.Legend.new(root, {
+                            centerX: am5.p50,
+                            x: am5.p50,
+                            layout: root.horizontalLayout,
+                            marginTop: 4
+                        }));
+                        legend.labels.template.setAll({ fontSize: 10, fill: am5.color(0x334155) });
+                        legend.valueLabels.template.setAll({ fontSize: 10, fill: am5.color(0x64748b) });
+                        legend.markers.template.setAll({ width: 10, height: 10 });
+                        legend.data.setAll(series.dataItems);
+                        series.appear(600, 80);
+                    });
+                }
+
+                /* 3 — Smoothed area (top 5 scores) */
+                if (!completed.length) {
+                    setFallback(topId, '<p class="text-[11px] text-slate-500 font-medium mb-0 text-center py-3">No completed attempts to rank.</p>');
+                } else {
+                    const top = [...completed].sort((a, b) => {
+                        if ((b.final_score || 0) !== (a.final_score || 0)) return (b.final_score || 0) - (a.final_score || 0);
+                        return (parseInt(a.duration_seconds || 0, 10) || 0) - (parseInt(b.duration_seconds || 0, 10) || 0);
+                    }).slice(0, 5);
+                    const topMax = Math.max(...top.map(r => parseInt(r.final_score || 0, 10)), 1);
+                    const topData = top.map((r, i) => ({
+                        slot: `#${i + 1}`,
+                        fullName: String(r.candidate_name || '-'),
+                        score: parseInt(r.final_score || 0, 10),
+                        total: parseInt(r.total_marks || 0, 10)
+                    }));
+                    const LineCtor = am5xy.SmoothedXLineSeries || am5xy.LineSeries;
+
+                    pushRoot(topId, (root) => {
+                        const chart = root.container.children.push(am5xy.XYChart.new(root, {
+                            panX: false,
+                            panY: false,
+                            wheelX: 'none',
+                            wheelY: 'none',
+                            paddingLeft: 6,
+                            paddingRight: 10,
+                            paddingTop: 8,
+                            paddingBottom: 4
+                        }));
+                        const xRenderer = am5xy.AxisRendererX.new(root, {
+                            minGridDistance: 24,
+                            cellStartLocation: 0,
+                            cellEndLocation: 1
+                        });
+                        xRenderer.grid.template.setAll({ strokeOpacity: 0, visible: false });
+                        const xAxis = chart.xAxes.push(am5xy.CategoryAxis.new(root, {
+                            categoryField: 'slot',
+                            renderer: xRenderer
+                        }));
+                        xAxis.get('renderer').labels.template.setAll({
+                            fontSize: 11,
+                            fill: am5.color(0x4f46e5),
+                            fontWeight: '700',
+                            textAlign: 'center'
+                        });
+                        xAxis.data.setAll(topData);
+                        const yRenderer = am5xy.AxisRendererY.new(root, {});
+                        yRenderer.grid.template.setAll({
+                            stroke: am5.color(0xcbd5e1),
+                            strokeOpacity: 0.55
+                        });
+                        const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+                            min: 0,
+                            max: topMax,
+                            strictMinMax: false,
+                            renderer: yRenderer,
+                            extraMax: 0.12
+                        }));
+                        yAxis.get('renderer').labels.template.setAll({ fontSize: 10, fill: am5.color(0x64748b) });
+                        const lineStroke = am5.color(0x7c3aed);
+                        const series = chart.series.push(LineCtor.new(root, {
+                            name: 'Score',
+                            xAxis,
+                            yAxis,
+                            valueYField: 'score',
+                            categoryXField: 'slot',
+                            stroke: lineStroke,
+                            tooltip: am5.Tooltip.new(root, {
+                                labelText: '[bold]{fullName}[/]\n[fontSize:12px]{score} / {total}[/]'
+                            })
+                        }));
+                        series.set('locationX', 0.5);
+                        series.strokes.template.setAll({
+                            strokeWidth: 3,
+                            strokeOpacity: 1
+                        });
+                        series.fills.template.setAll({
+                            visible: true,
+                            fillOpacity: 1,
+                            fill: am5.LinearGradient.new(root, {
+                                rotation: 90,
+                                stops: [
+                                    { color: am5.color(0xc4b5fd), opacity: 0.45 },
+                                    { color: am5.color(0x7c3aed), opacity: 0.12 }
+                                ]
+                            })
+                        });
+                        series.bullets.push(() => am5.Bullet.new(root, {
+                            sprite: am5.Circle.new(root, {
+                                radius: 5,
+                                fill: am5.color(0xffffff),
+                                stroke: lineStroke,
+                                strokeWidth: 2.5
+                            })
+                        }));
+                        series.data.setAll(topData);
+                        series.appear(500, 50);
+                    });
                 }
             },
 
@@ -12364,12 +13061,10 @@ if (!empty($Tests)) {
                 if (typeof initTestsDataTable === 'function') initTestsDataTable();
                 if (typeof App.initExecutionDashboard === 'function') App.initExecutionDashboard();
 
-                Swal.fire({
+                Toast.fire({
                     icon: 'success',
                     title: 'Deleted',
-                    text: 'Candidate score entry removed.',
-                    timer: 1000,
-                    showConfirmButton: false
+                    text: 'Candidate score entry removed.'
                 });
             },
 
@@ -12662,19 +13357,19 @@ if (!empty($Tests)) {
             navigateEvaluator: (currentKey, direction) => {
                 const results = App.currentFilteredResults || [];
                 // Only consider results that CAN be evaluated (Completed + Answered Subjective)
-                const evaluatable = results.filter(r => 
-                    r.status === 'Completed' && 
+                const evaluatable = results.filter(r =>
+                    r.status === 'Completed' &&
                     !String(r.key).startsWith('pending::') &&
                     (r.subjective_items || []).some(q => (q.candidate_answer || '').trim() !== '')
                 );
-                
+
                 const currentIndex = evaluatable.findIndex(r => String(r.key) === String(currentKey));
                 if (currentIndex === -1) {
                     // Fallback to simple index search if key mapping is complex
                     console.warn("Evaluator navigation: Current key not found in filtered list.");
                     return;
                 }
-                
+
                 const nextIndex = currentIndex + direction;
                 if (nextIndex >= 0 && nextIndex < evaluatable.length) {
                     App.openEvaluatorForSubmission(evaluatable[nextIndex].key);
@@ -12862,6 +13557,16 @@ if (!empty($Tests)) {
                             <h5 class="text-sm font-bold text-[#1e293b]">Evaluation Complete</h5>
                             <p class="text-[11px] text-[#94a3b8] uppercase tracking-wider font-bold">All subjective answers are graded</p>
                         </div>
+                        <div class="flex justify-end mt-3 gap-2">
+                            <button class="bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#64748b] px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all border border-[#e2e8f0]"
+                                onclick="App.navigateEvaluator('${submission.key}', -1)">
+                                Previous
+                            </button>
+                            <button class="bg-[#dc2230] hover:bg-[#c61e2b] text-white px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm"
+                                onclick="App.navigateEvaluator('${submission.key}', 1)">
+                                Next
+                            </button>
+                        </div>
                     `;
                     return;
                 }
@@ -12897,7 +13602,6 @@ if (!empty($Tests)) {
                                 </div>
                             </div>
                         `).join('')}
-                    </div>
                     </div>
                     <div class="flex justify-end mt-3 gap-2">
                         <button class="bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#64748b] px-6 py-2 rounded-[6px] font-bold text-[11px] uppercase tracking-widest transition-all border border-[#e2e8f0]"
@@ -13015,7 +13719,7 @@ if (!empty($Tests)) {
                 App.loadCandidateResult();
                 App.renderEvaluatorView(submissionKey);
 
-                Swal.fire({ icon: 'success', title: 'Grade saved', timer: 1000, showConfirmButton: false });
+                Toast.fire({ icon: 'success', title: 'Grade saved' });
             },
 
             saveFinalEvaluation: (submissionKey) => {
@@ -13034,24 +13738,22 @@ if (!empty($Tests)) {
                 App.saveEvaluationState();
                 App.loadCandidateResult();
                 App.activeEvaluatorSubmissionKey = submissionKey;
-                Swal.fire({
+                Toast.fire({
                     icon: 'success',
                     title: 'Evaluation Saved',
-                    text: 'Final score updated. Moving to next candidate...',
-                    timer: 1000,
-                    showConfirmButton: false
+                    text: 'Final score updated. Moving to next candidate...'
                 });
 
                 // Move to next candidate after a short delay to let the user see the success
                 setTimeout(() => {
                     const results = App.currentFilteredResults || [];
-                    const evaluatable = results.filter(r => 
-                        r.status === 'Completed' && 
+                    const evaluatable = results.filter(r =>
+                        r.status === 'Completed' &&
                         !String(r.key).startsWith('pending::') &&
                         (r.subjective_items || []).some(q => (q.candidate_answer || '').trim() !== '')
                     );
                     const currentIndex = evaluatable.findIndex(r => String(r.key) === String(submissionKey));
-                    
+
                     if (currentIndex !== -1 && currentIndex < evaluatable.length - 1) {
                         App.navigateEvaluator(submissionKey, 1);
                     } else {
@@ -13377,16 +14079,11 @@ if (!empty($Tests)) {
 
         // Proctoring: Tab/Window Switch Detection
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden' && App.executionState.active) {
+            if (document.visibilityState === 'hidden' && App.executionState.active && App.executionState.browserLockdown) {
                 App.simulateViolation();
             }
         });
 
-        window.addEventListener('blur', () => {
-            if (App.executionState.active) {
-                App.simulateViolation();
-            }
-        });
 
         window.backFromResultsPage = () => {
             const viewEvaluator = document.getElementById('result-evaluator-view');
@@ -13935,7 +14632,8 @@ if (!empty($Tests)) {
                                                             Minimum to pass</p>
                                                     </div>
                                                 </div>
-                                                <input id="builder_pass_mark_visible" type="number" min="0" max="100" value="0"
+                                                <input id="builder_pass_mark_visible" type="number" min="0" max="100"
+                                                    value="0"
                                                     oninput="document.getElementById('builder_pass_mark_inline').value = this.value === '' ? '0' : this.value"
                                                     class="w-full bg-slate-50 border border-slate-100 rounded-xl text-[13px] font-bold h-11 px-4 focus:ring-2 focus:ring-emerald-100 focus:border-emerald-300 transition-all text-slate-700 shadow-inner"
                                                     placeholder="e.g. 60" />
@@ -14020,11 +14718,11 @@ if (!empty($Tests)) {
                                                     <div
                                                         class="col-span-4 py-3 pl-2 pr-3 flex items-center justify-end gap-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">
                                                         <span class="shrink-0 translate-x-[-4px]">Actions</span>
-                                                        <button type="button"
-                                                            onclick="addNewSectionRowInline()"
+                                                        <button type="button" onclick="addNewSectionRowInline()"
                                                             class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-red-600 bg-red-600 text-white hover:bg-red-700 hover:border-red-700 transition-all shadow-sm shadow-red-100"
                                                             title="Add section (save the current row first if it is being edited)">
-                                                            <i class="bi bi-plus-lg text-base leading-none font-bold text-white"></i>
+                                                            <i
+                                                                class="bi bi-plus-lg text-base leading-none font-bold text-white"></i>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -14805,8 +15503,9 @@ if (!empty($Tests)) {
 
             document.getElementById('builder_last_sync').textContent = isClone ? 'New Cloned Template' : 'Loaded: ' + new Date().toLocaleTimeString();
 
-            Swal.fire({
-                toast: true, position: 'top-end', icon: 'success', title: isClone ? 'Template structure cloned' : 'Template loaded with ' + App.manualQuestions.length + ' questions', showConfirmButton: false, timer: 1500
+            Toast.fire({
+                icon: 'success',
+                title: isClone ? 'Template structure cloned' : 'Template loaded with ' + App.manualQuestions.length + ' questions'
             });
         }
 
@@ -16035,7 +16734,7 @@ if (!empty($Tests)) {
             document.querySelectorAll('#manualOptionsSection input[type="text"]').forEach(i => i.value = '');
             resetPedagogyCombo('manualQuestionPedagogy');
 
-            Swal.fire({ title: 'Added!', text: 'Question added to section', icon: 'success', timer: 1000, showConfirmButton: false });
+            Toast.fire({ title: 'Added!', text: 'Question added to section', icon: 'success' });
         };
 
         App.refreshSectionQuestions = (idx) => {
@@ -16673,7 +17372,7 @@ if (!empty($Tests)) {
             if (typeof App.loadEvaluationState === 'function') {
                 App.loadEvaluationState();
             }
-            
+
             if (typeof window.initTestsDataTable === 'function') {
                 window.initTestsDataTable();
             }
@@ -17255,13 +17954,19 @@ if (!empty($Tests)) {
         }
 
         function resetCreateTestExamConfigDefaults() {
-            const map = [['test_form_proctored', true], ['test_form_lockdown', false], ['test_form_show_results', false], ['test_form_backtrack', false]];
-            map.forEach(([id, on]) => {
-                const el = document.getElementById(id);
-                if (el) el.checked = on;
-            });
+            const p = document.getElementById('test_form_proctored');
+            const l = document.getElementById('test_form_lockdown');
+            const sr = document.getElementById('test_form_show_results');
+            const bt = document.getElementById('test_form_backtrack');
             const vid = document.getElementById('ass_add_video');
+            if (p) p.checked = true;
+            if (l) l.checked = false;
+            if (sr) sr.checked = true;
+            if (bt) bt.checked = false;
             if (vid) vid.value = 'No';
+            
+            const msg = document.getElementById('lockdown_info_msg');
+            if (msg) msg.classList.add('hidden');
         }
 
         function toggleCreateTest() {
@@ -17360,7 +18065,11 @@ if (!empty($Tests)) {
             const sr = document.getElementById('test_form_show_results');
             const bt = document.getElementById('test_form_backtrack');
             if (p) p.checked = yn(data.proctored_exam);
-            if (l) l.checked = yn(data.browser_lockdown);
+            if (l) {
+                l.checked = yn(data.browser_lockdown);
+                const msg = document.getElementById('lockdown_info_msg');
+                if (msg) msg.classList.toggle('hidden', !l.checked);
+            }
             if (sr) sr.checked = yn(data.show_results);
             if (bt) bt.checked = yn(data.allow_backtracking);
             const av = document.getElementById('ass_add_video');
@@ -17441,7 +18150,7 @@ if (!empty($Tests)) {
                     })
                 });
                 if (response.ok) {
-                    Swal.fire({ title: 'Updated!', text: 'Test has been updated', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => {
+                    Toast.fire({ title: 'Updated!', text: 'Test has been updated', icon: 'success' }).then(() => {
                         closeModal('TestModal');
                         App.refreshAllData();
                     });
@@ -17464,7 +18173,7 @@ if (!empty($Tests)) {
             });
 
             await fetch(`/Test/deleteTest/${id}`, { method: 'POST' });
-            Swal.fire({ icon: 'success', title: 'Test Deleted', timer: 1000, showConfirmButton: false });
+            Toast.fire({ icon: 'success', title: 'Test Deleted' });
             App.refreshAllData();
         }
 
@@ -17525,7 +18234,7 @@ if (!empty($Tests)) {
                     }
                 }
 
-                Swal.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success', timer: 2000, showConfirmButton: false }).then(() => {
+                Toast.fire({ title: 'Success!', text: 'Test created successfully', icon: 'success' }).then(() => {
                     closeModal('TestModal');
                     App.refreshAllData();
                 });
@@ -17568,7 +18277,7 @@ if (!empty($Tests)) {
                     }))
                 })
             });
-            Swal.fire({ title: 'Template Saved', text: 'Your template has been created successfully', icon: 'success', timer: 1500, showConfirmButton: false }).then(() => {
+            Toast.fire({ title: 'Template Saved', text: 'Your template has been created successfully', icon: 'success' }).then(() => {
                 if (typeof closeQuickTemplateModal === 'function') closeQuickTemplateModal();
                 App.refreshAllData();
             });
@@ -17616,7 +18325,7 @@ if (!empty($Tests)) {
             Swal.fire({ title: 'Delete this pack?', text: "This action cannot be undone.", icon: 'warning', showCancelButton: true }).then(async (result) => {
                 if (result.isConfirmed) {
                     await fetch(`/Test/deletePack/${id}`, { method: 'POST' });
-                    Swal.fire({ icon: 'success', title: 'Batch Deleted', timer: 1000, showConfirmButton: false });
+                    Toast.fire({ icon: 'success', title: 'Batch Deleted' });
                     App.refreshAllData();
                 }
             });
@@ -17657,12 +18366,10 @@ if (!empty($Tests)) {
                 confirmButtonColor: '#2563eb'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    Swal.fire({
+                    Toast.fire({
                         title: 'Configuration Copied!',
                         text: 'Redirecting to Step 3: Assign Candidates...',
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false
+                        icon: 'success'
                     }).then(() => {
                         // Create a duplicated row in background for demo
                         addPackToTable({
@@ -18080,4 +18787,9 @@ if (!empty($Tests)) {
     </div>
 
 </body>
+
 </html>
+</body>
+
+</html>
+
