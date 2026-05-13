@@ -184,6 +184,8 @@ class TestController extends BaseController
                     'marks' => $q['marks'] ?? 1,
                     'pedagogy' => $this->normalizePedagogy($q['pedagogy'] ?? null),
                     'knowledge_type' => $q['knowledge_type'] ?? $q['pedagogy'] ?? null,
+                    'starter_code' => $q['starter_code'] ?? null,
+                    'language' => $q['language'] ?? 'python',
                 ]);
             }
         }
@@ -232,6 +234,8 @@ class TestController extends BaseController
                 'marks' => $q['marks'] ?? 1,
                 'knowledge_type' => $q['knowledge_type'] ?? $q['pedagogy'] ?? null,
                 'pedagogy' => $this->normalizePedagogy($q['pedagogy'] ?? null),
+                'starter_code' => $q['starter_code'] ?? null,
+                'language' => $q['language'] ?? 'python',
             ]);
         }
     }
@@ -464,7 +468,10 @@ class TestController extends BaseController
     {
         $t = strtolower(trim($type));
 
-        return $t === 'mcq' ? 'MCQ' : '2-Mark';
+        if ($t === 'mcq') return 'MCQ';
+        if ($t === 'coding' || $t === 'programming' || $t === 'practical') return 'Programming';
+        
+        return '2-Mark';
     }
 
     /**
@@ -504,6 +511,10 @@ class TestController extends BaseController
 
         if ($t === 'descriptive' || str_contains($t, 'short answer') || str_contains($t, 'short_answer')) {
             return 'Short Answer';
+        }
+
+        if ($t === 'coding' || $t === 'programming' || $t === 'practical') {
+            return 'Programming';
         }
 
         return $raw !== '' ? $raw : 'Multiple Choice';
@@ -816,8 +827,18 @@ class TestController extends BaseController
 
         // Map upload type to template marks_type
         $isMcq = $this->uploadPackUsesMcqQuestions($type);
-        $targetMarksType = $isMcq ? 'Multiple Choice' : 'Short Answer';
-        $friendlyKind = $isMcq ? 'MCQ' : 'descriptive question';
+        $isCoding = (strtolower(trim($type)) === 'coding' || strtolower(trim($type)) === 'programming');
+        
+        $targetMarksType = 'Multiple Choice';
+        $friendlyKind = 'MCQ';
+        
+        if ($isCoding) {
+            $targetMarksType = 'Programming';
+            $friendlyKind = 'programming question';
+        } elseif (!$isMcq) {
+            $targetMarksType = 'Short Answer';
+            $friendlyKind = 'descriptive question';
+        }
 
         $sections = $tsModel->where('template_id', $tp['template_id'])
             ->where('marks_type', $targetMarksType)
@@ -882,8 +903,17 @@ class TestController extends BaseController
                 . "# 4. 'marks' should be 1.\n"
                 . "# 5. 'pedagogy': label for this item (e.g. Bloom level, subject strand). Legacy CSV may use 'knowledge_type' instead.\n";
             $header = "question,option_a,option_b,option_c,option_d,correct_answer,marks,pedagogy";
+        } elseif ($type == 'coding' || $type == 'programming') {
+            $instructions = "# PROGRAMMING QUESTION CSV - UPLOAD INSTRUCTIONS:\n"
+                . "# 1. Provide the question text/problem statement in the 'question' column.\n"
+                . "# 2. Provide the 'starter_code' if any (can be empty).\n"
+                . "# 3. 'marks' records the score weight.\n"
+                . "# 4. 'pedagogy': label for this item (e.g. Logic, Algorithm).\n"
+                . "# 5. 'language': specify the programming language (e.g. python, java, c, cpp, javascript).\n";
+            $header = "question,starter_code,marks,pedagogy,language";
+            $filename = 'programming_template.csv';
         } else {
-            $instructions = "# DESCRIPTIVE QUESTION CSV — UPLOAD INSTRUCTIONS:\n"
+            $instructions = "# DESCRIPTIVE QUESTION CSV - UPLOAD INSTRUCTIONS:\n"
                 . "# 1. Provide the question text in the 'question' column.\n"
                 . "# 2. Provide the 'expected_answer' for evaluation.\n"
                 . "# 3. 'marks' records the score weight (typically 2).\n"
@@ -924,6 +954,8 @@ class TestController extends BaseController
             'marks' => (int) ($raw['marks'] ?? 1),
             'knowledge_type' => $raw['knowledge_type'] ?? null,
             'pedagogy' => $this->normalizePedagogy($raw['pedagogy'] ?? null),
+            'starter_code' => $raw['starter_code'] ?? $raw['coding_starter'] ?? null,
+            'language' => $raw['language'] ?? $raw['coding_language'] ?? 'python',
         ];
 
         $id = $model->insert($row);

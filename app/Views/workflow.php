@@ -5602,6 +5602,8 @@ if (!empty($Tests)) {
                             onclick="App.switchAssignTab('assign-mcq')">MCQ</button>
                         <button id="btn-assign-2m" class="tab tab-idle px-8 py-2.5 rounded-lg"
                             onclick="App.switchAssignTab('assign-2m')">DESCRIPTIVE QUESTION</button>
+                        <button id="btn-assign-coding" class="tab tab-idle px-8 py-2.5 rounded-lg"
+                            onclick="App.switchAssignTab('assign-coding')">PROGRAMMING</button>
                     </div>
 
                     <!-- MCQ panel -->
@@ -5779,6 +5781,92 @@ if (!empty($Tests)) {
                                     <button
                                         class="btn btn-primary-custom h-12 px-10 text-[12px] font-extrabold justify-center rounded-lg shadow-md"
                                         onclick="App.addManualAssignQuestion('descriptive')">
+                                        <i class="bi bi-plus-circle-fill me-1"></i> Add Question to Pack
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="assign-coding" class="assign-panel hidden">
+                        <!-- Bulk Upload Section -->
+                        <div class="card p-6 mb-8 flex items-center justify-between flex-wrap gap-4"
+                            style="background:#fff; border: 2px dashed #e2e8f0; border-radius: 16px;">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm">
+                                    <i class="bi bi-code-slash text-2xl"></i>
+                                </div>
+                                <div>
+                                    <div class="text-base font-extrabold text-slate-800">Programming Bulk Upload</div>
+                                    <div class="text-slate-400 text-[10px] mt-0.5 uppercase font-black tracking-widest">
+                                        CSV format required</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <a href="Test/downloadTemplate/coding"
+                                    class="btn btn-secondary-custom h-12 text-xs px-6 font-bold border-slate-200 rounded-lg">DOWNLOAD
+                                    TEMPLATE</a>
+                                <form action="Test/uploadQuestions" method="POST" enctype="multipart/form-data"
+                                    class="flex gap-2 m-0">
+                                    <input type="hidden" name="test_pack_id" class="assign_tp_id_input" />
+                                    <input type="hidden" name="type" value="coding" />
+                                    <input type="file" name="file" class="hidden" id="file_coding"
+                                        onchange="this.form.submit()" />
+                                    <label for="file_coding"
+                                        class="btn btn-primary-custom h-12 text-xs px-8 cursor-pointer font-bold rounded-lg shadow-md hover:shadow-lg transition-all">UPLOAD
+                                        CSV</label>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Manual Entry Section -->
+                        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-1 h-6 bg-red-600 rounded-full"></div>
+                                <h5 class="text-xs font-black text-slate-500 uppercase tracking-widest mb-0">MANUAL
+                                    PROGRAMMING ENTRY</h5>
+                            </div>
+                            <div class="grid gap-5">
+                                <div>
+                                    <label
+                                        class="form-label text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-2">Pedagogy</label>
+                                    <div class="pedagogy-combo relative w-full" data-pedagogy-base="assign_coding_pedagogy">
+                                        <input type="hidden" class="pedagogy-combo-hidden" value="">
+                                        <input type="text"
+                                            class="pedagogy-combo-search form-control h-12 text-sm border-slate-200 rounded-lg shadow-sm w-full"
+                                            autocomplete="off" spellcheck="false"
+                                            placeholder="Search or type pedagogy...">
+                                        <div
+                                            class="pedagogy-combo-panel mt-0.5 max-h-52 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl hidden">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="form-label text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-2">Programming Language</label>
+                                        <select id="coding_language" class="form-select h-12 text-sm font-bold border-slate-200 rounded-lg shadow-sm">
+                                            <option value="python">Python 3</option>
+                                            <option value="java">Java</option>
+                                            <option value="c">C</option>
+                                            <option value="cpp">C++</option>
+                                            <option value="javascript">JavaScript</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-2">Marks</label>
+                                        <input type="number" id="coding_marks" class="form-control h-12 text-sm font-bold border-slate-200 rounded-lg shadow-sm" value="5">
+                                    </div>
+                                </div>
+                                <textarea id="coding_content" class="form-control text-sm p-4 bg-slate-50 border-slate-200"
+                                    placeholder="Type the problem statement..." rows="3"
+                                    style="border-radius: 12px;"></textarea>
+                                <textarea id="coding_starter" class="form-control text-sm font-mono p-4 bg-slate-900 text-emerald-400 border-slate-800"
+                                    placeholder="Starter code (optional)..." rows="5"
+                                    style="border-radius: 12px;"></textarea>
+                                <div class="flex justify-end pt-2">
+                                    <button
+                                        class="btn btn-primary-custom h-12 px-10 text-[12px] font-extrabold justify-center rounded-lg shadow-md"
+                                        onclick="App.addManualAssignQuestion('coding')">
                                         <i class="bi bi-plus-circle-fill me-1"></i> Add Question to Pack
                                     </button>
                                 </div>
@@ -6172,6 +6260,7 @@ if (!empty($Tests)) {
                 ) {
                     return 'descriptive';
                 }
+                if (t.includes('coding') || t.includes('programming') || t.includes('practical')) return 'coding';
                 return t;
             },
 
@@ -7145,12 +7234,10 @@ if (!empty($Tests)) {
 
         function qbQuestionMatchesCategory(q, activeCat) {
             if (!q) return false;
-            if (activeCat === 'MCQ') return (q.type || '') === 'MCQ';
-            if (activeCat === 'descriptive') {
-                return typeof App !== 'undefined' && App.normalizeType
-                    ? App.normalizeType(q.type) === 'descriptive'
-                    : false;
-            }
+            const qType = App.normalizeType(q.type);
+            if (activeCat === 'MCQ') return qType === 'mcq';
+            if (activeCat === 'descriptive') return qType === 'descriptive';
+            if (activeCat === 'coding') return qType === 'programming' || qType === 'coding';
             return false;
         }
 
@@ -7162,7 +7249,7 @@ if (!empty($Tests)) {
         }
 
         function navigateQBCategory(dir) {
-            const categories = ['MCQ', 'descriptive'];
+            const categories = ['MCQ', 'descriptive', 'coding'];
             let idx = categories.indexOf(activeQBCategory);
             if (idx === -1) idx = 0;
             idx += dir;
@@ -7189,6 +7276,10 @@ if (!empty($Tests)) {
                         <div class="relative py-3">
                             <button class="text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeQBCategory === 'descriptive' ? 'text-red-600' : 'text-slate-400 hover:text-slate-500'}" onclick="selectQBCategory('descriptive')">Descriptive question</button>
                             ${activeQBCategory === 'descriptive' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
+                        </div>
+                        <div class="relative py-3">
+                            <button class="text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeQBCategory === 'coding' ? 'text-red-600' : 'text-slate-400 hover:text-slate-500'}" onclick="selectQBCategory('coding')">Programming</button>
+                            ${activeQBCategory === 'coding' ? '<div class="absolute bottom-0 left-0 w-full h-[3px] bg-red-600 rounded-t-full shadow-[0_-2px_15px_rgba(220,34,48,0.25)] animate-fadeIn"></div>' : ''}
                         </div>
                     </div>
                 `;
@@ -7366,7 +7457,6 @@ if (!empty($Tests)) {
                                 `).join('')}
                             </div>
                         </div>
-                        <!-- Floating Actions on hover -->
                         <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-white/90 border border-slate-100 rounded-lg px-1.5 py-1 shadow-sm z-10">
                             <button class="w-7 h-7 rounded bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 shadow-sm transition-all" onclick="editQuestionInline('${q.id || idx}')">
                                 <i class="bi bi-pencil-square text-[11px]"></i>
@@ -7378,12 +7468,14 @@ if (!empty($Tests)) {
                     </div>
                 `;
             } else {
+                const badgeColor = activeQBCategory === 'coding' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-blue-50 text-blue-600 border-blue-100';
+                const label = activeQBCategory === 'coding' ? 'Programming' : 'Descriptive';
                 return `
                     <div class="py-1.5 px-10 hover:bg-slate-50/30 transition-all group relative" id="question-card-${q.id || idx}">
                         <div class="${gridClass}">
                             <div class="flex flex-col items-center gap-1">
                                 <div class="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-black shadow-sm border border-slate-700">${idx + 1}</div>
-                                <span class="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[7px] font-black uppercase tracking-widest border border-blue-100">Descriptive</span>
+                                <span class="px-1.5 py-0.5 rounded-md ${badgeColor} text-[7px] font-black uppercase tracking-widest border">${label}</span>
                             </div>
                             <div class="min-w-0 px-1">
                                 <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Pedagogy</p>
@@ -9639,15 +9731,16 @@ if (!empty($Tests)) {
         }
 
         function isInlineMarksEditable(type) {
-            return normalizeInlineSectionType(type) === 'descriptive';
+            const nt = normalizeInlineSectionType(type);
+            return nt === 'descriptive' || nt === 'coding';
         }
 
         function addSelectedSectionInline(type, name = null, count = 10, marks = null) {
             if (!type) return;
             const normalizedType = normalizeInlineSectionType(type);
             const used = getUsedInlineSectionTypes();
-            if (used.length >= 2 && !used.includes(normalizedType)) {
-                Swal.fire('Section limit reached', 'Only two sections are allowed: one MCQ and one descriptive question.', 'info');
+            if (used.length >= 3 && !used.includes(normalizedType)) {
+                Swal.fire('Section limit reached', 'Only three sections are allowed: MCQ, Descriptive, and Programming.', 'info');
                 return;
             }
 
@@ -9914,8 +10007,8 @@ if (!empty($Tests)) {
                 });
             });
 
-            if (sections.length > 2) {
-                Swal.fire('Section limit reached', 'Only two sections are allowed: one MCQ and one descriptive question.', 'warning');
+            if (sections.length > 3) {
+                Swal.fire('Section limit reached', 'Only three sections are allowed: MCQ, Descriptive, and Programming.', 'warning');
                 return;
             }
 
@@ -10090,9 +10183,10 @@ if (!empty($Tests)) {
             const nt = typeof App !== 'undefined' && App.normalizeType ? App.normalizeType(raw) : '';
             if (nt === 'descriptive') return 'descriptive';
             if (nt === 'mcq') return 'MCQ';
+            if (nt === 'coding' || nt === 'practical' || nt === 'programming') return 'coding';
 
             const v = raw.toLowerCase();
-            if (v.includes('coding') || v.includes('practical')) return raw;
+            if (v.includes('coding') || v.includes('practical') || v.includes('programming')) return 'coding';
 
             return 'MCQ';
         }
@@ -10102,6 +10196,7 @@ if (!empty($Tests)) {
             const t = normalizeInlineSectionType(internalType);
             if (t === 'descriptive') return 'Descriptive question';
             if (t === 'MCQ') return 'MCQ';
+            if (t === 'coding') return 'Programming';
             return String(internalType || '').trim() || 'MCQ';
         }
 
@@ -10121,10 +10216,9 @@ if (!empty($Tests)) {
 
         function getAllowedTypesForNewInlineRow() {
             const used = getUsedInlineSectionTypes();
-            if (used.length >= 2) return [];
-            if (used.includes('MCQ')) return ['descriptive'];
-            if (used.includes('descriptive')) return ['MCQ'];
-            return ['MCQ', 'descriptive'];
+            const allPossible = ['MCQ', 'descriptive', 'coding'];
+            const allowed = allPossible.filter(t => !used.includes(t));
+            return allowed;
         }
 
         function buildInlineTypeOptions(allowedTypes, selectedType) {
@@ -10135,7 +10229,10 @@ if (!empty($Tests)) {
         }
 
         function getFixedMarksByType(type) {
-            return normalizeInlineSectionType(type) === 'descriptive' ? 2 : 1;
+            const nt = normalizeInlineSectionType(type);
+            if (nt === 'descriptive') return 2;
+            if (nt === 'coding') return 5;
+            return 1;
         }
 
         function handleInlineSectionTypeChange(selectEl) {
@@ -10145,8 +10242,9 @@ if (!empty($Tests)) {
             const nextType = normalizeInlineSectionType(selectEl.value);
             const usedOtherTypes = getUsedInlineSectionTypes(row.id);
             if (usedOtherTypes.includes(nextType)) {
-                Swal.fire('Type already used', 'You can only have one MCQ section and one descriptive question section.', 'info');
-                const fallback = usedOtherTypes.includes('MCQ') ? 'descriptive' : 'MCQ';
+                Swal.fire('Type already used', 'You can only have one section of each type (MCQ, Descriptive, and Programming).', 'info');
+                const allPossible = ['MCQ', 'descriptive', 'coding'];
+                const fallback = allPossible.find(t => !usedOtherTypes.includes(t)) || 'MCQ';
                 selectEl.value = fallback;
             }
 
@@ -10187,7 +10285,7 @@ if (!empty($Tests)) {
             }
             const allowedTypes = getAllowedTypesForNewInlineRow();
             if (allowedTypes.length === 0) {
-                Swal.fire('Section limit reached', 'Only two sections are allowed: one MCQ and one descriptive question.', 'info');
+                Swal.fire('Section limit reached', 'All three section types (MCQ, Descriptive, and Programming) have already been added.', 'info');
                 return;
             }
 
@@ -10255,7 +10353,7 @@ if (!empty($Tests)) {
             const type = normalizeInlineSectionType(typeSelect.value);
             const usedOtherTypes = getUsedInlineSectionTypes(rowId);
             if (usedOtherTypes.includes(type)) {
-                Swal.fire('Type already used', 'Only one MCQ section and one descriptive question section are allowed.', 'warning');
+                Swal.fire('Type already used', 'Each template can only have one section of each type (MCQ, Descriptive, or Programming).', 'warning');
                 return;
             }
 
@@ -10313,8 +10411,9 @@ if (!empty($Tests)) {
             if (typeSelect) {
                 currentType = normalizeInlineSectionType(typeSelect.value || row.dataset.type);
                 const usedOtherTypes = getUsedInlineSectionTypes(rowId);
-                const allowed = usedOtherTypes.length > 0 ? [usedOtherTypes.includes('MCQ') ? 'descriptive' : 'MCQ'] : ['MCQ', 'descriptive'];
-                const safeAllowed = allowed.includes(currentType) ? allowed : [...new Set([currentType, ...allowed])];
+                const allPossible = ['MCQ', 'descriptive', 'coding'];
+                const allowed = allPossible.filter(t => !usedOtherTypes.includes(t));
+                const safeAllowed = allowed.includes(currentType) ? allowed : [currentType, ...allowed];
                 typeSelect.innerHTML = buildInlineTypeOptions(safeAllowed, currentType);
                 typeSelect.value = currentType;
             }
@@ -10341,12 +10440,20 @@ if (!empty($Tests)) {
         }
 
         App.downloadBuilderTemplate = () => {
-            let csv = "Section,Question,Option A,Option B,Option C,Option D,Correct Answer (A/B/C/D),Marks\n";
+            let csv = "Section,Question,Option A,Option B,Option C,Option D,Correct Answer (A/B/C/D),Starter Code,Marks,Pedagogy\n";
             const sections = document.querySelectorAll('#builder_sections_container_inline > div:not(.empty-state)');
             sections.forEach(s => {
                 const name = s.querySelector('input[type="text"]').value;
                 const marks = s.querySelector('.sec-marks-inline').value;
-                csv += `"${name.replace(/"/g, '""')}",Example Question,Opt 1,Opt 2,Opt 3,Opt 4,A,${marks}\n`;
+                const type = s.dataset.type || 'MCQ';
+                
+                if (type === 'Programming') {
+                    csv += `"${name.replace(/"/g, '""')}",Example Coding Question,,,,,"function solve() {}","${marks}",Logic\n`;
+                } else if (type === 'Short Answer') {
+                    csv += `"${name.replace(/"/g, '""')}",Example Descriptive Question,,,,,"Expected answer...","${marks}",Theory\n`;
+                } else {
+                    csv += `"${name.replace(/"/g, '""')}",Example MCQ Question,Opt 1,Opt 2,Opt 3,Opt 4,A,,"${marks}",General\n`;
+                }
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -12961,12 +13068,12 @@ if (!empty($Tests)) {
                 document.querySelectorAll('.assign-panel').forEach(p => p.classList.add('hidden'));
                 document.getElementById(tabId).classList.remove('hidden');
 
-                document.querySelectorAll('#btn-assign-mcq, #btn-assign-2m').forEach(b => {
+                document.querySelectorAll('#btn-assign-mcq, #btn-assign-2m, #btn-assign-coding').forEach(b => {
                     b.classList.remove('tab-active');
                     b.classList.add('tab-idle');
                 });
 
-                const activeBtnId = tabId === 'assign-mcq' ? 'btn-assign-mcq' : 'btn-assign-2m';
+                const activeBtnId = tabId === 'assign-mcq' ? 'btn-assign-mcq' : (tabId === 'assign-2m' ? 'btn-assign-2m' : 'btn-assign-coding');
                 const activeBtn = document.getElementById(activeBtnId);
                 activeBtn.classList.remove('tab-idle');
                 activeBtn.classList.add('tab-active');
@@ -12975,7 +13082,7 @@ if (!empty($Tests)) {
             addManualAssignQuestion: async (type) => {
                 let data = {
                     test_pack_id: document.querySelector('.assign_tp_id_input').value,
-                    type: type === 'MCQ' ? 'MCQ' : 'descriptive'
+                    type: type === 'MCQ' ? 'MCQ' : (type === 'coding' ? 'Programming' : 'descriptive')
                 };
 
                 if (type === 'MCQ') {
@@ -12990,6 +13097,17 @@ if (!empty($Tests)) {
 
                     if (!data.content || !data.option_a || !data.option_b || !data.correct_answer) {
                         Swal.fire('Incomplete Data', 'Please fill in the question, at least 2 options, and the correct answer.', 'warning');
+                        return;
+                    }
+                } else if (type === 'coding') {
+                    data.content = document.getElementById('coding_content').value;
+                    data.starter_code = document.getElementById('coding_starter').value;
+                    data.language = document.getElementById('coding_language').value;
+                    data.marks = document.getElementById('coding_marks').value || 5;
+                    data.pedagogy = getPedagogyComboValue('assign_coding_pedagogy');
+
+                    if (!data.content) {
+                        Swal.fire('Incomplete Data', 'Please fill in the problem statement.', 'warning');
                         return;
                     }
                 } else {
@@ -13021,6 +13139,10 @@ if (!empty($Tests)) {
                             document.getElementById('mcq_opt_d').value = '';
                             document.getElementById('mcq_correct').value = '';
                             resetPedagogyCombo('assign_mcq_pedagogy');
+                        } else if (type === 'coding') {
+                            document.getElementById('coding_content').value = '';
+                            document.getElementById('coding_starter').value = '';
+                            resetPedagogyCombo('assign_coding_pedagogy');
                         } else {
                             document.getElementById('m2_content').value = '';
                             document.getElementById('m2_correct').value = '';
@@ -14220,9 +14342,8 @@ if (!empty($Tests)) {
         </div>
 
     </div> <!-- End modal-content -->
-    </div>
-    </div>
-    </div>
+    </div> <!-- End modal-dialog -->
+    </div> <!-- End modal -->
 
     <!-- Add Question Manually Modal -->
     <div class="modal fade" id="addManualQuestionModal" tabindex="-1" style="z-index: 10050;">
@@ -14577,7 +14698,7 @@ if (!empty($Tests)) {
                 ? window.inlineSectionTypeDisplayName(type)
                 : (nt === 'descriptive' ? 'Descriptive question' : type);
             const displayName = name || `${typeLabel} Section`;
-            const displayMarks = marks !== null ? marks : (nt === 'descriptive' ? 2 : 1);
+            const displayMarks = marks !== null ? marks : (nt === 'descriptive' ? 2 : (nt === 'coding' ? 5 : 1));
 
             sectionCard.innerHTML = `
             <div class="flex items-center justify-between mb-4">
@@ -14799,41 +14920,49 @@ if (!empty($Tests)) {
             if (testId) currentTestIdForPack = testId;
             currentEditPackId = null; // Clear edit mode if any
 
-            // 1. Reset Master Hidden Inputs
-            document.getElementById('pack_wizard_name').value = '';
-            document.getElementById('baseTemplateSelect').value = '';
-            document.getElementById('pack_duration').value = 60;
-            document.getElementById('pack_start_time').value = '';
-            document.getElementById('pack_end_time').value = '';
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val;
+            };
+            const setChecked = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.checked = val;
+            };
+
+            setVal('pack_wizard_name', '');
+            setVal('baseTemplateSelect', '');
+            setVal('pack_duration', 60);
+            setVal('pack_start_time', '');
+            setVal('pack_end_time', '');
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('pack_scheduled_date').value = today;
-            document.getElementById('pack_instructions').value = 'Read all questions carefully before answering. Ensure a stable internet connection.';
-            document.getElementById('pack_shuffle').checked = true;
-            document.getElementById('pack_proctored').checked = true;
-            document.getElementById('pack_lockdown').checked = true;
+            setVal('pack_scheduled_date', today);
+            setVal('pack_instructions', 'Read all questions carefully before answering. Ensure a stable internet connection.');
+            
+            setChecked('pack_shuffle', true);
+            setChecked('pack_proctored', true);
+            setChecked('pack_lockdown', true);
+
             App.manualQuestions = [];
             App.quickModePaperSource = null;
             hasBuilderGeneratedPreview = false;
 
-            // Initialize candidate storage for this test if it doesn't exist
             if (!App.selectedCandidates[currentTestIdForPack]) {
                 App.selectedCandidates[currentTestIdForPack] = [];
             }
 
-            // 2. Reset Sidebar Interactive Inputs
-            document.getElementById('summary_name').value = 'New Group';
-            document.getElementById('summary_duration_input').value = 60;
-            document.getElementById('summary_start_input').value = '';
-            document.getElementById('summary_end_input').value = '';
-            document.getElementById('summary_instructions_input').value = 'Read all questions carefully before answering. Ensure a stable internet connection.';
+            setVal('summary_name', 'New Group');
+            setVal('summary_duration_input', 60);
+            setVal('summary_start_input', '');
+            setVal('summary_end_input', '');
+            setVal('summary_instructions_input', 'Read all questions carefully before answering. Ensure a stable internet connection.');
 
-            // Reset Toggle Visuals in Sidebar
             updateSummary(); // This will sync master -> sidebar visuals
 
             // 3. Reset UI Highlights & Details
             document.querySelectorAll('.template-card').forEach(card => {
                 card.classList.remove('border-red-600', 'bg-red-50');
-                card.querySelector('.check-badge').classList.add('opacity-0');
+                const badge = card.querySelector('.check-badge');
+                if (badge) badge.classList.add('opacity-0');
             });
             updateTemplateDetails(null);
 
@@ -16064,6 +16193,7 @@ if (!empty($Tests)) {
                             option_c: data.option_c || '',
                             option_d: data.option_d || '',
                             correct_answer: data.correct_answer || '',
+                            starter_code: data.starter_code || '',
                             category: 'Bulk',
                             pedagogy: (data.pedagogy || '').trim()
                         };
@@ -16127,7 +16257,7 @@ if (!empty($Tests)) {
                     </div>
 
                     <div class="d-flex align-items-center gap-2 mb-4 text-slate-500 text-[12px] font-semibold">
-                        <i class="bi bi-info-circle text-primary"></i> Question Type: ${qs[0].type === 'MCQ' ? 'Multiple Choice' : (App.normalizeType(qs[0].type) === 'descriptive' ? 'Descriptive question' : qs[0].type)}
+                        <i class="bi bi-info-circle text-primary"></i> Question Type: ${App.normalizeType(qs[0].type) === 'mcq' ? 'Multiple Choice' : (App.normalizeType(qs[0].type) === 'coding' ? 'Programming' : 'Descriptive question')}
                     </div>
                     
                     <div class="space-y-6">
@@ -16144,6 +16274,43 @@ if (!empty($Tests)) {
                                         <div class="border border-1 border-slate-200 rounded-xl p-6 text-slate-300 text-[12px] bg-slate-50/30">
                                             Student response area...
                                         </div>
+                                    ` : (App.normalizeType(q.type) === 'coding' ? `
+                                        <div class="rounded-xl overflow-hidden border border-slate-200 bg-[#1e1e1e] shadow-lg">
+                                            <!-- Editor Header -->
+                                            <div class="px-4 py-2 bg-[#2d2d2d] border-b border-[#3d3d3d] flex items-center justify-between">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="flex gap-1.5 mr-2">
+                                                        <div class="w-2.5 h-2.5 rounded-full bg-[#ff5f56]"></div>
+                                                        <div class="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]"></div>
+                                                        <div class="w-2.5 h-2.5 rounded-full bg-[#27c93f]"></div>
+                                                    </div>
+                                                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">solution.php</span>
+                                                </div>
+                                                <button class="px-3 py-1 bg-[#444] text-white text-[10px] font-black rounded hover:bg-[#555] transition-all flex items-center gap-1.5">
+                                                    <i class="bi bi-play-fill text-emerald-400"></i> RUN CODE
+                                                </button>
+                                            </div>
+                                            <!-- Editor Body -->
+                                            <div class="p-4 font-mono text-[13px] leading-relaxed">
+                                                <div class="flex gap-4">
+                                                    <div class="text-slate-600 text-right select-none pr-2 border-r border-[#333]">
+                                                        1<br>2<br>3<br>4
+                                                    </div>
+                                                    <div class="text-emerald-400">
+                                                        <span class="text-slate-300">&lt;?php</span><br>
+                                                        <span class="text-purple-400">function</span> <span class="text-blue-400">solution</span>() {<br>
+                                                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-slate-500">// Student will type code here...</span><br>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Console Output -->
+                                            <div class="mt-2 bg-[#000] p-3 border-t border-[#333]">
+                                                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Terminal Output</p>
+                                                <p class="text-[11px] font-mono text-emerald-500/80 mb-0">$ php solution.php</p>
+                                                <p class="text-[11px] font-mono text-slate-400 mb-0">Waiting for execution...</p>
+                                            </div>
+                                        </div>
                                     ` : `
                                         <div class="row g-3">
                                             ${(q.options || []).map((opt, oi) => `
@@ -16155,7 +16322,7 @@ if (!empty($Tests)) {
                                                 </div>
                                             `).join('')}
                                         </div>
-                                    `}
+                                    `)}
                                 </div>
                             </div>
                         `).join('')}
@@ -17913,8 +18080,4 @@ if (!empty($Tests)) {
     </div>
 
 </body>
-
-</html>
-</body>
-
 </html>
